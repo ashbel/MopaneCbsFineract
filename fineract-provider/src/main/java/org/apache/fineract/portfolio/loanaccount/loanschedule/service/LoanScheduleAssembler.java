@@ -232,6 +232,14 @@ public class LoanScheduleAssembler {
 
         // disbursement details
         final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        
+        final BigDecimal principalbalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinancePrincipalbalance", element);
+        final BigDecimal feesbalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinanceFeesbalance", element);
+        final BigDecimal penaltybalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinancePenaltybalance", element);
+        final BigDecimal interestbalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinanceInterestbalance", element);
+        
+        //BigDecimal cumulativePrincipal = principal.add(principalbalance).add(feesbalance).add(penaltybalance).add(interestbalance);
+        
         final Money principalMoney = Money.of(currency, principal);
 
         final LocalDate expectedDisbursementDate = this.fromApiJsonHelper.extractLocalDateNamed("expectedDisbursementDate", element);

@@ -430,57 +430,57 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append(" join m_group e on c.group_id = e.id ");
         sqlBuilder.append(" where b.enum_name = 'transaction_type_enum' ");
 
-//        int arrayPos = 0;
-//        List<Object> extraCriterias = new ArrayList<>();
-//        extraCriterias.add(hierarchySearchString);
-//        extraCriterias.add(hierarchySearchString);
+        int arrayPos = 0;
+        List<Object> extraCriterias = new ArrayList<>();
+        extraCriterias.add(hierarchySearchString);
+        extraCriterias.add(hierarchySearchString);
 
-//        if (searchParameters!=null) {
-//
-//            String sqlQueryCriteria = searchParameters.getSqlSearch();
-//            if (StringUtils.isNotBlank(sqlQueryCriteria)) {
-//                SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
-//                sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
-//                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
-//                sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
-//            }
-//
-//            if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-//                sqlBuilder.append(" and l.external_id = ?");
-//                extraCriterias.add(searchParameters.getExternalId());
-//                arrayPos = arrayPos + 1;
-//            }
-//            if(searchParameters.getOfficeId()!=null){
-//                sqlBuilder.append("and c.office_id =?");
-//                extraCriterias.add(searchParameters.getOfficeId());
-//                arrayPos = arrayPos + 1;
-//            }
-//
-//            if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-//                sqlBuilder.append(" and l.account_no = ?");
-//                extraCriterias.add(searchParameters.getAccountNo());
-//                arrayPos = arrayPos + 1;
-//            }
-//
-//            if (searchParameters.isOrderByRequested()) {
-//                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
-//                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
-//
-//                if (searchParameters.isSortOrderProvided()) {
-//                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
-//                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
-//                }
-//            }
-//
-//            if (searchParameters.isLimited()) {
-//                sqlBuilder.append(" limit ").append(searchParameters.getLimit());
-//                if (searchParameters.isOffset()) {
-//                    sqlBuilder.append(" offset ").append(searchParameters.getOffset());
-//                }
-//            }
-//        }
-//        final Object[] objectArray = extraCriterias.toArray();
-//        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+        if (searchParameters!=null) {
+
+            String sqlQueryCriteria = searchParameters.getSqlSearch();
+            if (StringUtils.isNotBlank(sqlQueryCriteria)) {
+                SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
+                sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
+                sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+            }
+
+            if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
+                sqlBuilder.append(" and l.external_id = ?");
+                extraCriterias.add(searchParameters.getExternalId());
+                arrayPos = arrayPos + 1;
+            }
+            if(searchParameters.getOfficeId()!=null){
+                sqlBuilder.append("and c.office_id =?");
+                extraCriterias.add(searchParameters.getOfficeId());
+                arrayPos = arrayPos + 1;
+            }
+
+            if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
+                sqlBuilder.append(" and l.account_no = ?");
+                extraCriterias.add(searchParameters.getAccountNo());
+                arrayPos = arrayPos + 1;
+            }
+
+            if (searchParameters.isOrderByRequested()) {
+                sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
+                this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
+
+                if (searchParameters.isSortOrderProvided()) {
+                    sqlBuilder.append(' ').append(searchParameters.getSortOrder());
+                    this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getSortOrder());
+                }
+            }
+
+            if (searchParameters.isLimited()) {
+                sqlBuilder.append(" limit ").append(searchParameters.getLimit());
+                if (searchParameters.isOffset()) {
+                    sqlBuilder.append(" offset ").append(searchParameters.getOffset());
+                }
+            }
+        }
+        final Object[] objectArray = extraCriterias.toArray();
+        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
         final String sqlCountRows = "SELECT FOUND_ROWS()";
         return this.paginationHelperTran.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), null,
                 this.tranMapper);

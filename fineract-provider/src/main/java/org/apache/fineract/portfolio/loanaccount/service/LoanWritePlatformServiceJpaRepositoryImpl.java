@@ -339,8 +339,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                                     +" should be after last transaction date of loan to be closed "+ lastUserTransactionOnLoanToClose);
                 }
 
-               // BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanIdToClose,
-                BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
+                BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanIdToClose,
+                //BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(loanIdToClose,
                             actualDisbursementDate).getAmount();
                 //loanOutstanding = loanOutstanding.add(loanToClose.get)
 

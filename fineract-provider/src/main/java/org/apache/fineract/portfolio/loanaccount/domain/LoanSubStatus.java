@@ -20,9 +20,11 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 
+//Added Refinance option
 public enum LoanSubStatus {
-    INVALID(0, "loanSubStatusType.invalid"), //
-    FORECLOSED(100, "loanSubStatusType.foreclosed");
+    INVALID(0, "loanSubStatusType.invalid"), //    
+    FORECLOSED(100, "loanSubStatusType.foreclosed"),
+    REFINANCED(200, "loanSubStatusType.refinanced");
 
     private final Integer value;
     private final String code;
@@ -33,6 +35,9 @@ public enum LoanSubStatus {
         switch (statusValue) {
             case 100:
                 enumeration = LoanSubStatus.FORECLOSED;
+            break;
+            case 200:
+                enumeration = LoanSubStatus.REFINANCED;
             break;
         }
         return enumeration;
@@ -58,6 +63,10 @@ public enum LoanSubStatus {
     public boolean isForeclosed() {
         return this.value.equals(LoanSubStatus.FORECLOSED.getValue());
     }
+    
+    public boolean isRefinanced() {
+        return this.value.equals(LoanSubStatus.REFINANCED.getValue());
+    }
 
     public static EnumOptionData loanSubStatus(final int id) {
         return loanSubStatusEnum(LoanSubStatus.fromInt(id));
@@ -70,6 +79,10 @@ public enum LoanSubStatus {
             case FORECLOSED:
                 optionData = new EnumOptionData(LoanSubStatus.FORECLOSED.getValue().longValue(), codePrefix
                         + LoanSubStatus.FORECLOSED.getCode(), "Foreclosed");
+            break;
+            case REFINANCED:
+                optionData = new EnumOptionData(LoanSubStatus.REFINANCED.getValue().longValue(), codePrefix
+                        + LoanSubStatus.REFINANCED.getCode(), "Refinanced");
             break;
             default:
                 optionData = new EnumOptionData(LoanSubStatus.INVALID.getValue().longValue(), LoanSubStatus.INVALID.getCode(), "Invalid");

@@ -3111,9 +3111,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
             }
         }
         
-      //if (loanTransaction.isRepayment() && isForeclosure()) {
-    	 // processIncomeAccrualTransactionOnLoanClosure();
-      //}
+      if (isTopup()) {
+    	  reprocess=true;
+      }
         
         if (reprocess) {
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
@@ -6388,6 +6388,20 @@ public class Loan extends AbstractPersistableCustom<Long> {
         validateAccountStatus(event);
         validateForForeclosure(repaymentTransaction.getTransactionDate());
         this.loanSubStatus = LoanSubStatus.FORECLOSED.getValue();
+        applyAccurals(appUser);
+        return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO,
+                appUser);
+    }
+    
+    //To Handle Refinance Transaction
+    public ChangedTransactionDetail handleRefinanceTransactions(final LoanTransaction repaymentTransaction,
+            final LoanLifecycleStateMachine loanLifecycleStateMachine, final ScheduleGeneratorDTO scheduleGeneratorDTO,
+            final AppUser appUser) {
+
+        LoanEvent event = LoanEvent.LOAN_REFINANCE;
+        validateAccountStatus(event);
+        validateForForeclosure(repaymentTransaction.getTransactionDate());
+        this.loanSubStatus = LoanSubStatus.REFINANCED.getValue();
         applyAccurals(appUser);
         return handleRepaymentOrRecoveryOrWaiverTransaction(repaymentTransaction, loanLifecycleStateMachine, null, scheduleGeneratorDTO,
                 appUser);

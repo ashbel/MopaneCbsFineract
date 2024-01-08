@@ -683,7 +683,7 @@ public final class LoanApplicationTerms {
                     switch (this.amortizationMethod) {
                         case EQUAL_INSTALLMENTS:
                             // average out outstanding interest over remaining
-                            // instalments where interest is applicable
+                            // installments where interest is applicable
                             interestForInstallment = calculateTotalFlatInterestForInstallmentAveragingOutGracePeriods(calculator,
                                     periodNumber, mc);
                         break;

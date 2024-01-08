@@ -43,5 +43,6 @@ public enum LoanEvent {
     LOAN_CLOSED, //
     LOAN_EDIT_MULTI_DISBURSE_DATE, //
     LOAN_REFUND, //
-    LOAN_FORECLOSURE;
+    LOAN_FORECLOSURE,
+    LOAN_REFINANCE; //Added new function for loan Refinance
 }

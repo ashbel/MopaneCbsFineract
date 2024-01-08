@@ -236,6 +236,159 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         return newRepaymentTransaction;
     }
 
+    //Make Final Repayment on Loan TopUp
+    
+    @Transactional
+    @Override
+    public LoanTransaction makeTopUpRepayment(final Loan loan, final CommandProcessingResultBuilder builderResult,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText,
+            final String txnExternalId, final boolean isRecoveryRepayment, boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto,
+            Boolean isHolidayValidationDone) {
+        return makeRepayment(loan, builderResult, transactionDate, transactionAmount, paymentDetail, noteText,
+                txnExternalId, isRecoveryRepayment, isAccountTransfer, holidayDetailDto, isHolidayValidationDone, false);
+    }
+
+    @Transactional
+    @Override
+    public LoanTransaction makeTopUpRepayment(final Loan loan, final CommandProcessingResultBuilder builderResult,
+            final LocalDate transactionDate, final BigDecimal transactionAmount, final PaymentDetail paymentDetail, final String noteText,
+            final String txnExternalId, final boolean isRecoveryRepayment, boolean isAccountTransfer, HolidayDetailDTO holidayDetailDto,
+            Boolean isHolidayValidationDone, final boolean isLoanToLoanTransfer) {
+        AppUser currentUser = getAppUserIfPresent();
+        MonetaryCurrency currency = loan.getCurrency();
+        LocalDateTime currentDateTime = DateUtils.getLocalDateTimeOfTenant();
+        checkClientOrGroupActive(loan);
+        this.businessEventNotifierService.notifyBusinessEventToBeExecuted(BUSINESS_EVENTS.LOAN_MAKE_REPAYMENT,
+                constructEntityMap(BUSINESS_ENTITY.LOAN, loan));
+        final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(transactionDate);
+
+        final List<Long> existingTransactionIds = new ArrayList<>();
+        final List<Long> existingReversedTransactionIds = new ArrayList<>();
+        List<LoanTransaction> newTransactions = new ArrayList<>();
+        
+        //Moved from here
+        if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
+                && (loan.getAccruedTill() == null || !transactionDate.isEqual(loan.getAccruedTill()))) {
+            loan.reverseAccrualsAfter(transactionDate);
+            Money[] accruedReceivables = loan.getReceivableIncome(transactionDate);
+            Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
+            Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
+            Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
+            Money total = interestPortion.plus(feePortion).plus(penaltyPortion);
+            if (total.isGreaterThanZero()) {
+                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), transactionDate,
+                        total.getAmount(), interestPortion.getAmount(), feePortion.getAmount(), penaltyPortion.getAmount(), currentUser);
+                LocalDate fromDate = loan.getDisbursementDate();
+                if (loan.getAccruedTill() != null) {
+                    fromDate = loan.getAccruedTill();
+                }
+                currentDateTime = currentDateTime.plusSeconds(1);
+                newTransactions.add(accrualTransaction);
+                loan.addLoanTransaction(accrualTransaction);
+                Set<LoanChargePaidBy> accrualCharges = accrualTransaction.getLoanChargesPaid();
+                for (LoanCharge loanCharge : loan.charges()) {
+                    if (loanCharge.isActive()
+                            && !loanCharge.isPaid()
+                            && (loanCharge.isDueForCollectionFromAndUpToAndIncluding(fromDate, transactionDate) || loanCharge
+                                    .isInstalmentFee())) {
+                        final LoanChargePaidBy loanChargePaidBy = new LoanChargePaidBy(accrualTransaction, loanCharge, loanCharge
+                                .getAmountOutstanding(currency).getAmount(), null);
+                        accrualCharges.add(loanChargePaidBy);
+                    }
+                }
+            }
+        }
+
+        final Money repaymentAmount = Money.of(loan.getCurrency(), transactionAmount);
+        LoanTransaction newRepaymentTransaction = null;
+        
+        Money interestPayable = foreCloseDetail.getInterestCharged(currency);
+        Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
+        Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
+        Money payPrincipal = foreCloseDetail.getPrincipal(currency);        
+        loan.updateInstallmentsPostDate(transactionDate);
+        
+        
+        
+        if (isRecoveryRepayment) {
+            newRepaymentTransaction = LoanTransaction.recoveryRepayment(loan.getOffice(), repaymentAmount, paymentDetail, transactionDate,
+                    txnExternalId, currentDateTime, currentUser);
+        } else {
+            newRepaymentTransaction = LoanTransaction.repayment(loan.getOffice(), repaymentAmount, paymentDetail, transactionDate,
+                    txnExternalId, currentDateTime, currentUser);
+            newTransactions.add(newRepaymentTransaction);
+            currentDateTime = currentDateTime.plusSeconds(1);
+            newRepaymentTransaction.updateCreatedDate(currentDateTime.toDate());
+            newRepaymentTransaction.updateLoan(loan);
+        }
+        
+       
+
+        LocalDate recalculateFrom = null;
+        
+        if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            recalculateFrom = transactionDate;
+        }
+        final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
+        
+       // loan.updateInstallmentsPostDate(transactionDate);
+
+        List<Long> transactionIds = new ArrayList<>();
+        
+        //Moved this up to allow interest before payment.
+        for (LoanTransaction newTransaction : newTransactions) {
+            saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
+            transactionIds.add(newTransaction.getId());
+        }
+        
+        final ChangedTransactionDetail changedTransactionDetail = loan.handleRefinanceTransactions(newRepaymentTransaction,
+                defaultLoanLifecycleStateMachine(), scheduleGeneratorDTO, currentUser);
+
+        saveLoanTransactionWithDataIntegrityViolationChecks(newRepaymentTransaction);
+
+        /***
+         * TODO Vishwas Batch save is giving me a
+         * HibernateOptimisticLockingFailureException, looping and saving for
+         * the time being, not a major issue for now as this loop is entered
+         * only in edge cases (when a payment is made before the latest payment
+         * recorded against the loan)
+         ***/
+
+        saveAndFlushLoanWithDataIntegrityViolationChecks(loan);
+
+        if (changedTransactionDetail != null) {
+            for (Map.Entry<Long, LoanTransaction> mapEntry : changedTransactionDetail.getNewTransactionMappings().entrySet()) {
+                saveLoanTransactionWithDataIntegrityViolationChecks(mapEntry.getValue());
+                // update loan with references to the newly created transactions
+                loan.addLoanTransaction(mapEntry.getValue());
+                updateLoanTransaction(mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
+
+        if (StringUtils.isNotBlank(noteText)) {
+            final Note note = Note.loanTransactionNote(loan, newRepaymentTransaction, noteText);
+            this.noteRepository.save(note);
+        }
+
+        postJournalEntries(loan, existingTransactionIds, existingReversedTransactionIds, isAccountTransfer, isLoanToLoanTransfer);
+
+        recalculateAccruals(loan);
+
+        this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.LOAN_MAKE_REPAYMENT,
+                constructEntityMap(BUSINESS_ENTITY.LOAN_TRANSACTION, newRepaymentTransaction));
+
+        // disable all active standing orders linked to this loan if status changes to closed
+        disableStandingInstructionsLinkedToClosedLoan(loan);
+
+        builderResult.withEntityId(newRepaymentTransaction.getId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withGroupId(loan.getGroupId()); //
+
+        return newRepaymentTransaction;
+    }
+
+    
     private void saveLoanTransactionWithDataIntegrityViolationChecks(LoanTransaction newRepaymentTransaction) {
         try {
             this.loanTransactionRepository.save(newRepaymentTransaction);
@@ -647,10 +800,6 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     fromDate = loan.getAccruedTill();
                 }
                 createdDate = createdDate.plusSeconds(1);
-                //Add Accrual Before Repayment to affect the balances
-//                accrualTransaction.updateCreatedDate(createdDate.toDate());
-//                accrualTransaction.updateLoan(loan);
-                //
                 newTransactions.add(accrualTransaction);
                 loan.addLoanTransaction(accrualTransaction);
                 Set<LoanChargePaidBy> accrualCharges = accrualTransaction.getLoanChargesPaid();

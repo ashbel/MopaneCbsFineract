@@ -441,7 +441,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
                 accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                 accountTransferDTO.getPaymentDetail(), accountTransferDTO.getNoteText(), accountTransferDTO.getTxnExternalId(), true);
 
-        LoanTransaction repayTransaction = this.loanAccountDomainService.makeRepayment(toLoanAccount, new CommandProcessingResultBuilder(),
+        LoanTransaction repayTransaction = this.loanAccountDomainService.makeTopUpRepayment(toLoanAccount, new CommandProcessingResultBuilder(),
                 accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
                 accountTransferDTO.getPaymentDetail(), null, null, false, isAccountTransfer,null,false, true);
 

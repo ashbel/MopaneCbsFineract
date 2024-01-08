@@ -73,7 +73,13 @@ buildDir = new File(rootProject.projectDir, "../build")
 repositories {
 	jcenter()
 	maven {
-	url "http://nexus.pentaho.org/content/repositories/omni/"
+	url "https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/"
+    }
+    maven {
+        url "https://repo.orl.eng.hitachivantara.com/ui/native/pnt-mvn/"
+    }
+    maven {
+        url "http://cobuys.com/pentaho.repo/"
     }
 	// mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
 }

@@ -65,6 +65,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.localeParameterName, LoanApiConstants.idParameterName, LoanApiConstants.clientIdParameterName,
             LoanApiConstants.groupIdParameterName, LoanApiConstants.loanTypeParameterName, LoanApiConstants.productIdParameterName,
             LoanApiConstants.principalParamName, LoanApiConstants.loanTermFrequencyParameterName,
+            LoanApiConstants.refinanceFeesParameterName, LoanApiConstants.refinanceInterestParameterName,
+            LoanApiConstants.refinancePenaltyParameterName, LoanApiConstants.refinancePrincipalParameterName,
             LoanApiConstants.loanTermFrequencyTypeParameterName, LoanApiConstants.numberOfRepaymentsParameterName,
             LoanApiConstants.repaymentEveryParameterName, LoanApiConstants.repaymentFrequencyTypeParameterName,
             LoanApiConstants.repaymentFrequencyNthDayTypeParameterName, LoanApiConstants.repaymentFrequencyDayOfWeekTypeParameterName,

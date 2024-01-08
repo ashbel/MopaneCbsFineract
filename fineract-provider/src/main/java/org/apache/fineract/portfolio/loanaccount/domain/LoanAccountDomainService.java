@@ -75,4 +75,14 @@ public interface LoanAccountDomainService {
     void disableStandingInstructionsLinkedToClosedLoan(Loan loan);
 
     void recalculateAccruals(Loan loan, boolean isInterestCalcualtionHappened);
+
+	LoanTransaction makeTopUpRepayment(Loan loan, CommandProcessingResultBuilder builderResult,
+			LocalDate transactionDate, BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText,
+			String txnExternalId, boolean isRecoveryRepayment, boolean isAccountTransfer,
+			HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone);
+
+	LoanTransaction makeTopUpRepayment(Loan loan, CommandProcessingResultBuilder builderResult,
+			LocalDate transactionDate, BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText,
+			String txnExternalId, boolean isRecoveryRepayment, boolean isAccountTransfer,
+			HolidayDetailDTO holidayDetailDto, Boolean isHolidayValidationDone, boolean isLoanToLoanTransfer);
 }
