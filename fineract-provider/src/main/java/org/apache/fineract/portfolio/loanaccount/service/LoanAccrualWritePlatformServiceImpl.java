@@ -362,7 +362,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
     }
 
     private void updateCharges(final Collection<LoanChargeData> chargesData, final LoanScheduleAccrualData accrualData,
-            final LocalDate startDate, final LocalDate endDate) {
+            final LocalDate startDate, final LocalDate endDate) throws Exception {
 
         final Map<LoanChargeData, BigDecimal> applicableCharges = new HashMap<>();
         BigDecimal dueDateFeeIncome = BigDecimal.ZERO;
@@ -398,6 +398,9 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                             break;
                         }
                     }
+                }
+                if(loanCharge.isTimeOfDisbursementCapitalised()) {       
+                	dueDateFeeIncome = loanCharge.getAmount();             
                 }
             } else if (loanCharge.getDueDate().isAfter(startDate) && !loanCharge.getDueDate().isAfter(endDate)) {
                 chargeAmount = loanCharge.getAmount();

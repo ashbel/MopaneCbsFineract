@@ -68,7 +68,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 if (e.getCause() != null) {
                     realCause = e.getCause();
                 }
-                sb.append("failed to add accural transaction for loan " + mapEntry.getKey() + " with message " + realCause.getMessage());
+                sb.append("failed to add accural transaction for loan " + mapEntry.getKey() + " with message " + e.toString());
             }
         }
 
@@ -110,7 +110,7 @@ public class LoanAccrualPlatformServiceImpl implements LoanAccrualPlatformServic
                 if (e.getCause() != null) {
                     realCause = e.getCause();
                 }
-                sb.append("failed to add accural transaction for loan " + mapEntry.getKey() + " with message " + realCause.getMessage());
+                sb.append("failed to add accural transaction for loan " + mapEntry.getKey() + " with message " + e.toString());
             }
         }
 

@@ -281,7 +281,8 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                         numberOfRepayments = this.loan.fetchNumberOfInstallmensAfterExceptions();
                     }
                     this.amount = chargeAmount.multiply(BigDecimal.valueOf(numberOfRepayments));
-                } else {
+                } 
+                else {
                     this.amount = chargeAmount;
                 }
                 this.amountOutstanding = this.amount;
@@ -307,6 +308,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         this.amountOrPercentage = chargeAmount;
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
+        }
+        if (this.loan != null && isCapitalisedAtDisbursement()) {
+            //updateInstallmentCharges();
         }
     }
 
@@ -413,6 +417,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
             }
+            if (this.loan != null && isCapitalisedAtDisbursement()) {
+                //updateInstallmentCharges();
+            }
         }
     }
 
@@ -508,6 +515,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             this.amountOrPercentage = newValue;
             if (isInstalmentFee()) {
                 updateInstallmentCharges();
+            }
+            if (isCapitalisedAtDisbursement()) {
+                //updateInstallmentCharges();
             }
         }
         return actualChanges;

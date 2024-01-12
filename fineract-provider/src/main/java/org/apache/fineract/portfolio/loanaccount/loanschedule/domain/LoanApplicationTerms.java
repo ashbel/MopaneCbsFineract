@@ -83,6 +83,7 @@ public final class LoanApplicationTerms {
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
+    private BigDecimal capitalisedCharge;
     private final LocalDate expectedDisbursementDate;
     private final LocalDate repaymentsStartingFromDate;
     private final LocalDate calculatedRepaymentsStartingFromDate;
@@ -671,6 +672,12 @@ public final class LoanApplicationTerms {
         Money interestForInstallment = this.principal.zero();
         Money interestBroughtForwardDueToGrace = cumulatingInterestPaymentDueToGrace.copy();
         InterestMethod interestMethod = this.interestMethod;
+        Money calculatedOutstandingBalance = outstandingBalance;
+        
+        if(this.capitalisedCharge.compareTo(BigDecimal.ZERO)>0) {
+        	BigDecimal singleCharge = this.capitalisedCharge; //.divide(new BigDecimal(this.numberOfRepayments));
+        	calculatedOutstandingBalance = calculatedOutstandingBalance.plus(singleCharge);
+        }
 
         if (this.isEqualAmortization() && this.totalInterestDue != null) {
             interestMethod = InterestMethod.FLAT;
@@ -705,10 +712,10 @@ public final class LoanApplicationTerms {
             case DECLINING_BALANCE:
 
                 final Money interestForThisInstallmentBeforeGrace = calculateDecliningInterestDueForInstallmentBeforeApplyingGrace(
-                        calculator, mc, outstandingBalance, periodStartDate, periodEndDate);
+                        calculator, mc, calculatedOutstandingBalance, periodStartDate, periodEndDate);
 
                 final Money interestForThisInstallmentAfterGrace = calculateDecliningInterestDueForInstallmentAfterApplyingGrace(
-                        calculator, interestCalculationGraceOnRepaymentPeriodFraction, mc, outstandingBalance, periodNumber,
+                        calculator, interestCalculationGraceOnRepaymentPeriodFraction, mc, calculatedOutstandingBalance, periodNumber,
                         periodStartDate, periodEndDate);
 
                 interestForInstallment = interestForThisInstallmentAfterGrace;
@@ -1378,6 +1385,10 @@ public final class LoanApplicationTerms {
     public void setPrincipal(Money principal) {
         this.principal = principal;
     }
+    
+    public void setCapitalisedCharge(BigDecimal chargesCapitalisedAtTimeOfDisbursement) {
+        this.capitalisedCharge = chargesCapitalisedAtTimeOfDisbursement;
+    }
 
     public LocalDate getInterestChargedFromLocalDate() {
         return this.interestChargedFromDate;
@@ -1413,6 +1424,10 @@ public final class LoanApplicationTerms {
 
     public Money getPrincipal() {
         return this.principal;
+    }
+    
+    public BigDecimal getCapitalisedCharge(){
+    	return this.capitalisedCharge;
     }
 
     public Money getApprovedPrincipal() {

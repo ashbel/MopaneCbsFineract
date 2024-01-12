@@ -89,12 +89,12 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         
 		//Add Capitalised Amount to Principal
         Money amt = loanApplicationTerms.getPrincipal().plus(chargesCapitalisedAtTimeOfDisbursement);
+		Money approvedPrincipalAmount = loanApplicationTerms.getPrincipal();
         
-       
         
-        loanApplicationTerms.setPrincipal(amt);
-        loanApplicationTerms.setTotalPrincipalAccounted(amt);
-        //loanAppicationTerms.set
+        loanApplicationTerms.setPrincipal(approvedPrincipalAmount);
+        loanApplicationTerms.setTotalPrincipalAccounted(approvedPrincipalAmount);
+        loanApplicationTerms.setCapitalisedCharge(chargesCapitalisedAtTimeOfDisbursement);
         
         // setup variables for tracking important facts required for loan
         // schedule generation.
@@ -1264,7 +1264,11 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money principalToBeScheduled;
         if (loanApplicationTerms.isMultiDisburseLoan() && loanApplicationTerms.getApprovedPrincipal().isGreaterThanZero()) {
             principalToBeScheduled = loanApplicationTerms.getApprovedPrincipal();
-        } else {
+        } 
+//        else if(loanApplicationTerms.getCapitalisedCharge()) {
+//        	principalToBeScheduled = loanApplicationTerms.getApprovedPrincipal().plus(loanApplicationTerms.getCapitalisedCharge());
+//        }
+        else {
             principalToBeScheduled = loanApplicationTerms.getPrincipal();
         }
         return principalToBeScheduled;
@@ -1992,6 +1996,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                             cumulative, loanCharge);
                 } else if (loanCharge.isDueForCollectionFromAndUpToAndIncluding(periodStart, periodEnd)) {
                     cumulative = cumulative.plus(loanCharge.amount());
+                }else if  (loanCharge.isDisbursementCapitalizedCharge()) {
+                    cumulative = calculateInstallmentCharge(principalInterestForThisPeriod, cumulative, loanCharge);
                 }
             }
         }

@@ -321,6 +321,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (canDisburse) {
             Money disburseAmount = loan.adjustDisburseAmount(command, actualDisbursementDate);
             Money amountToDisburse = disburseAmount.copy();
+            Money capitalisedCharge = Money.zero(disburseAmount.getCurrency());
+            final Set<LoanCharge> upfrontLoanCharges = loan.charges();           
+            for (final LoanCharge upfrontLoanCharge : upfrontLoanCharges) {  
+                if(upfrontLoanCharge.isCapitalisedAtDisbursement()) {
+                	capitalisedCharge = capitalisedCharge.plus(upfrontLoanCharge.amountOutstanding());
+                }
+            }
+            
             boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincpal());
             final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
 
@@ -363,6 +371,12 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             } else {
                 existingTransactionIds.addAll(loan.findExistingTransactionIds());
                 existingReversedTransactionIds.addAll(loan.findExistingReversedTransactionIds());
+                
+                LoanTransaction disbursementChargeTransaction = LoanTransaction.accrueAtDisbursement(loan.getOffice(), capitalisedCharge, paymentDetail,
+                        actualDisbursementDate, txnExternalId, DateUtils.getLocalDateTimeOfTenant(), currentUser);
+                disbursementChargeTransaction.updateLoan(loan);
+                loan.addLoanTransaction(disbursementChargeTransaction);
+                
                 LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amountToDisburse, paymentDetail,
                         actualDisbursementDate, txnExternalId, DateUtils.getLocalDateTimeOfTenant(), currentUser);
                 disbursementTransaction.updateLoan(loan);
@@ -389,9 +403,10 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                     && loanCharge.isChargePending()) {
                 disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
             }
-            if(loanCharge.isCapitalisedAtDisbursement()) {
-            	capitalisedCharges = capitalisedCharges.add(loanCharge.amount());
-            }
+//            if(loanCharge.isCapitalisedAtDisbursement()) {
+//            	capitalisedCharges = capitalisedCharges.add(loanCharge.amount());
+//            	//disBuLoanCharges.put(loanCharge.getId(), loanCharge.amountOutstanding());
+//            }
         }
         
         if (!changes.isEmpty()) {
