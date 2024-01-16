@@ -78,6 +78,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
@@ -100,6 +102,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final BusinessEventNotifierService businessEventNotifierService;
     private final LoanUtilService loanUtilService;
     private final StandingInstructionRepository standingInstructionRepository;
+    private final static Logger logger = LoggerFactory.getLogger(Loan.class);
 
     @Autowired
     public LoanAccountDomainServiceJpa(final LoanAssembler loanAccountAssembler, final LoanRepositoryWrapper loanRepositoryWrapper,
@@ -391,6 +394,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     
     private void saveLoanTransactionWithDataIntegrityViolationChecks(LoanTransaction newRepaymentTransaction) {
         try {
+        	logger.info(" saveLoanTransactionWithDataIntegrityViolationChecks ");
             this.loanTransactionRepository.save(newRepaymentTransaction);
         } catch (DataIntegrityViolationException e) {
             final Throwable realCause = e.getCause();
@@ -407,8 +411,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
 
     private void saveAndFlushLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
+        	logger.info(" saveAndFlushLoanWithDataIntegrityViolationChecks ");
             List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
             for (LoanRepaymentScheduleInstallment installment : installments) {
+            	logger.info(" saveAndFlushLoanWithDataIntegrityViolationChecks : Installment " 
+            			+ installment.getInstallmentNumber() + " " + installment.getFeeChargesCharged(loan.getCurrency()));
                 if (installment.getId() == null) {
                     this.repaymentScheduleInstallmentRepository.save(installment);
                 }
@@ -429,8 +436,11 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     @Override
     public void saveLoanWithDataIntegrityViolationChecks(final Loan loan) {
         try {
+        	logger.info(" saveLoanWithDataIntegrityViolationChecks ");
             List<LoanRepaymentScheduleInstallment> installments = loan.getRepaymentScheduleInstallments();
             for (LoanRepaymentScheduleInstallment installment : installments) {
+            	logger.info(" saveLoanWithDataIntegrityViolationChecks  : Installment"
+            			+ installment.getInstallmentNumber());
                 if (installment.getId() == null) {
                     this.repaymentScheduleInstallmentRepository.save(installment);
                 }
@@ -691,7 +701,10 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                         dueDateFeeIncome = dueDateFeeIncome.add(loanCharge.amount());
                     } else if (loanCharge.isPenaltyCharge()) {
                         dueDatePenaltyIncome = dueDatePenaltyIncome.add(loanCharge.amount());
-                    }
+                    } 
+                }
+                if(loanCharge.isCapitalisedAtDisbursement()) {
+                	dueDateFeeIncome = dueDateFeeIncome.add(loanCharge.amountOutstanding());
                 }
             }
             LoanScheduleAccrualData accrualData = new LoanScheduleAccrualData(loanId, officeId, installment.getInstallmentNumber(),
@@ -782,12 +795,17 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         final ScheduleGeneratorDTO scheduleGeneratorDTO = null;
         AppUser appUser = getAppUserIfPresent();
         final LoanRepaymentScheduleInstallment foreCloseDetail = loan.fetchLoanForeclosureDetail(foreClosureDate);
+        logger.info("ForelosureFeesCharged " + foreCloseDetail.getFeeChargesCharged(currency));
+        logger.info("ForeclosureInterestCharged " + foreCloseDetail.getInterestCharged(currency));
       
         //Moved from here
         if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()
                 && (loan.getAccruedTill() == null || !foreClosureDate.isEqual(loan.getAccruedTill()))) {
             loan.reverseAccrualsAfter(foreClosureDate);
             Money[] accruedReceivables = loan.getReceivableIncome(foreClosureDate);
+            logger.info("AccrualFeesCharged " + accruedReceivables[1]);
+            logger.info("AccrualInterestCharged " + accruedReceivables[0]);
+
             Money interestPortion = foreCloseDetail.getInterestCharged(currency).minus(accruedReceivables[0]);
             Money feePortion = foreCloseDetail.getFeeChargesCharged(currency).minus(accruedReceivables[1]);
             Money penaltyPortion = foreCloseDetail.getPenaltyChargesCharged(currency).minus(accruedReceivables[2]);
@@ -814,12 +832,24 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
                     }
                 }
             }
-        }
+        } 
+//        else {
+//        	if(foreCloseDetail.getFeeChargesCharged(currency).isGreaterThanZero()){
+//                LoanTransaction accrualTransaction = LoanTransaction.accrueTransaction(loan, loan.getOffice(), foreClosureDate,
+//                		foreCloseDetail.getFeeChargesCharged(currency).getAmount(), Money.zero(currency).getAmount(), foreCloseDetail.getFeeChargesCharged(currency).getAmount(), Money.zero(currency).getAmount(), appUser);   
+//                newTransactions.add(accrualTransaction);
+//                loan.addLoanTransaction(accrualTransaction);
+//        	}
+//        }
 
         Money interestPayable = foreCloseDetail.getInterestCharged(currency);
         Money feePayable = foreCloseDetail.getFeeChargesCharged(currency);
         Money penaltyPayable = foreCloseDetail.getPenaltyChargesCharged(currency);
-        Money payPrincipal = foreCloseDetail.getPrincipal(currency);        
+        Money payPrincipal = foreCloseDetail.getPrincipal(currency); 
+        
+        logger.info("ForelosureFeesPayable " + feePayable);
+        logger.info("ForeclosureInterestPayable " + interestPayable);
+        
         loan.updateInstallmentsPostDate(foreClosureDate);
 
         LoanTransaction payment = null;
@@ -842,8 +872,13 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
         
         //Moved this up to allow interest before payment.
         for (LoanTransaction newTransaction : newTransactions) {
+            logger.info("TransactionFees " + newTransaction.getFeeChargesPortion(currency));
+            logger.info("TransactionInterest " + newTransaction.getInterestPortion(currency));
+            logger.info("TransactionAmount " + newTransaction.getAmount(currency));
+            logger.info("TransactionPrincipal " + newTransaction.getPrincipalPortion(currency));
+            logger.info("TransactionId " + newTransaction.getId());
             saveLoanTransactionWithDataIntegrityViolationChecks(newTransaction);
-            transactionIds.add(newTransaction.getId());
+            transactionIds.add(newTransaction.getId());          
         }
         changes.put("transactions", transactionIds);
         changes.put("eventAmount", payPrincipal.getAmount().negate());

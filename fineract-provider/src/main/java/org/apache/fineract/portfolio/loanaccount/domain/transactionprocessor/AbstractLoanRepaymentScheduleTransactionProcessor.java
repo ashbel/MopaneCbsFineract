@@ -30,6 +30,7 @@ import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 import org.apache.fineract.portfolio.loanaccount.domain.ChangedTransactionDetail;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanChargePaidBy;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInstallmentCharge;
@@ -42,6 +43,8 @@ import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.imp
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.HeavensFamilyLoanRepaymentScheduleTransactionProcessor;
 import org.apache.fineract.portfolio.loanaccount.domain.transactionprocessor.impl.InterestPrincipalPenaltyFeesOrderLoanRepaymentScheduleTransactionProcessor;
 import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of {@link LoanRepaymentScheduleTransactionProcessor}
@@ -54,6 +57,7 @@ import org.joda.time.LocalDate;
  */
 public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implements LoanRepaymentScheduleTransactionProcessor {
 
+	  private final static Logger logger = LoggerFactory.getLogger(Loan.class);
     /**
      * Provides support for passing all {@link LoanTransaction}'s so it will
      * completely re-process the entire loan schedule. This is required in cases
@@ -72,6 +76,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 if (!loanCharge.isDueAtDisbursement()) {
                     loanCharge.resetPaidAmount(currency);
                 }
+                logger.info("ChargesPassed " + loanCharge.amount());
             }
         }
 
@@ -237,6 +242,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             final boolean isFeeCharge) {
         // to.
         if (loanTransaction.isRepayment() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
+        	logger.info("isRepaymentOr");
             loanTransaction.resetDerivedComponents();
         }
         Money transactionAmountUnprocessed = processTransaction(loanTransaction, currency, installments, chargeAmountToProcess);
@@ -288,16 +294,19 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     // the
                     // current installment?
                     if (isTransactionInAdvanceOfInstallment(installmentIndex, installments, transactionDate, transactionAmountUnprocessed)) {
+                    	logger.info("Advance");
                         transactionAmountUnprocessed = handleTransactionThatIsPaymentInAdvanceOfInstallment(currentInstallment,
                                 installments, loanTransaction, transactionDate, transactionAmountUnprocessed, transactionMappings);
                     } else if (isTransactionALateRepaymentOnInstallment(installmentIndex, installments,
                             loanTransaction.getTransactionDate())) {
                         // does this result in a late payment of existing
                         // installment?
+                    	logger.info("ILate");
                         transactionAmountUnprocessed = handleTransactionThatIsALateRepaymentOfInstallment(currentInstallment, installments,
                                 loanTransaction, transactionAmountUnprocessed, transactionMappings);
                     } else {
                         // standard transaction
+                    	logger.info("On Time");
                         transactionAmountUnprocessed = handleTransactionThatIsOnTimePaymentOfInstallment(currentInstallment,
                                 loanTransaction, transactionAmountUnprocessed, transactionMappings);
                     }
@@ -315,8 +324,10 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         for (final LoanCharge loanCharge : loanCharges) {
             if (loanCharge.isFeeCharge()) {
                 feeCharges.add(loanCharge);
+                logger.info("Fees " + loanCharge.amount());
             }
         }
+        
         return feeCharges;
     }
 
@@ -664,6 +675,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     }
 
                     if (feeCharges.isGreaterThanZero()) {
+                    	logger.info("FeeChargesGreaterThanZero " + feeCharges);
                         Money feeChargesPortion = Money.zero(currency);
                         if (loanTransaction.isWaiver()) {
                             feeChargesPortion = currentInstallment.waiveFeeChargesComponent(transactionDate, feeCharges);

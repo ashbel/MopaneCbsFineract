@@ -62,6 +62,9 @@ import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.fineract.infrastructure.security.filter.TenantAwareBasicAuthenticationFilter;
 import org.apache.fineract.infrastructure.security.service.RandomPasswordGenerator;
 import org.apache.fineract.organisation.holiday.domain.Holiday;
 import org.apache.fineract.organisation.holiday.service.HolidayUtil;
@@ -150,6 +153,8 @@ import com.google.gson.JsonPrimitive;
 @Table(name = "m_loan", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "loan_account_no_UNIQUE"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "loan_externalid_UNIQUE") })
 public class Loan extends AbstractPersistableCustom<Long> {
+	
+	  private final static Logger logger = LoggerFactory.getLogger(Loan.class);
 
     /** Disable optimistic locking till batch jobs failures can be fixed **/
     @Version
@@ -601,7 +606,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             chargeAmt = loanCharge.getPercentage();
-            if (loanCharge.isInstalmentFee()) {
+            if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
             } else if (loanCharge.isOverdueInstallmentCharge()) {
                 totalChargeAmt = loanCharge.amountOutstanding();
@@ -1156,7 +1161,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             BigDecimal totalChargeAmt = BigDecimal.ZERO;
             if (loanCharge.getChargeCalculation().isPercentageBased()) {
                 chargeAmt = loanCharge.getPercentage();
-                if (loanCharge.isInstalmentFee()) {
+                if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
                 }
             } else {
@@ -1240,6 +1245,18 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     interest = interest.plus(loanTransaction.getInterestPortion(getCurrency()));
                     fee = fee.plus(loanTransaction.getFeeChargesPortion(getCurrency()));
                     penality = penality.plus(loanTransaction.getPenaltyChargesPortion(getCurrency()));
+                    if(getAccruedTill()==null) {this.accruedTill =loanTransaction.getTransactionDate().toDate();}
+                    
+                  if(fee.isZero() && (installment.getFeeChargesCharged(getCurrency()).isGreaterThanZero())) {
+                  Loan loan = installment.getLoan();
+                  for(LoanCharge loanCharge : loan.charges) {
+                  	if(loanCharge.isCapitalisedAtDisbursement()) {
+                  		fee = fee.plus(installment.getFeeChargesCharged(getCurrency()));
+                  	}
+                  }
+                  }
+                    logger.info(installment.getInstallmentNumber() +" T_Int " + interest + " I_Int " + installment.getInterestCharged(getCurrency()) + " T_Fee " + fee + " I_Fee " + installment.getFeeChargesCharged(getCurrency()));
+
                     if (installment.getFeeChargesCharged(getCurrency()).isLessThan(fee)
                             || installment.getInterestCharged(getCurrency()).isLessThan(interest)
                             || installment.getPenaltyChargesCharged(getCurrency()).isLessThan(penality)
@@ -1252,6 +1269,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     }
                 }
             }
+            
             installment.updateAccrualPortion(interest, fee, penality);
         }
         LoanRepaymentScheduleInstallment lastInstallment = getRepaymentScheduleInstallments()
@@ -1646,7 +1664,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 amount = calculateAmountPercentageAppliedTo(loanCharge);
             }
             chargeAmt = loanCharge.getPercentage();
-            if (loanCharge.isInstalmentFee()) {
+            if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
             }
         } else {
@@ -3136,7 +3154,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
       }
         
         if (reprocess) {
+            logger.info("Reprocess True");
             if (this.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            	logger.info("InterestRecalculationEnabled");
                 regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO, currentUser);
             }
             final List<LoanTransaction> allNonContraTransactionsPostDisbursement = retreiveListOfTransactionsPostDisbursement();
@@ -4829,7 +4849,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
-        if (loanCharge.isInstalmentFee()) {
+        if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments() ;
             for (final LoanRepaymentScheduleInstallment installment : installments) {
             	if(installment.isRecalculatedInterestComponent()){
@@ -5355,7 +5375,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     fee = fee.add(loanCharge.amount());
                     loanCharges.add(loanCharge);
                 }
-            } else if (loanCharge.isInstalmentFee()) {
+            } else if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
                 for (LoanInstallmentCharge installmentCharge : loanCharge.installmentCharges()) {
                     if (installments.contains(installmentCharge.getRepaymentInstallment().getInstallmentNumber())) {
                         fee = fee.add(installmentCharge.getAmount());
@@ -6213,7 +6233,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
     public LoanRepaymentScheduleInstallment fetchLoanForeclosureDetail(final LocalDate closureDate) {        
         Money[] receivables = retriveIncomeOutstandingTillDate(closureDate);
         Money totalPrincipal = (Money.of(getCurrency(), this.getSummary().getTotalPrincipalOutstanding().add(this.getSummary().getTotalFeeChargesOutstanding())));
-        totalPrincipal = totalPrincipal.minus(receivables[3]);
+        totalPrincipal = totalPrincipal.minus(receivables[3]).minus(receivables[4]);
         final Set<LoanInterestRecalcualtionAdditionalDetails> compoundingDetails = null;
         final LocalDate currentDate = DateUtils.getLocalDateOfTenant();
         return new LoanRepaymentScheduleInstallment(null, 0, currentDate, currentDate, totalPrincipal.getAmount(),
@@ -6221,19 +6241,21 @@ public class Loan extends AbstractPersistableCustom<Long> {
     }
 
     public Money[] retriveIncomeOutstandingTillDate(final LocalDate paymentDate) {
-        Money[] balances = new Money[4];         
+        Money[] balances = new Money[5];         
         final MonetaryCurrency currency = getCurrency();      
         Money interest = Money.zero(currency);
         Money paidFromFutureInstallments = Money.zero(currency); 
         Money fee = Money.zero(currency);
-        Money penalty = Money.zero(currency);         
+        Money penalty = Money.zero(currency); 
+        Money capitalisedCharge = Money.zero(currency);
         for (final LoanRepaymentScheduleInstallment installment : this.repaymentScheduleInstallments) {
             if (!installment.getDueDate().isAfter(paymentDate)) {
                 interest = interest.plus(installment.getInterestOutstanding(currency));
                 penalty = penalty.plus(installment.getPenaltyChargesOutstanding(currency));
                 fee = fee.plus(installment.getFeeChargesOutstanding(currency));
             } else if (installment.getFromDate().isBefore(paymentDate)) {
-                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);                        
+                Money[] balancesForCurrentPeroid = fetchInterestFeeAndPenaltyTillDate(paymentDate, currency, installment);  
+                capitalisedCharge = balancesForCurrentPeroid[6];
                 if (balancesForCurrentPeroid[0].isGreaterThan(balancesForCurrentPeroid[5])) {
                     interest = interest.plus(balancesForCurrentPeroid[0])
                             .minus(balancesForCurrentPeroid[5]);
@@ -6261,12 +6283,13 @@ public class Loan extends AbstractPersistableCustom<Long> {
         balances[1] = fee;
         balances[2] = penalty;
         balances[3] = paidFromFutureInstallments;
+        balances[4] = capitalisedCharge;
         return balances;
     }
     
     //Added this method to calculate accrued interest before applying it Ashbel 20/03/2020
     public Money[] retriveAccruedInterestTillToday(final LocalDate paymentDate) {
-        Money[] balances = new Money[4];         
+        Money[] balances = new Money[5];         
         final MonetaryCurrency currency = getCurrency();      
         Money interest = Money.zero(currency);
         Money paidFromFutureInstallments = Money.zero(currency); 
@@ -6296,6 +6319,8 @@ public class Loan extends AbstractPersistableCustom<Long> {
         Money feeAccountedForCurrentPeriod = Money.zero(getCurrency());
         Money interestForCurrentPeriod=Money.zero(getCurrency());
         Money interestAccountedForCurrentPeriod=Money.zero(getCurrency());
+        Money capitalisedFees = Money.zero(getCurrency());
+        Money capitalisedFeesAccountedFor = Money.zero(getCurrency());
         int totalPeriodDays = Days.daysBetween(installment.getFromDate(), installment.getDueDate()).getDays();
         int tillDays = Days.daysBetween(installment.getFromDate(), paymentDate).getDays(); 
         interestForCurrentPeriod = Money.of(getCurrency(),BigDecimal.valueOf(calculateInterestForDays(totalPeriodDays, installment.getInterestCharged(getCurrency())
@@ -6312,7 +6337,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
 						feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
 						feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
 								.plus(loanCharge.getAmountWaived(getCurrency()).plus(
-
 										loanCharge.getAmountPaid(getCurrency())));
 					}
 				} else if (loanCharge.isInstalmentFee()) {
@@ -6325,17 +6349,29 @@ public class Loan extends AbstractPersistableCustom<Long> {
 						feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
 								.plus(loanInstallmentCharge.getAmountPaid(currency));
 					}
+				}				
+				else if(loanCharge.isCapitalisedAtDisbursement()) {
+//					feeForCurrentPeriod = feeForCurrentPeriod.plus(loanCharge.getAmount(currency));
+					capitalisedFees = capitalisedFees.plus(loanCharge.getAmount(currency));
+//					feeAccountedForCurrentPeriod = feeAccountedForCurrentPeriod
+//							.plus(loanCharge.getAmountWaived(getCurrency()).plus(
+//									loanCharge.getAmountPaid(getCurrency())));
+					capitalisedFeesAccountedFor = capitalisedFeesAccountedFor
+							.plus(loanCharge.getAmountWaived(getCurrency()).plus(
+									loanCharge.getAmountPaid(getCurrency())));
+//					feeForCurrentPeriod = feeForCurrentPeriod.minus(feeAccountedForCurrentPeriod);
 				}
 			}
 		}
         
-        Money[] balances = new Money[6];
+        Money[] balances = new Money[7];
         balances[0] = interestForCurrentPeriod;
-        balances[1] = feeForCurrentPeriod;
+        balances[1] = feeForCurrentPeriod.plus(capitalisedFees).minus(capitalisedFeesAccountedFor);
         balances[2] = penaltyForCurrentPeriod;
         balances[3] = feeAccountedForCurrentPeriod;
         balances[4] = penaltyAccoutedForCurrentPeriod;
         balances[5] = interestAccountedForCurrentPeriod;
+        balances[6] = capitalisedFees.minus(capitalisedFeesAccountedFor);
         return balances;
     }
     
@@ -6525,13 +6561,18 @@ public class Loan extends AbstractPersistableCustom<Long> {
         newInstallment.updateInstallmentNumber(newInstallments.size() + 1);
         newInstallments.add(newInstallment);        
         updateLoanScheduleOnForeclosure(newInstallments);
-
+        
+        logger.info("UpdateInstallmentFees " + balances[1].getAmount());
+        logger.info("UpdateInterest " + balances[0].getAmount());
+        
+        
         Set<LoanCharge> charges = this.charges();
         int penaltyWaitPeriod = 0;
         for (LoanCharge loanCharge : charges) {
             if (loanCharge.getDueLocalDate() != null
                     && (loanCharge.getDueLocalDate().isAfter(transactionDate))) {
                 loanCharge.setActive(false);
+                logger.info("Loan Charge Set to False ");
             } else if (loanCharge.getDueLocalDate() == null) {
                 recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
                 loanCharge.updateWaivedAmount(currency);

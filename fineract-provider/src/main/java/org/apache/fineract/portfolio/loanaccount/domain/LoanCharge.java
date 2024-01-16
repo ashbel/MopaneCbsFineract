@@ -55,10 +55,13 @@ import org.apache.fineract.portfolio.charge.exception.LoanChargeWithoutMandatory
 import org.apache.fineract.portfolio.loanaccount.command.LoanChargeCommand;
 import org.apache.fineract.portfolio.loanaccount.data.LoanChargePaidDetail;
 import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Entity
 @Table(name = "m_loan_charge")
 public class LoanCharge extends AbstractPersistableCustom<Long> {
+	private final static Logger logger = LoggerFactory.getLogger(Loan.class);
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", referencedColumnName = "id", nullable = false)
@@ -306,11 +309,12 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             break;
         }
         this.amountOrPercentage = chargeAmount;
+        logger.info("populateDerivedFields " + loanCharge);
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
         }
         if (this.loan != null && isCapitalisedAtDisbursement()) {
-            //updateInstallmentCharges();
+            updateInstallmentCharges(true);
         }
     }
 
@@ -414,11 +418,12 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             }
             this.amountOrPercentage = amount;
             this.amountOutstanding = calculateOutstanding();
+            logger.info("updateBigDecimal " + loanCharge);
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
             }
             if (this.loan != null && isCapitalisedAtDisbursement()) {
-                //updateInstallmentCharges();
+                updateInstallmentCharges(true);
             }
         }
     }
@@ -501,7 +506,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                     this.percentage = newValue;
                     this.amountPercentageAppliedTo = amount;
                     loanCharge = BigDecimal.ZERO;
-                    if (isInstalmentFee()) {
+                    if (isInstalmentFee() || isCapitalisedAtDisbursement()) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
                                 this.percentage);
                     }
@@ -513,17 +518,19 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 break;
             }
             this.amountOrPercentage = newValue;
+            logger.info("updateJson " + loanCharge);
             if (isInstalmentFee()) {
                 updateInstallmentCharges();
             }
             if (isCapitalisedAtDisbursement()) {
-                //updateInstallmentCharges();
+                updateInstallmentCharges(true);
             }
         }
         return actualChanges;
     }
 
     private void updateInstallmentCharges() {
+    	logger.info("updateInstallmentCharges " );
         final Collection<LoanInstallmentCharge> remove = new HashSet<>();
         final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
         if (this.loanInstallmentCharge.isEmpty()) {
@@ -539,6 +546,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             for (final LoanInstallmentCharge chargePerInstallment : oldChargeInstallments) {
                 if (index == loanChargePerInstallmentArray.length) {
                     remove.add(chargePerInstallment);
+                    logger.info("Removing " + chargePerInstallment.getAmount());  
                     chargePerInstallment.updateInstallment(null);
                 } else {
                     chargePerInstallment.copyFrom(loanChargePerInstallmentArray[index++]);
@@ -546,11 +554,50 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             }
             this.loanInstallmentCharge.removeAll(remove);
             while (index < loanChargePerInstallmentArray.length) {
+            	logger.info("Adding " + loanChargePerInstallmentArray[index++].getAmount());
                 this.loanInstallmentCharge.add(loanChargePerInstallmentArray[index++]);
             }
         }
         Money amount = Money.zero(this.loan.getCurrency());
         for(LoanInstallmentCharge charge:this.loanInstallmentCharge){
+        	logger.info("Suming Charges " +charge.getAmount());
+            amount =amount.plus(charge.getAmount());
+        }
+        this.amount =amount.getAmount();
+    }
+    
+    private void updateInstallmentCharges(boolean isCapitalised ) {
+    	logger.info("updateInstallmentCharges " );
+        final Collection<LoanInstallmentCharge> remove = new HashSet<>();
+        final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
+        if (this.loanInstallmentCharge.isEmpty()) {
+            this.loanInstallmentCharge.addAll(newChargeInstallments);
+        } else {
+            int index = 0;
+            final List<LoanInstallmentCharge> oldChargeInstallments = new ArrayList<>();
+            if(this.loanInstallmentCharge != null && !this.loanInstallmentCharge.isEmpty()){
+                oldChargeInstallments.addAll(this.loanInstallmentCharge);
+            }
+            Collections.sort(oldChargeInstallments);
+            final LoanInstallmentCharge[] loanChargePerInstallmentArray = newChargeInstallments.toArray(new LoanInstallmentCharge[newChargeInstallments.size()]);
+            for (final LoanInstallmentCharge chargePerInstallment : oldChargeInstallments) {
+                if (index == loanChargePerInstallmentArray.length) {
+                    remove.add(chargePerInstallment);
+                    logger.info("Removing " + chargePerInstallment.getAmount());  
+                    //chargePerInstallment.updateInstallment(null);
+                } else {
+                    chargePerInstallment.copyFrom(loanChargePerInstallmentArray[index++]);
+                }
+            }
+            //this.loanInstallmentCharge.removeAll(remove);
+            while (index < loanChargePerInstallmentArray.length) {
+            	logger.info("Adding " + loanChargePerInstallmentArray[index++].getAmount());
+                this.loanInstallmentCharge.add(loanChargePerInstallmentArray[index++]);
+            }
+        }
+        Money amount = Money.zero(this.loan.getCurrency());
+        for(LoanInstallmentCharge charge:this.loanInstallmentCharge){
+        	logger.info("Suming Charges " +charge.getAmount());
             amount =amount.plus(charge.getAmount());
         }
         this.amount =amount.getAmount();

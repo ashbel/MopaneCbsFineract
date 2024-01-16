@@ -280,13 +280,13 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
 
         Collection<LoanChargeData> removeCharges = new ArrayList<>();
         for (LoanChargeData loanChargeData : charges) {
-            if (loanChargeData.isInstallmentFee()) {
+            if (loanChargeData.isInstallmentFee() || loanChargeData.isTimeOfDisbursementCapitalised()) {
                 removeCharges.add(loanChargeData);
             }
         }
         charges.removeAll(removeCharges);
         for (LoanChargeData loanChargeData : removeCharges) {
-            if (loanChargeData.isInstallmentFee()) {
+            if (loanChargeData.isInstallmentFee()|| loanChargeData.isTimeOfDisbursementCapitalised()) {
                 Collection<LoanInstallmentChargeData> installmentChargeDatas = retrieveInstallmentLoanChargesForAccrual(
                         loanChargeData.getId());
                 LoanChargeData modifiedChargeData = new LoanChargeData(loanChargeData, installmentChargeDatas);
