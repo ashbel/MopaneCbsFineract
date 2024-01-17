@@ -208,6 +208,10 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     public void setPrincipal(BigDecimal principal) {
         this.principal = principal;
     }
+    
+    public void addCapitalisedChargeToPrincipal(BigDecimal charge) {
+        this.principal = this.principal.add(charge);
+    }
 
     @Override
     public Integer graceOnInterestCharged() {

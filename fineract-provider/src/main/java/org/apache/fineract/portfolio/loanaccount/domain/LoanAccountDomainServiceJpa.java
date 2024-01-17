@@ -102,7 +102,7 @@ public class LoanAccountDomainServiceJpa implements LoanAccountDomainService {
     private final BusinessEventNotifierService businessEventNotifierService;
     private final LoanUtilService loanUtilService;
     private final StandingInstructionRepository standingInstructionRepository;
-    private final static Logger logger = LoggerFactory.getLogger(oanAccountDomainServiceJpa.class);
+    private final static Logger logger = LoggerFactory.getLogger(LoanAccountDomainServiceJpa.class);
 
     @Autowired
     public LoanAccountDomainServiceJpa(final LoanAssembler loanAccountAssembler, final LoanRepositoryWrapper loanRepositoryWrapper,

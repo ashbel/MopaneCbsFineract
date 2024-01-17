@@ -28,6 +28,10 @@ import javax.persistence.Embeddable;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyException;
+import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates all the summary details of a {@link Loan}.
@@ -38,6 +42,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 @Embeddable
 public final class LoanSummary {
 
+	  private final static Logger logger = LoggerFactory.getLogger(LoanSummary.class);
     // derived totals fields
     @Column(name = "principal_disbursed_derived", scale = 6, precision = 19)
     private BigDecimal totalPrincipalDisbursed;
@@ -134,6 +139,19 @@ public final class LoanSummary {
 
     public void updateTotalFeeChargesDueAtDisbursement(final BigDecimal totalFeeChargesDueAtDisbursement) {
         this.totalFeeChargesDueAtDisbursement = totalFeeChargesDueAtDisbursement;
+    }
+    
+    public void removeCapitalisedChargesBeforeDeployment(BigDecimal capitalisedCharge) {
+    	logger.info(" before " + capitalisedCharge 
+    	+ " this.totalFeeChargesCharged "+ this.totalFeeChargesCharged
+    	+ " this.totalFeeChargesDueAtDisbursement " + this.totalFeeChargesDueAtDisbursement);
+    	
+        	this.totalFeeChargesCharged = this.totalFeeChargesCharged.subtract(capitalisedCharge);
+        	this.totalFeeChargesDueAtDisbursement = this.totalFeeChargesDueAtDisbursement.subtract(capitalisedCharge);   
+        	
+        	logger.info(" after " 
+        	    	+ " this.totalFeeChargesCharged "+ this.totalFeeChargesCharged
+        	    	+ " this.totalFeeChargesDueAtDisbursement " + this.totalFeeChargesDueAtDisbursement);
     }
 
     public Money getTotalFeeChargesDueAtDisbursement(final MonetaryCurrency currency) {
@@ -234,7 +252,7 @@ public final class LoanSummary {
         final Money totalFeeChargesCharged = summaryWrapper.calculateTotalFeeChargesCharged(repaymentScheduleInstallments, currency).plus(
                 this.totalFeeChargesDueAtDisbursement);
         this.totalFeeChargesCharged = totalFeeChargesCharged.getAmount();
-
+        
         Money totalFeeChargesRepaidAtDisbursement = summaryWrapper.calculateTotalChargesRepaidAtDisbursement(charges,currency);
         this.totalFeeChargesRepaid = totalFeeChargesRepaidAtDisbursement.getAmount();
         

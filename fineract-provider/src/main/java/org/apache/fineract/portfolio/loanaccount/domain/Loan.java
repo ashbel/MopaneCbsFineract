@@ -596,6 +596,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             throw new LoanChargeCannotBeAddedException("loanCharge", "due.at.disbursement.and.loan.is.disbursed", defaultUserMessage,
                     getId(), loanCharge.name());
         }
+        if(!loanCharge.isDisbursementCapitalizedCharge()) {
 
         validateChargeHasValidSpecifiedDateIfApplicable(loanCharge, getDisbursementDate(), getLastRepaymentPeriodDueDate(false));
 
@@ -635,7 +636,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
         wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
         updateLoanSummaryDerivedFields();
-
+        }
     }
 
     public ChangedTransactionDetail reprocessTransactions() {
@@ -1135,6 +1136,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
         /** Process new and updated charges **/
         for (final LoanCharge loanCharge : loanCharges) {
+        	if(!loanCharge.isDisbursementCapitalizedCharge()) {
             LoanCharge charge = loanCharge;
             // add new charges
             if (loanCharge.getId() == null) {
@@ -1171,7 +1173,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             }
             if (charge != null)
                 charge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
-
+        	}
         }
 
         /** Updated deleted charges **/
@@ -4846,13 +4848,11 @@ public class Loan extends AbstractPersistableCustom<Long> {
         if (this.charges != null) {
             for (LoanCharge charge : this.charges) {
                 if (charge.isCapitalisedAtDisbursement()) {                    
-                    this.approvedPrincipal =this.approvedPrincipal.add(charge.amount());
-                    this.proposedPrincipal = this.proposedPrincipal.add(charge.amount());
-                    this.charges.remove(charge);
+                 this.charges.remove(charge);
            		 logger.info("removeCapitalisedCharges " + charge.amount());
-           		 logger.info("removeCapitalisedCharges " + charge.chargeAmount());
-        		 logger.info("Add Principal " + this.approvedPrincipal + " " + this.proposedPrincipal);
-                    }
+        		 logger.info("Principal " + this.approvedPrincipal);
+        		 this.summary.removeCapitalisedChargesBeforeDeployment(charge.amount());
+               }
             }
         }
     }

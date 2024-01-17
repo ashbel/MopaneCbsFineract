@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implements LoanRepaymentScheduleTransactionProcessor {
 
-	  private final static Logger logger = LoggerFactory.getLogger(Loan.class);
+	  private final static Logger logger = LoggerFactory.getLogger(AbstractLoanRepaymentScheduleTransactionProcessor.class);
     /**
      * Provides support for passing all {@link LoanTransaction}'s so it will
      * completely re-process the entire loan schedule. This is required in cases

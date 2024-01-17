@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 @Entity
 @Table(name = "m_loan_charge")
 public class LoanCharge extends AbstractPersistableCustom<Long> {
-	private final static Logger logger = LoggerFactory.getLogger(Loan.class);
+	private final static Logger logger = LoggerFactory.getLogger(LoanCharge.class);
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "loan_id", referencedColumnName = "id", nullable = false)

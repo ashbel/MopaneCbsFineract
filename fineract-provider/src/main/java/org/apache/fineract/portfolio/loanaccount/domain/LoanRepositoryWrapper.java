@@ -77,7 +77,9 @@ public class LoanRepositoryWrapper {
     
     @Transactional
     public Loan save(final Loan loan) {
-    	logger.info(" saving loan " + loan.getAccountNumber() + " "+ loan.getPrincpal());
+    	logger.info(" saving loan " + loan.getAccountNumber() 
+    	+ " fees "+ loan.getLoanSummary().getTotalFeeChargesDueAtDisbursement(loan.getCurrency())
+    	+ " principal " + loan.getPrincpal());
         return this.repository.save(loan) ;
     }
     

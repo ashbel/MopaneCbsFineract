@@ -207,8 +207,9 @@ public class LoanChargeAssembler {
                         if (loanCharge != null) {
                             if(!loanCharge.isTrancheDisbursementCharge()
                                     || disbursementChargeIds.contains(loanChargeId)){
+                            	if(!loanCharge.isCapitalisedAtDisbursement()) {
                                 loanCharge.update(amount, dueDate, numberOfRepayments);
-                             
+                            	}
                                 	
                                 loanCharges.add(loanCharge);
                                 
