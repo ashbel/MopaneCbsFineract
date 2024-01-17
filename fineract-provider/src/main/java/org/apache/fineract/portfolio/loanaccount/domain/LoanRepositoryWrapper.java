@@ -29,6 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -40,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanRepositoryWrapper {
 
     private final LoanRepository repository;
+    private final static Logger logger = LoggerFactory.getLogger(LoanRepositoryWrapper.class);
 
     @Autowired
     public LoanRepositoryWrapper(final LoanRepository repository) {
@@ -74,6 +77,7 @@ public class LoanRepositoryWrapper {
     
     @Transactional
     public Loan save(final Loan loan) {
+    	logger.info(" saving loan " + loan.getAccountNumber() + " "+ loan.getPrincpal());
         return this.repository.save(loan) ;
     }
     

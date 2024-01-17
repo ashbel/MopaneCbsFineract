@@ -208,14 +208,17 @@ public class LoanChargeAssembler {
                             if(!loanCharge.isTrancheDisbursementCharge()
                                     || disbursementChargeIds.contains(loanChargeId)){
                                 loanCharge.update(amount, dueDate, numberOfRepayments);
+                             
+                                	
                                 loanCharges.add(loanCharge);
+                                
                             }
                         }
                     }
                 }
             }
         }
-
+        
         return loanCharges;
     }
 

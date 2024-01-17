@@ -314,7 +314,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             updateInstallmentCharges();
         }
         if (this.loan != null && isCapitalisedAtDisbursement()) {
-            updateInstallmentCharges(true);
+            //updateInstallmentCharges(true);
         }
     }
 
@@ -423,7 +423,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 updateInstallmentCharges();
             }
             if (this.loan != null && isCapitalisedAtDisbursement()) {
-                updateInstallmentCharges(true);
+                //updateInstallmentCharges(true);
             }
         }
     }
@@ -506,7 +506,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                     this.percentage = newValue;
                     this.amountPercentageAppliedTo = amount;
                     loanCharge = BigDecimal.ZERO;
-                    if (isInstalmentFee() || isCapitalisedAtDisbursement()) {
+                    if (isInstalmentFee() ) {
                         loanCharge = this.loan.calculatePerInstallmentChargeAmount(ChargeCalculationType.fromInt(this.chargeCalculation),
                                 this.percentage);
                     }
@@ -523,7 +523,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 updateInstallmentCharges();
             }
             if (isCapitalisedAtDisbursement()) {
-                updateInstallmentCharges(true);
+                //updateInstallmentCharges(true);
             }
         }
         return actualChanges;

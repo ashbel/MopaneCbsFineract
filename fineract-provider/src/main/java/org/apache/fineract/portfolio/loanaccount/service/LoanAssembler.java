@@ -294,7 +294,6 @@ public class LoanAssembler {
                 isHolidayEnabled, holidays, workingDays, element,disbursementDetails);
         loanApplication.loanApplicationSubmittal(currentUser, loanScheduleModel, loanApplicationTerms, defaultLoanLifecycleStateMachine(),
                 submittedOnDate, externalId, allowTransactionsOnHoliday, holidays, workingDays, allowTransactionsOnNonWorkingDay);
-
         return loanApplication;
     }
 

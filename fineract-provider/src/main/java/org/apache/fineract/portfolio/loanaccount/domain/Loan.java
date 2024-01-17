@@ -606,11 +606,13 @@ public class Loan extends AbstractPersistableCustom<Long> {
         BigDecimal totalChargeAmt = BigDecimal.ZERO;
         if (loanCharge.getChargeCalculation().isPercentageBased()) {
             chargeAmt = loanCharge.getPercentage();
-            if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+            if (loanCharge.isInstalmentFee()) {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
+            } else if (loanCharge.isCapitalisedAtDisbursement()) {
+                totalChargeAmt = loanCharge.amount();
             } else if (loanCharge.isOverdueInstallmentCharge()) {
                 totalChargeAmt = loanCharge.amountOutstanding();
-            } 
+            }
           
         } else {
             chargeAmt = loanCharge.amountOrPercentage();
@@ -1161,7 +1163,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             BigDecimal totalChargeAmt = BigDecimal.ZERO;
             if (loanCharge.getChargeCalculation().isPercentageBased()) {
                 chargeAmt = loanCharge.getPercentage();
-                if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+                if (loanCharge.isInstalmentFee()) {
                     totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
                 }
             } else {
@@ -1664,8 +1666,11 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 amount = calculateAmountPercentageAppliedTo(loanCharge);
             }
             chargeAmt = loanCharge.getPercentage();
-            if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+            if (loanCharge.isInstalmentFee()) {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
+            }
+            if(loanCharge.isCapitalisedAtDisbursement()) {
+            	totalChargeAmt = loanCharge.amount();
             }
         } else {
             chargeAmt = loanCharge.amountOrPercentage();
@@ -4836,6 +4841,21 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
         return loanCharges;
     }
+    
+    public void removeCapitalisedCharges() {
+        if (this.charges != null) {
+            for (LoanCharge charge : this.charges) {
+                if (charge.isCapitalisedAtDisbursement()) {                    
+                    this.approvedPrincipal =this.approvedPrincipal.add(charge.amount());
+                    this.proposedPrincipal = this.proposedPrincipal.add(charge.amount());
+                    this.charges.remove(charge);
+           		 logger.info("removeCapitalisedCharges " + charge.amount());
+           		 logger.info("removeCapitalisedCharges " + charge.chargeAmount());
+        		 logger.info("Add Principal " + this.approvedPrincipal + " " + this.proposedPrincipal);
+                    }
+            }
+        }
+    }
 
     public Set<LoanTrancheCharge> trancheCharges() {
         Set<LoanTrancheCharge> loanCharges = new HashSet<>();
@@ -4848,13 +4868,25 @@ public class Loan extends AbstractPersistableCustom<Long> {
     }
 
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
+    	logger.info(" generateInstallmentLoanCharges " );
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
         if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+        	int count = 0;
             List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments() ;
             for (final LoanRepaymentScheduleInstallment installment : installments) {
+            	logger.info("Installments " + installment.getInstallmentNumber());
+            	logger.info("Capitalised " + loanCharge.isCapitalisedAtDisbursement());
             	if(installment.isRecalculatedInterestComponent()){
             		continue;
             	}
+            	if(installment.getInstallmentNumber()==1 && loanCharge.isCapitalisedAtDisbursement()) {
+            		BigDecimal amount = BigDecimal.ZERO;
+            		amount = loanCharge.amount();
+            		logger.info("Capitalised " + amount);
+                    final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
+                    loanChargePerInstallments.add(loanInstallmentCharge);
+            	} 
+            	else {
                 BigDecimal amount = BigDecimal.ZERO;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
@@ -4864,17 +4896,11 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 }
                 final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
                 loanChargePerInstallments.add(loanInstallmentCharge);
+            	}
+                
             }
         } 
-//        if(loanCharge.isCapitalisedAtDisbursement()) {
-//            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments() ;
-//            for (final LoanRepaymentScheduleInstallment installment : installments) {
-//        	BigDecimal amount = BigDecimal.ZERO;
-//        	amount = loanCharge.amountOrPercentage();
-//            final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
-//            loanChargePerInstallments.add(loanInstallmentCharge);
-//            }
-//        }
+
         return loanChargePerInstallments;
     }
 
@@ -5375,7 +5401,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     fee = fee.add(loanCharge.amount());
                     loanCharges.add(loanCharge);
                 }
-            } else if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+            } else if (loanCharge.isInstalmentFee()) {
                 for (LoanInstallmentCharge installmentCharge : loanCharge.installmentCharges()) {
                     if (installments.contains(installmentCharge.getRepaymentInstallment().getInstallmentNumber())) {
                         fee = fee.add(installmentCharge.getAmount());
@@ -5593,7 +5619,8 @@ public class Loan extends AbstractPersistableCustom<Long> {
         //List<LoanTransaction> accrualTransactions = retrieve
         for (LoanTransaction loanTransaction : loanTransactions) {
 //        	loanTransaction.isIncomePosting() ||
-            if (loanTransaction.isDisbursement() || loanTransaction.isIncomePosting() || loanTransaction.isFee() || loanTransaction.isAccrual() || loanTransaction.isCapitalisedFee()) {
+            if (loanTransaction.isDisbursement() || loanTransaction.isIncomePosting() || loanTransaction.isFee() || loanTransaction.isAccrual() 
+            		|| loanTransaction.isCapitalisedFee()) {
                 outstanding = outstanding.plus(loanTransaction.getAmount(getCurrency()));
                 loanTransaction.updateOutstandingLoanBalance(outstanding.getAmount());
             } else {

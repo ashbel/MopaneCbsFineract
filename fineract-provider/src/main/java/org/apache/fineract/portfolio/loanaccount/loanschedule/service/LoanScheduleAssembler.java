@@ -186,6 +186,14 @@ public class LoanScheduleAssembler {
 
         final MonetaryCurrency currency = loanProduct.getCurrency();
         final ApplicationCurrency applicationCurrency = this.applicationCurrencyRepository.findOneWithNotFoundDetection(currency);
+        BigDecimal amortizedFees = BigDecimal.ZERO;
+        List<LoanDisbursementDetails> disbursementDetails = null;
+        final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element,disbursementDetails);
+        for (final LoanCharge loanCharge : loanCharges) {
+          if(loanCharge.isCapitalisedAtDisbursement()) {
+        	  amortizedFees.add(loanCharge.amount());
+          }
+        }
 
         // loan terms
         final Integer loanTermFrequency = this.fromApiJsonHelper.extractIntegerWithLocaleNamed("loanTermFrequency", element);
@@ -229,9 +237,10 @@ public class LoanScheduleAssembler {
         if (interestRatePerPeriod != null) {
             annualNominalInterestRate = this.aprCalculator.calculateFrom(interestRatePeriodFrequencyType, interestRatePerPeriod);
         }
-
+            
         // disbursement details
-        final BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        BigDecimal principal = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("principal", element);
+        principal = principal.add(amortizedFees);
         
         final BigDecimal principalbalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinancePrincipalbalance", element);
         final BigDecimal feesbalance = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("refinanceFeesbalance", element);

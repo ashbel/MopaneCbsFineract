@@ -319,7 +319,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.setTopupLoanDetails(topupDetails);
                 }
             }
-
+            newLoanApplication.removeCapitalisedCharges();
+            
             this.loanRepositoryWrapper.save(newLoanApplication);
 
             if (loanProduct.isInterestRecalculationEnabled()) {

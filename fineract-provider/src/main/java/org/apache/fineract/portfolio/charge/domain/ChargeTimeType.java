@@ -155,7 +155,7 @@ public enum ChargeTimeType {
     }
     
     public boolean isTimeOfDisbursement() {
-        return isTimeOfDisbursement1() || isTimeOfDisbursementCapitalised();
+        return isTimeOfDisbursement1() ;
     }
 
     public boolean isOnSpecifiedDueDate() {

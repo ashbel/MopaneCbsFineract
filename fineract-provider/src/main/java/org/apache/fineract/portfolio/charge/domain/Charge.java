@@ -267,6 +267,11 @@ public class Charge extends AbstractPersistableCustom<Long> {
     public boolean isAllowedLoanChargeTime() {
         return ChargeTimeType.fromInt(this.chargeTimeType).isAllowedLoanChargeTime();
     }
+    
+    public boolean isDisbursementCapitalised() {
+        return ChargeTimeType.fromInt(this.chargeTimeType).isTimeOfDisbursementCapitalised();
+    }
+
 
     public boolean isAllowedClientChargeTime() {
         return ChargeTimeType.fromInt(this.chargeTimeType).isAllowedClientChargeTime();
