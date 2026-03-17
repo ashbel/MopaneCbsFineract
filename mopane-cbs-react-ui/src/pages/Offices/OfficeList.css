@@ -1,0 +1,59 @@
+.office-list-page {
+  max-width: 1000px;
+}
+
+.office-list-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.office-list-page .page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.office-table-wrap {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.office-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.office-table th,
+.office-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.office-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.office-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.office-table .link-view {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.office-table .link-view:hover {
+  text-decoration: underline;
+}

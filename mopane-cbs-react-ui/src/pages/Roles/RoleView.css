@@ -1,0 +1,26 @@
+.role-view-page {
+  padding: 1rem;
+}
+
+.role-detail-card,
+.role-permissions-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.role-permissions-card .permissions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.25rem;
+}
+
+.role-permissions-card .permissions-list li {
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}

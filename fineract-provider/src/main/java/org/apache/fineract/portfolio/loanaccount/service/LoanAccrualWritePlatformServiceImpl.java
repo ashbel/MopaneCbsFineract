@@ -399,9 +399,6 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                         }
                     }
                 }
-//                if(loanCharge.isTimeOfDisbursementCapitalised()) {       
-//                	dueDateFeeIncome = loanCharge.getAmount();             
-//                }
             } else if (loanCharge.getDueDate().isAfter(startDate) && !loanCharge.getDueDate().isAfter(endDate)) {
                 chargeAmount = loanCharge.getAmount();
                 if (loanCharge.getAmountUnrecognized() != null) {

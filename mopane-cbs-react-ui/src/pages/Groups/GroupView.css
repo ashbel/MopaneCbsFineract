@@ -1,0 +1,84 @@
+.group-view-page {
+  max-width: 700px;
+}
+
+.group-view-page .back-link {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.group-view-page .back-link:hover {
+  color: #3b82f6;
+}
+
+.group-view-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.group-view-page .page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.group-detail-card,
+.group-members-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.group-detail-card h2,
+.group-members-card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.group-view-page .detail-list {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.group-view-page .detail-list dt {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.group-view-page .detail-list dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.members-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.members-list li {
+  margin-bottom: 0.35rem;
+}
+
+.members-list a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.members-list a:hover {
+  text-decoration: underline;
+}

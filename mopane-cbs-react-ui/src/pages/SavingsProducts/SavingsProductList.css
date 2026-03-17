@@ -1,0 +1,59 @@
+.savings-product-list-page {
+  max-width: 1000px;
+}
+
+.savings-product-list-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.savings-product-list-page .page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.savings-product-table-wrap {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.savings-product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.savings-product-table th,
+.savings-product-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.savings-product-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.savings-product-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.savings-product-table .link-view {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.savings-product-table .link-view:hover {
+  text-decoration: underline;
+}

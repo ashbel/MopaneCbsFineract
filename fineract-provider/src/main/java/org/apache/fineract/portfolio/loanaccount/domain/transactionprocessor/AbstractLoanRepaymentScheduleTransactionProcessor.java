@@ -76,7 +76,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 if (!loanCharge.isDueAtDisbursement()) {
                     loanCharge.resetPaidAmount(currency);
                 }
-                logger.info("ChargesPassed " + loanCharge.amount());
+                logger.debug("ChargesPassed " + loanCharge.amount());
             }
         }
 
@@ -242,7 +242,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
             final boolean isFeeCharge) {
         // to.
         if (loanTransaction.isRepayment() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
-        	logger.info("isRepaymentOr");
+        	logger.debug("isRepaymentOr");
             loanTransaction.resetDerivedComponents();
         }
         Money transactionAmountUnprocessed = processTransaction(loanTransaction, currency, installments, chargeAmountToProcess);
@@ -294,19 +294,19 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     // the
                     // current installment?
                     if (isTransactionInAdvanceOfInstallment(installmentIndex, installments, transactionDate, transactionAmountUnprocessed)) {
-                    	logger.info("Advance");
+                    	logger.debug("Advance");
                         transactionAmountUnprocessed = handleTransactionThatIsPaymentInAdvanceOfInstallment(currentInstallment,
                                 installments, loanTransaction, transactionDate, transactionAmountUnprocessed, transactionMappings);
                     } else if (isTransactionALateRepaymentOnInstallment(installmentIndex, installments,
                             loanTransaction.getTransactionDate())) {
                         // does this result in a late payment of existing
                         // installment?
-                    	logger.info("ILate");
+                    	logger.debug("ILate");
                         transactionAmountUnprocessed = handleTransactionThatIsALateRepaymentOfInstallment(currentInstallment, installments,
                                 loanTransaction, transactionAmountUnprocessed, transactionMappings);
                     } else {
                         // standard transaction
-                    	logger.info("On Time");
+                    	logger.debug("On Time");
                         transactionAmountUnprocessed = handleTransactionThatIsOnTimePaymentOfInstallment(currentInstallment,
                                 loanTransaction, transactionAmountUnprocessed, transactionMappings);
                     }
@@ -324,7 +324,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         for (final LoanCharge loanCharge : loanCharges) {
             if (loanCharge.isFeeCharge()) {
                 feeCharges.add(loanCharge);
-                logger.info("Fees " + loanCharge.amount());
+                logger.debug("Fees " + loanCharge.amount());
             }
         }
         
@@ -379,22 +379,26 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         LoanInstallmentCharge chargePerInstallment = null;
         for (final LoanCharge loanCharge : charges) {
             if (loanCharge.getAmountOutstanding(currency).isGreaterThanZero() && !loanCharge.isDueAtDisbursement()) {
-                if (loanCharge.isInstalmentFee()) {
+                if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
                     LoanInstallmentCharge unpaidLoanChargePerInstallment = loanCharge.getUnpaidInstallmentLoanCharge();
-                    if (chargePerInstallment == null
-                            || chargePerInstallment.getRepaymentInstallment().getDueDate()
-                                    .isAfter(unpaidLoanChargePerInstallment.getRepaymentInstallment().getDueDate())) {
+                    if (unpaidLoanChargePerInstallment != null
+                            && (chargePerInstallment == null
+                                    || chargePerInstallment.getRepaymentInstallment().getDueDate()
+                                            .isAfter(unpaidLoanChargePerInstallment.getRepaymentInstallment().getDueDate()))) {
                         installemntCharge = loanCharge;
                         chargePerInstallment = unpaidLoanChargePerInstallment;
                     }
-                } else if (earliestUnpaidCharge == null || loanCharge.getDueLocalDate().isBefore(earliestUnpaidCharge.getDueLocalDate())) {
+                } else if (loanCharge.getDueLocalDate() != null
+                        && (earliestUnpaidCharge == null || earliestUnpaidCharge.getDueLocalDate() == null
+                                || loanCharge.getDueLocalDate().isBefore(earliestUnpaidCharge.getDueLocalDate()))) {
                     earliestUnpaidCharge = loanCharge;
                 }
             }
         }
         if (earliestUnpaidCharge == null
-                || (chargePerInstallment != null && earliestUnpaidCharge.getDueLocalDate().isAfter(
-                        chargePerInstallment.getRepaymentInstallment().getDueDate()))) {
+                || (chargePerInstallment != null && earliestUnpaidCharge.getDueLocalDate() != null
+                        && earliestUnpaidCharge.getDueLocalDate().isAfter(
+                                chargePerInstallment.getRepaymentInstallment().getDueDate()))) {
             earliestUnpaidCharge = installemntCharge;
         }
 
@@ -675,7 +679,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                     }
 
                     if (feeCharges.isGreaterThanZero()) {
-                    	logger.info("FeeChargesGreaterThanZero " + feeCharges);
+                    	logger.debug("FeeChargesGreaterThanZero " + feeCharges);
                         Money feeChargesPortion = Money.zero(currency);
                         if (loanTransaction.isWaiver()) {
                             feeChargesPortion = currentInstallment.waiveFeeChargesComponent(transactionDate, feeCharges);

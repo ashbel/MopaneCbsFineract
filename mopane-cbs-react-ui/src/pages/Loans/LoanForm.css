@@ -1,0 +1,82 @@
+.loan-form-page {
+  max-width: 520px;
+}
+
+.loan-form-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.loan-form-page .page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.loan-form {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.loan-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.loan-form label span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.loan-form input,
+.loan-form select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.loan-form input:focus,
+.loan-form select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.loan-form .form-actions .btn-primary {
+  padding: 0.65rem 1.25rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.loan-form .btn-secondary {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #475569;
+}
+
+.loan-form .form-error {
+  padding: 0.6rem 0;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}

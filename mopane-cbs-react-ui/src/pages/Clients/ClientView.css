@@ -1,0 +1,132 @@
+.client-view-page {
+  max-width: 700px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #3b82f6;
+}
+
+.client-view-page .page-header {
+  margin-bottom: 1.5rem;
+}
+
+.client-view-page .page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.client-detail-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.client-detail-card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.detail-list dt {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.detail-list dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.client-section-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.client-section-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.client-section-card .section-actions {
+  margin-bottom: 0.75rem;
+}
+
+.client-charges-table,
+.client-identifiers-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.client-charges-table th,
+.client-charges-table td,
+.client-identifiers-table th,
+.client-identifiers-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.client-charges-table th,
+.client-identifiers-table th,
+.client-documents-table th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.client-documents-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.client-documents-table th,
+.client-documents-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: #3b82f6;
+  cursor: pointer;
+}
+
+.link-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.link-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
