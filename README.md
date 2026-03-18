@@ -26,11 +26,22 @@ Instructions to run Apache RAT (Release Audit Tool)
 2. Download gradle-wrapper.jar version 2.10 and place it in the fineract-provider/gradle/wrapper folder. See 'Instructions to download gradle wrapper' above.
 3. Run `./gradlew rat`. Report will be generated under build/reports/rat/rat-report.txt
 
+Pentaho reporting dependencies (required before first build)
+============
+Public Maven mirrors for Pentaho 3.9.x no longer work. **Run once** from the repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File fineract-provider/scripts/bootstrap-pentaho-m2.ps1
+```
+
+This downloads from SourceForge (~70 MB + ~178 MB for Report Designer CE on first run) into `fineract-provider/pentaho-m2-local/`. Set `MOPANE_PRD_ZIP` if you already have `prd-ce-3.9.1-GA.zip`. See `fineract-provider/pentaho-m2-local/README.md`.
+
 Instructions to build war file
 ============
 1. Extract the archive file to your local directory.
 2. Download gradle-wrapper.jar version 2.10 and place it in the fineract-provider/gradle/wrapper folder. See 'Instructions to download gradle wrapper' above.
-3. Run `./gradlew clean war` or `./gradlew build` to build deployable war file which will be created at build/libs directory.
+3. Run the **Pentaho reporting dependencies** step above if you have not already.
+4. Run `./gradlew clean war` or `./gradlew build` to build deployable war file which will be created at build/libs directory.
 
 
 Instructions to execute Integration tests

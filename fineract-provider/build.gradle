@@ -29,7 +29,8 @@ buildscript {
   }
 
   dependencies {
-     classpath 'org.gradle.api.plugins:gradle-tomcat-plugin:1.0',
+     // 1.0 was never published; 0.9.9 is the last org.gradle.api.plugins coordinate on Maven Central
+     classpath 'org.gradle.api.plugins:gradle-tomcat-plugin:0.9.9',
                'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0',
                'org.zeroturnaround:gradle-jrebel-plugin:1.1.2',
                'org.springframework.boot:spring-boot-gradle-plugin:1.1.6.RELEASE' // also change springDataJpaVersion below
@@ -72,16 +73,11 @@ group = 'org.apache.fineract'
 buildDir = new File(rootProject.projectDir, "../build")
 repositories {
 	jcenter()
-	maven {
-	url "https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/"
-    }
-    maven {
-        url "https://repo.orl.eng.hitachivantara.com/ui/native/pnt-mvn/"
-    }
-    maven {
-        url "http://cobuys.com/pentaho.repo/"
-    }
-	// mavenLocal() // useful for local dev using MariaDB4j SNAPSHOTs (not needed for real-world non-SNAPHOT builds)
+	mavenCentral()
+	/* Pentaho no longer publishes these to a stable public Maven repo (Hitachi/cobuys mirrors are dead).
+	   Run:  powershell -File fineract-provider/scripts/bootstrap-pentaho-m2.ps1
+	   to populate fineract-provider/pentaho-m2-local/ from SourceForge + Report Designer CE. */
+	maven { url uri("${rootProject.projectDir}/pentaho-m2-local") }
 }
 openjpa {
     files = fileTree(sourceSets.main.output.classesDir).matching {
