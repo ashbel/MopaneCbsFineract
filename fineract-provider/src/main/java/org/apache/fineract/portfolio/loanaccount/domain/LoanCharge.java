@@ -135,6 +135,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
     @OneToOne(mappedBy = "loancharge", cascade = CascadeType.ALL, optional = true, orphanRemoval = true, fetch = FetchType.EAGER)
     private LoanTrancheDisbursementCharge loanTrancheDisbursementCharge;
 
+    @Column(name = "is_capitalized", nullable = false)
+    private boolean capitalized;
+
     public static LoanCharge createNewFromJson(final Loan loan, final Charge chargeDefinition, final JsonCommand command) {
         final LocalDate dueDate = command.localDateValueOfParameterNamed("dueDate");
         return createNewFromJson(loan, chargeDefinition, command, dueDate);
@@ -198,8 +201,15 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             }
         }
         
-        return new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation, dueDate,
+        LoanCharge lc = new LoanCharge(loan, chargeDefinition, amountPercentageAppliedTo, amount, chargeTime, chargeCalculation, dueDate,
                 chargePaymentMode, null, loanCharge);
+        if (command.parameterExists("isCapitalized")) {
+            lc.setCapitalized(command.booleanPrimitiveValueOfParameterNamed("isCapitalized"));
+        }
+        if (lc.isCapitalisedAtDisbursement()) {
+            lc.setCapitalized(true);
+        }
+        return lc;
     }
 
     /*
@@ -1096,7 +1106,18 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
     
     public boolean isDisbursementCapitalizedCharge() {
         return ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.DISBURSEMENT_CAPITALISED);
-//        ChargeTimeType.fromInt(this.chargeTime).equals(ChargeTimeType.DISBURSEMENT_CAPITALISED)
+    }
+
+    public boolean isPrincipalCapitalizingFee() {
+        return this.capitalized || isCapitalisedAtDisbursement();
+    }
+
+    public void setCapitalized(final boolean capitalized) {
+        this.capitalized = capitalized;
+    }
+
+    public boolean isCapitalizedFlag() {
+        return this.capitalized;
     }
     
     public boolean isTrancheDisbursementCharge() {

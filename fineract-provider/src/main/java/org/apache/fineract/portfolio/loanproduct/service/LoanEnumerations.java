@@ -401,6 +401,14 @@ public class LoanEnumerations {
                 optionData = new LoanTransactionEnumData(LoanTransactionType.INCOME_POSTING.getValue().longValue(),
                         LoanTransactionType.INCOME_POSTING.getCode(), "Income Posting");
             break;
+            case CAPITALIZED_FEE:
+                optionData = new LoanTransactionEnumData(LoanTransactionType.CAPITALIZED_FEE.getValue().longValue(),
+                        LoanTransactionType.CAPITALIZED_FEE.getCode(), "Capitalised fee (principal)");
+            break;
+            case DEDUCTED_FEE:
+                optionData = new LoanTransactionEnumData(LoanTransactionType.DEDUCTED_FEE.getValue().longValue(),
+                        LoanTransactionType.DEDUCTED_FEE.getCode(), "Deducted fee");
+            break;
             default:
             break;
         }

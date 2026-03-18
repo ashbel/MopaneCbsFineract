@@ -59,6 +59,7 @@ import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -595,8 +596,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             throw new LoanChargeCannotBeAddedException("loanCharge", "due.at.disbursement.and.loan.is.disbursed", defaultUserMessage,
                     getId(), loanCharge.name());
         }
-        if(!loanCharge.isDisbursementCapitalizedCharge()) {
-
         validateChargeHasValidSpecifiedDateIfApplicable(loanCharge, getDisbursementDate(), getLastRepaymentPeriodDueDate(false));
 
         loanCharge.update(this);
@@ -608,19 +607,17 @@ public class Loan extends AbstractPersistableCustom<Long> {
             chargeAmt = loanCharge.getPercentage();
             if (loanCharge.isInstalmentFee()) {
                 totalChargeAmt = calculatePerInstallmentChargeAmount(loanCharge);
-            } else if (loanCharge.isCapitalisedAtDisbursement()) {
+            } else if (loanCharge.isCapitalisedAtDisbursement() || loanCharge.isPrincipalCapitalizingFee()) {
                 totalChargeAmt = loanCharge.amount();
             } else if (loanCharge.isOverdueInstallmentCharge()) {
                 totalChargeAmt = loanCharge.amountOutstanding();
             }
-          
+
         } else {
             chargeAmt = loanCharge.amountOrPercentage();
         }
         loanCharge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
 
-        // NOTE: must add new loan charge to set of loan charges before
-        // reporcessing the repayment schedule.
         if (this.charges == null) {
             this.charges = new HashSet<>();
         }
@@ -628,14 +625,99 @@ public class Loan extends AbstractPersistableCustom<Long> {
         this.charges.add(loanCharge);
 
         this.summary = updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        //this.summary = updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
 
-        // store Id's of existing loan transactions and existing reversed loan
-        // transactions
         final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
         wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
         updateLoanSummaryDerivedFields();
+    }
+
+    public BigDecimal sumUnappliedPrincipalCapitalisingFeeOutstanding() {
+        BigDecimal sum = BigDecimal.ZERO;
+        final MonetaryCurrency currency = getCurrency();
+        for (final LoanCharge c : charges()) {
+            if (c.isPrincipalCapitalizingFee() && !c.isWaived() && c.isActive()
+                    && c.getAmountOutstanding(currency).isGreaterThanZero()) {
+                sum = sum.add(c.getAmountOutstanding(currency).getAmount());
+            }
         }
+        return sum;
+    }
+
+    public BigDecimal sumPrincipalCapitalisingFeesForDisbursement(final LocalDate disbursementDate) {
+        BigDecimal sum = BigDecimal.ZERO;
+        final MonetaryCurrency currency = getCurrency();
+        for (final LoanCharge c : charges()) {
+            if (!c.isPrincipalCapitalizingFee() || c.isWaived() || !c.isActive()
+                    || !c.getAmountOutstanding(currency).isGreaterThanZero()) {
+                continue;
+            }
+            final boolean applyAtDisburse = c.isDueAtDisbursement() || c.isCapitalisedAtDisbursement()
+                    || (c.isSpecifiedDueDate() && c.getDueLocalDate() != null && !c.getDueLocalDate().isAfter(disbursementDate));
+            if (applyAtDisburse) {
+                sum = sum.add(c.getAmountOutstanding(currency).getAmount());
+            }
+        }
+        return sum;
+    }
+
+    public boolean hasUnappliedPrincipalCapitalisingFeesAtDisbursement(final LocalDate disbursementDate) {
+        return sumPrincipalCapitalisingFeesForDisbursement(disbursementDate).compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    public void applyPrincipalCapitalisingFeesAtDisbursement(final AppUser currentUser, final LocalDate disbursementDate) {
+        for (final LoanCharge c : new HashSet<>(charges())) {
+            if (!c.isPrincipalCapitalizingFee() || c.isWaived() || !c.isActive()) {
+                continue;
+            }
+            final boolean applyAtDisburse = c.isDueAtDisbursement() || c.isCapitalisedAtDisbursement()
+                    || (c.isSpecifiedDueDate() && c.getDueLocalDate() != null && !c.getDueLocalDate().isAfter(disbursementDate));
+            if (!applyAtDisburse) {
+                continue;
+            }
+            if (!c.getAmountOutstanding(getCurrency()).isGreaterThanZero()) {
+                continue;
+            }
+            final Money fee = c.getAmountOutstanding(getCurrency());
+            c.markAsFullyPaid();
+            final LoanTransaction cap = LoanTransaction.capitalizedFee(this, getOffice(), fee, disbursementDate,
+                    DateUtils.getLocalDateTimeOfTenant(), currentUser);
+            cap.updateLoan(this);
+            addLoanTransaction(cap);
+        }
+    }
+
+    public LoanTransaction applyPrincipalCapitalisingFeeForCharge(final LoanCharge loanCharge, final ScheduleGeneratorDTO scheduleGeneratorDTO,
+            final AppUser currentUser, LocalDate capitalizationDate) {
+        if (!loanCharge.isPrincipalCapitalizingFee() || loanCharge.isWaived()) {
+            return null;
+        }
+        if (this.loanProduct.isMultiDisburseLoan()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.capitalized.fee.multi.disburse.not.supported",
+                    "Capitalised fees are not supported for multi-disbursement loans.", getId());
+        }
+        LoanTransaction capFeeResult = null;
+        final MonetaryCurrency currency = getCurrency();
+        final Money fee = loanCharge.getAmount(currency);
+        loanCharge.markAsFullyPaid();
+        if (capitalizationDate == null) {
+            capitalizationDate = DateUtils.getLocalDateOfTenant();
+        }
+        if (getDisbursementDate() != null && capitalizationDate.isBefore(getDisbursementDate())) {
+            capitalizationDate = getDisbursementDate();
+        }
+        capFeeResult = LoanTransaction.capitalizedFee(this, getOffice(), fee, capitalizationDate, DateUtils.getLocalDateTimeOfTenant(),
+                currentUser);
+        capFeeResult.updateLoan(this);
+        addLoanTransaction(capFeeResult);
+        final BigDecimal newPrincipal = getPrincpal().getAmount().add(fee.getAmount());
+        this.loanRepaymentScheduleDetail.setPrincipal(newPrincipal);
+        if (repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+            regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO, currentUser);
+        } else {
+            regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
+            processPostDisbursementTransactions();
+        }
+        return capFeeResult;
     }
 
     public ChangedTransactionDetail reprocessTransactions() {
@@ -1135,7 +1217,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
         /** Process new and updated charges **/
         for (final LoanCharge loanCharge : loanCharges) {
-        	if(!loanCharge.isDisbursementCapitalizedCharge()) {
             LoanCharge charge = loanCharge;
             // add new charges
             if (loanCharge.getId() == null) {
@@ -1170,9 +1251,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
             } else {
                 chargeAmt = loanCharge.amountOrPercentage();
             }
-            if (charge != null)
+            if (charge != null) {
                 charge.update(chargeAmt, loanCharge.getDueLocalDate(), amount, fetchNumberOfInstallmensAfterExceptions(), totalChargeAmt);
-        	}
+            }
         }
 
         /** Updated deleted charges **/

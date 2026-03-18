@@ -379,7 +379,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
         LoanInstallmentCharge chargePerInstallment = null;
         for (final LoanCharge loanCharge : charges) {
             if (loanCharge.getAmountOutstanding(currency).isGreaterThanZero() && !loanCharge.isDueAtDisbursement()) {
-                if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
+                if (loanCharge.isInstalmentFee() || (loanCharge.isCapitalisedAtDisbursement() && !loanCharge.isPrincipalCapitalizingFee())) {
                     LoanInstallmentCharge unpaidLoanChargePerInstallment = loanCharge.getUnpaidInstallmentLoanCharge();
                     if (unpaidLoanChargePerInstallment != null
                             && (chargePerInstallment == null

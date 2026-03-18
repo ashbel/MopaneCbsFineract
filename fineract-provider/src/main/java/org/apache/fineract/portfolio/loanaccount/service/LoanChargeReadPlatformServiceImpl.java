@@ -76,7 +76,7 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                     + "lc.charge_time_enum as chargeTime, " + "lc.is_penalty as penalty, "
                     + "lc.due_for_collection_as_of_date as dueAsOfDate, " + "lc.charge_calculation_enum as chargeCalculation, "
                     + "lc.charge_payment_mode_enum as chargePaymentMode, " + "lc.is_paid_derived as paid, " + "lc.waived as waied, "
-                    + "lc.min_cap as minCap, lc.max_cap as maxCap, " + "lc.charge_amount_or_percentage as amountOrPercentage, "
+                    + "lc.min_cap as minCap, lc.max_cap as maxCap, "                     + "lc.charge_amount_or_percentage as amountOrPercentage, " + "lc.is_capitalized as capitalized, "
                     + "c.currency_code as currencyCode, oc.name as currencyName, "
                     + "date(ifnull(dd.disbursedon_date,dd.expected_disburse_date)) as disbursementDate, "
                     + "oc.decimal_places as currencyDecimalPlaces, oc.currency_multiplesof as inMultiplesOf, oc.display_symbol as currencyDisplaySymbol, "
@@ -132,9 +132,10 @@ public class LoanChargeReadPlatformServiceImpl implements LoanChargeReadPlatform
                 dueAsOfDate = disbursementDate;
             }
 
+            final boolean capitalized = rs.getBoolean("capitalized");
             return new LoanChargeData(id, chargeId, name, currency, amount, amountPaid, amountWaived, amountWrittenOff, amountOutstanding,
                     chargeTimeType, dueAsOfDate, chargeCalculationType, percentageOf, amountPercentageAppliedTo, penalty, paymentMode, paid,
-                    waived, null, minCap, maxCap, amountOrPercentage, null);
+                    waived, null, minCap, maxCap, amountOrPercentage, null, capitalized);
         }
     }
 

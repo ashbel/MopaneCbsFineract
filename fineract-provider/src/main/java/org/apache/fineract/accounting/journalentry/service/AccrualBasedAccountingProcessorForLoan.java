@@ -59,10 +59,12 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             /** Handle Disbursements **/
             if (loanTransactionDTO.getTransactionType().isDisbursement()) {
                 createJournalEntriesForDisbursements(loanDTO, loanTransactionDTO, office);
+            } else if (loanTransactionDTO.getTransactionType().isCapitalisedFee()) {
+                createJournalEntriesForCapitalizedFee(loanDTO, loanTransactionDTO, office);
             }
 
             /*** Handle Accruals ***/
-            if (loanTransactionDTO.getTransactionType().isAccrual()) {
+            else if (loanTransactionDTO.getTransactionType().isAccrual()) {
                 createJournalEntriesForAccruals(loanDTO, loanTransactionDTO, office);
             }
 
@@ -138,6 +140,23 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                     paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed);
         }
 
+    }
+
+    private void createJournalEntriesForCapitalizedFee(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final Date transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal amount = loanTransactionDTO.getPrincipal();
+        final boolean isReversed = loanTransactionDTO.isReversed();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        if (amount != null && amount.compareTo(java.math.BigDecimal.ZERO) != 0) {
+            this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
+                    ACCRUAL_ACCOUNTS_FOR_LOAN.LOAN_PORTFOLIO.getValue(), ACCRUAL_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue(),
+                    loanProductId, paymentTypeId, loanId, transactionId, transactionDate, amount, isReversed);
+        }
     }
 
     /**

@@ -81,11 +81,12 @@ public class LoanChargeData {
     private BigDecimal amountAccrued;
 
     private BigDecimal amountUnrecognized;
-    
+
+    private final boolean capitalized;
 
     public static LoanChargeData template(final Collection<ChargeData> chargeOptions) {
         return new LoanChargeData(null, null, null, null, null, null, null, null, chargeOptions, false, null, false, false, null, null,
-                null, null, null);
+                null, null, null, false);
     }
 
     /**
@@ -97,7 +98,7 @@ public class LoanChargeData {
             final EnumOptionData chargeCalculationType, final boolean penalty, final EnumOptionData chargePaymentMode,
             final BigDecimal minCap, final BigDecimal maxCap) {
         return new LoanChargeData(null, chargeId, name, currency, amount, percentage, chargeTimeType, chargeCalculationType, null, penalty,
-                chargePaymentMode, false, false, null, minCap, maxCap, null, null);
+                chargePaymentMode, false, false, null, minCap, maxCap, null, null, false);
     }
 
     public LoanChargeData(final Long id, final Long chargeId, final String name, final CurrencyData currency, final BigDecimal amount,
@@ -107,6 +108,18 @@ public class LoanChargeData {
             final boolean penalty, final EnumOptionData chargePaymentMode, final boolean paid, final boolean waived, final Long loanId,
             final BigDecimal minCap, final BigDecimal maxCap, final BigDecimal amountOrPercentage,
             Collection<LoanInstallmentChargeData> installmentChargeData) {
+        this(id, chargeId, name, currency, amount, amountPaid, amountWaived, amountWrittenOff, amountOutstanding, chargeTimeType, dueDate,
+                chargeCalculationType, percentage, amountPercentageAppliedTo, penalty, chargePaymentMode, paid, waived, loanId, minCap,
+                maxCap, amountOrPercentage, installmentChargeData, false);
+    }
+
+    public LoanChargeData(final Long id, final Long chargeId, final String name, final CurrencyData currency, final BigDecimal amount,
+            final BigDecimal amountPaid, final BigDecimal amountWaived, final BigDecimal amountWrittenOff,
+            final BigDecimal amountOutstanding, final EnumOptionData chargeTimeType, final LocalDate dueDate,
+            final EnumOptionData chargeCalculationType, final BigDecimal percentage, final BigDecimal amountPercentageAppliedTo,
+            final boolean penalty, final EnumOptionData chargePaymentMode, final boolean paid, final boolean waived, final Long loanId,
+            final BigDecimal minCap, final BigDecimal maxCap, final BigDecimal amountOrPercentage,
+            Collection<LoanInstallmentChargeData> installmentChargeData, final boolean capitalized) {
         this.id = id;
         this.chargeId = chargeId;
         this.name = name;
@@ -143,13 +156,14 @@ public class LoanChargeData {
         this.installmentChargeData = installmentChargeData;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
+        this.capitalized = capitalized;
     }
 
     private LoanChargeData(final Long id, final Long chargeId, final String name, final CurrencyData currency, final BigDecimal amount,
             final BigDecimal percentage, final EnumOptionData chargeTimeType, final EnumOptionData chargeCalculationType,
             final Collection<ChargeData> chargeOptions, final boolean penalty, final EnumOptionData chargePaymentMode, final boolean paid,
             final boolean waived, final Long loanId, final BigDecimal minCap, final BigDecimal maxCap, final BigDecimal amountOrPercentage,
-            Collection<LoanInstallmentChargeData> installmentChargeData) {
+            Collection<LoanInstallmentChargeData> installmentChargeData, final boolean capitalized) {
         this.id = id;
         this.chargeId = chargeId;
         this.name = name;
@@ -187,6 +201,7 @@ public class LoanChargeData {
         this.installmentChargeData = installmentChargeData;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
+        this.capitalized = capitalized;
     }
 
     public LoanChargeData(final Long id, final LocalDate dueAsOfDate, final BigDecimal amountOutstanding, EnumOptionData chargeTimeType,
@@ -218,6 +233,7 @@ public class LoanChargeData {
         this.installmentChargeData = installmentChargeData;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
+        this.capitalized = false;
     }
     
     //Ashbel to capture upfront charges
@@ -249,6 +265,7 @@ public class LoanChargeData {
         this.installmentChargeData = null;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
+        this.capitalized = false;
     }
 
     public LoanChargeData(final Long id, final Long chargeId, final LocalDate dueAsOfDate, EnumOptionData chargeTimeType,
@@ -280,6 +297,7 @@ public class LoanChargeData {
         this.installmentChargeData = null;
         this.amountAccrued = amountAccrued;
         this.amountUnrecognized = null;
+        this.capitalized = false;
     }
 
     public LoanChargeData(final BigDecimal amountUnrecognized, final LoanChargeData chargeData) {
@@ -310,6 +328,7 @@ public class LoanChargeData {
         this.installmentChargeData = null;
         this.amountAccrued = chargeData.amountAccrued;
         this.amountUnrecognized = amountUnrecognized;
+        this.capitalized = chargeData.capitalized;
     }
 
     public LoanChargeData(LoanChargeData chargeData, Collection<LoanInstallmentChargeData> installmentChargeData) {
@@ -340,6 +359,7 @@ public class LoanChargeData {
         this.installmentChargeData = installmentChargeData;
         this.amountAccrued = chargeData.amountAccrued;
         this.amountUnrecognized = chargeData.amountUnrecognized;
+        this.capitalized = chargeData.capitalized;
     }
 
     public LoanChargeData(final Long id, final LocalDate dueAsOfDate, final BigDecimal amountOrPercentage) {
@@ -370,6 +390,7 @@ public class LoanChargeData {
         this.installmentChargeData = null;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
+        this.capitalized = false;
     }
 
     public boolean isChargePayable() {
@@ -446,5 +467,9 @@ public class LoanChargeData {
         	isTimeOfDisbursementCapitalised = ChargeTimeType.fromInt(this.chargeTimeType.getId().intValue()).isTimeOfDisbursementCapitalised();
         }
         return isTimeOfDisbursementCapitalised;
+    }
+
+    public boolean isCapitalized() {
+        return this.capitalized;
     }
 }

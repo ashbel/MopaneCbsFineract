@@ -67,6 +67,7 @@ import org.apache.fineract.portfolio.calendar.domain.Calendar;
 import org.apache.fineract.portfolio.calendar.exception.CalendarParameterUpdateNotSupportedException;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
+import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.apache.fineract.portfolio.charge.domain.ChargeRepositoryWrapper;
 import org.apache.fineract.portfolio.charge.exception.*;
 import org.apache.fineract.portfolio.charge.exception.LoanChargeCannotBeDeletedException.LOAN_CHARGE_CANNOT_BE_DELETED_REASON;
@@ -323,6 +324,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Money amountToDisburse = disburseAmount.copy();
             final Money capitalisedCharge = Money.zero(disburseAmount.getCurrency());
 
+            if (!loan.isMultiDisburmentLoan()) {
+                final java.math.BigDecimal capFees = loan.sumPrincipalCapitalisingFeesForDisbursement(actualDisbursementDate);
+                if (capFees.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    loan.repaymentScheduleDetail().setPrincipal(loan.getPrincpal().getAmount().add(capFees));
+                }
+            }
+
             boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincpal());
             final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
 
@@ -385,6 +393,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, paymentDetail);
             } else {
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, null);
+            }
+            if (!loan.isMultiDisburmentLoan() && loan.hasUnappliedPrincipalCapitalisingFeesAtDisbursement(actualDisbursementDate)) {
+                loan.applyPrincipalCapitalisingFeesAtDisbursement(currentUser, actualDisbursementDate);
             }
         }
         
@@ -1394,10 +1405,22 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String defaultUserMessage = "Installment charge cannot be added to the loan.";
             throw new LoanChargeCannotBeAddedException("loanCharge", "overdue.charge", defaultUserMessage, null, chargeDefinition.getName());
         } else if (loanCharge.getDueLocalDate() != null
-                && loanCharge.getDueLocalDate().isBefore(loan.getLastUserTransactionForChargeCalc())) {
+                && loanCharge.getDueLocalDate().isBefore(loan.getLastUserTransactionForChargeCalc())
+                && !loanCharge.isPrincipalCapitalizingFee()) {
             final String defaultUserMessage = "charge with date before last transaction date can not be added to loan.";
             throw new LoanChargeCannotBeAddedException("loanCharge", "date.is.before.last.transaction.date", defaultUserMessage, null,
                     chargeDefinition.getName());
+        } else if (loanCharge.isCapitalizedFlag() || loanCharge.isPrincipalCapitalizingFee()) {
+            if (chargeDefinition.isPenalty()) {
+                throw new LoanChargeCannotBeAddedException("loanCharge", "capitalized.fee.invalid.type",
+                        "Only non-penalty fee charges can be capitalised.", null, chargeDefinition.getName());
+            }
+            final int ct = chargeDefinition.getChargeTimeType();
+            if (ct != ChargeTimeType.DISBURSEMENT.getValue() && ct != ChargeTimeType.SPECIFIED_DUE_DATE.getValue()
+                    && ct != ChargeTimeType.DISBURSEMENT_CAPITALISED.getValue()) {
+                throw new LoanChargeCannotBeAddedException("loanCharge", "capitalized.fee.invalid.charge.time",
+                        "Capitalised fee requires disbursement or specified due date charge timing.", null, chargeDefinition.getName());
+            }
         } else if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
 
             if (loanCharge.isInstalmentFee() && loan.status().isActive()) {
@@ -1472,6 +1495,14 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (loan.status().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null, currentUser);
             this.loanTransactionRepository.save(applyLoanChargeTransaction);
+        }
+        if (loan.status().isActive() && loan.isDisbursed() && loanCharge.isPrincipalCapitalizingFee()) {
+            final LocalDate capDate = loanCharge.getDueLocalDate() != null ? loanCharge.getDueLocalDate() : DateUtils.getLocalDateOfTenant();
+            final ScheduleGeneratorDTO capScheduleDto = this.loanUtilService.buildScheduleGeneratorDTO(loan, capDate);
+            final LoanTransaction capTxn = loan.applyPrincipalCapitalisingFeeForCharge(loanCharge, capScheduleDto, currentUser, capDate);
+            if (capTxn != null) {
+                this.loanTransactionRepository.save(capTxn);
+            }
         }
         boolean isAppliedOnBackDate = false;
         if (loanCharge.getDueLocalDate() == null || DateUtils.getLocalDateOfTenant().isAfter(loanCharge.getDueLocalDate())) {

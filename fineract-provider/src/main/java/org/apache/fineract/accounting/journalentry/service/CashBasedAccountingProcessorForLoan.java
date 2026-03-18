@@ -62,6 +62,8 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
             /** Handle Disbursements and reversals of disbursements **/
             if (loanTransactionDTO.getTransactionType().isDisbursement()) {
                 createJournalEntriesForDisbursements(loanDTO, loanTransactionDTO, office);
+            } else if (loanTransactionDTO.getTransactionType().isCapitalisedFee()) {
+                createJournalEntriesForCapitalizedFee(loanDTO, loanTransactionDTO, office);
             }
             /***
              * Logic for repayments, repayments at disbursement and reversal of
@@ -119,6 +121,23 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
      * @param loanTransactionDTO
      * @param office
      */
+    private void createJournalEntriesForCapitalizedFee(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final Date transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal amount = loanTransactionDTO.getPrincipal();
+        final boolean isReversal = loanTransactionDTO.isReversed();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        if (amount != null && amount.compareTo(BigDecimal.ZERO) != 0) {
+            this.helper.createCashBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
+                    CASH_ACCOUNTS_FOR_LOAN.LOAN_PORTFOLIO.getValue(), CASH_ACCOUNTS_FOR_LOAN.INCOME_FROM_FEES.getValue(), loanProductId,
+                    paymentTypeId, loanId, transactionId, transactionDate, amount, isReversal);
+        }
+    }
+
     private void createJournalEntriesForDisbursements(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
             final Office office) {
         // loan properties

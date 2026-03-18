@@ -286,6 +286,16 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
         return applyCharge;
     }
 
+    /**
+     * Non-cash increase to loan principal from a capitalised fee (fee merged into principal for scheduling).
+     */
+    public static LoanTransaction capitalizedFee(final Loan loan, final Office office, final Money principalIncrease, final LocalDate date,
+            final LocalDateTime createdDate, final AppUser appUser) {
+        final BigDecimal amt = principalIncrease.getAmount();
+        return new LoanTransaction(loan, office, LoanTransactionType.CAPITALIZED_FEE.getValue(), date.toDate(), amt, amt, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, null, false, null, null, createdDate, appUser);
+    }
+
     public static LoanTransaction refundForActiveLoan(final Office office, final Money amount, final PaymentDetail paymentDetail,
             final LocalDate paymentDate, final String externalId, final LocalDateTime createdDate, final AppUser appUser) {
         return new LoanTransaction(null, office, LoanTransactionType.REFUND_FOR_ACTIVE_LOAN, paymentDetail, amount.getAmount(),
@@ -812,6 +822,6 @@ public class LoanTransaction extends AbstractPersistableCustom<Long> {
     public boolean isPaymentTransaction() {
         return this.isNotReversed()
                 && !(this.isDisbursement() || this.isAccrual() || this.isRepaymentAtDisbursement() || this.isNonMonetaryTransaction() || this
-                        .isIncomePosting());
+                        .isIncomePosting() || this.isCapitalisedFee());
     }
 }

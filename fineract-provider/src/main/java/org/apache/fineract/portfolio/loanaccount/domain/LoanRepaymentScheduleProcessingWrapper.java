@@ -73,6 +73,9 @@ public class LoanRepaymentScheduleProcessingWrapper {
 
         Money cumulative = Money.zero(monetaryCurrency);
         for (final LoanCharge loanCharge : loanCharges) {
+            if (loanCharge.isPrincipalCapitalizingFee()) {
+                continue;
+            }
             if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
                 if ((loanCharge.isInstalmentFee()|| loanCharge.isCapitalisedAtDisbursement()) && isInstallmentChargeApplicable) {
                     if (loanCharge.getChargeCalculation().isPercentageBased()) {

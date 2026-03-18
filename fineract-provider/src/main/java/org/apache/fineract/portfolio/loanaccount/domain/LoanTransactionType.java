@@ -199,7 +199,7 @@ public enum LoanTransactionType {
     }
     
     public boolean isCapitalisedFee() {
-        return this.value.equals(LoanTransactionType.FEE.getValue());
+        return this.value.equals(LoanTransactionType.CAPITALIZED_FEE.getValue());
     }
     
     public boolean isDeductedFee() {

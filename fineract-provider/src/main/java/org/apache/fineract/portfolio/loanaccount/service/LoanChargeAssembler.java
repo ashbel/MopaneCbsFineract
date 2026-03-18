@@ -120,6 +120,8 @@ public class LoanChargeAssembler {
                             locale);
                     if (id == null) {
                         final Charge chargeDefinition = this.chargeRepository.findOneWithNotFoundDetection(chargeId);
+                        final Boolean capitalizedFlag = loanChargeElement.has("isCapitalized")
+                                ? loanChargeElement.get("isCapitalized").getAsBoolean() : null;
 
                         if (chargeDefinition.isOverdueInstallment()) {
 
@@ -143,6 +145,9 @@ public class LoanChargeAssembler {
                         if (!isMultiDisbursal) {
                             final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount, chargeTime,
                                     chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
+                            if (Boolean.TRUE.equals(capitalizedFlag)) {
+                                loanCharge.setCapitalized(true);
+                            }
                             loanCharges.add(loanCharge);
                         } else {
                             if (topLevelJsonElement.has("disbursementData") && topLevelJsonElement.get("disbursementData").isJsonArray()) {
@@ -161,6 +166,9 @@ public class LoanChargeAssembler {
                                             && disbursementDetail.expectedDisbursementDateAsLocalDate().equals(expectedDisbursementDate)) {
                                         final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount,
                                                 chargeTime, chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
+                                        if (Boolean.TRUE.equals(capitalizedFlag)) {
+                                            loanCharge.setCapitalized(true);
+                                        }
                                         loanCharges.add(loanCharge);
                                         if (loanCharge.isTrancheDisbursementCharge()) {
                                             loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -173,6 +181,9 @@ public class LoanChargeAssembler {
                                                     disbursementDetail.principal(), amount, chargeTime, chargeCalculation,
                                                     disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
                                                     numberOfRepayments);
+                                            if (Boolean.TRUE.equals(capitalizedFlag)) {
+                                                loanCharge.setCapitalized(true);
+                                            }
                                             loanCharges.add(loanCharge);
                                             if (loanCharge.isTrancheDisbursementCharge()) {
                                                 loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge,
@@ -190,6 +201,9 @@ public class LoanChargeAssembler {
                                                 disbursementDetail.principal(), amount, chargeTime, chargeCalculation,
                                                 disbursementDetail.expectedDisbursementDateAsLocalDate(), chargePaymentModeEnum,
                                                 numberOfRepayments);
+                                        if (Boolean.TRUE.equals(capitalizedFlag)) {
+                                            loanCharge.setCapitalized(true);
+                                        }
                                         loanCharges.add(loanCharge);
                                         loanTrancheDisbursementCharge = new LoanTrancheDisbursementCharge(loanCharge, disbursementDetail);
                                         loanCharge.updateLoanTrancheDisbursementCharge(loanTrancheDisbursementCharge);
@@ -198,6 +212,9 @@ public class LoanChargeAssembler {
                             } else {
                                 final LoanCharge loanCharge = LoanCharge.createNewWithoutLoan(chargeDefinition, principal, amount,
                                         chargeTime, chargeCalculation, dueDate, chargePaymentModeEnum, numberOfRepayments);
+                                if (Boolean.TRUE.equals(capitalizedFlag)) {
+                                    loanCharge.setCapitalized(true);
+                                }
                                 loanCharges.add(loanCharge);
                             }
                         }
