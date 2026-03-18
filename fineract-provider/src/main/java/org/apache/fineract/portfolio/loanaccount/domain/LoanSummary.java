@@ -140,19 +140,6 @@ public final class LoanSummary {
     public void updateTotalFeeChargesDueAtDisbursement(final BigDecimal totalFeeChargesDueAtDisbursement) {
         this.totalFeeChargesDueAtDisbursement = totalFeeChargesDueAtDisbursement;
     }
-    
-    public void removeCapitalisedChargesBeforeDeployment(BigDecimal capitalisedCharge) {
-    	logger.info(" before " + capitalisedCharge 
-    	+ " this.totalFeeChargesCharged "+ this.totalFeeChargesCharged
-    	+ " this.totalFeeChargesDueAtDisbursement " + this.totalFeeChargesDueAtDisbursement);
-    	
-        	this.totalFeeChargesCharged = this.totalFeeChargesCharged.subtract(capitalisedCharge);
-        	this.totalFeeChargesDueAtDisbursement = this.totalFeeChargesDueAtDisbursement.subtract(capitalisedCharge);   
-        	
-        	logger.info(" after " 
-        	    	+ " this.totalFeeChargesCharged "+ this.totalFeeChargesCharged
-        	    	+ " this.totalFeeChargesDueAtDisbursement " + this.totalFeeChargesDueAtDisbursement);
-    }
 
     public Money getTotalFeeChargesDueAtDisbursement(final MonetaryCurrency currency) {
         return Money.of(currency, this.totalFeeChargesDueAtDisbursement);

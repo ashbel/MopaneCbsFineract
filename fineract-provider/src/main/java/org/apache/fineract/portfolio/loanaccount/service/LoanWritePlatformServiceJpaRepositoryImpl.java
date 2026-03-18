@@ -321,14 +321,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         if (canDisburse) {
             Money disburseAmount = loan.adjustDisburseAmount(command, actualDisbursementDate);
             Money amountToDisburse = disburseAmount.copy();
-            Money capitalisedCharge = Money.zero(disburseAmount.getCurrency());
-            final Set<LoanCharge> upfrontLoanCharges = loan.charges();           
-            for (final LoanCharge upfrontLoanCharge : upfrontLoanCharges) {  
-                if(upfrontLoanCharge.isCapitalisedAtDisbursement()) {
-                	capitalisedCharge = capitalisedCharge.plus(upfrontLoanCharge.amountOutstanding());
-                }
-            }
-            
+            final Money capitalisedCharge = Money.zero(disburseAmount.getCurrency());
+
             boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincpal());
             final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
 

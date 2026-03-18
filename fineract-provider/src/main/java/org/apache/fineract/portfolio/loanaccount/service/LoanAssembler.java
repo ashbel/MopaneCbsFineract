@@ -205,7 +205,6 @@ public class LoanAssembler {
         }
         final Set<LoanCollateral> collateral = this.loanCollateralAssembler.fromParsedJson(element);
         final Set<LoanCharge> loanCharges = this.loanChargeAssembler.fromParsedJson(element,disbursementDetails);
-        BigDecimal capitalisedCharge = BigDecimal.ZERO;
         for (final LoanCharge loanCharge : loanCharges) {
             if (!loanProduct.hasCurrencyCodeOf(loanCharge.currencyCode())) {
                 final String errorMessage = "Charge and Loan must have the same currency.";
@@ -218,9 +217,6 @@ public class LoanAssembler {
                     throw new LinkedAccountRequiredException("loanCharge", errorMessage);
                 }
             }
-            if(loanCharge.isCapitalisedAtDisbursement()) {
-            	capitalisedCharge = capitalisedCharge.add(loanCharge.amount());
-            }
         }
 
         Loan loanApplication = null;
@@ -228,7 +224,7 @@ public class LoanAssembler {
         Group group = null;
 
         final LoanProductRelatedDetail loanProductRelatedDetail = this.loanScheduleAssembler.assembleLoanProductRelatedDetail(element);
-        loanProductRelatedDetail.addCapitalisedChargeToPrincipal(capitalisedCharge);
+        loanProductRelatedDetail.addCapitalisedChargeToPrincipal(BigDecimal.ZERO);
         
         final BigDecimal interestRateDifferential = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(LoanApiConstants.interestRateDifferentialParameterName, element);
         final Boolean isFloatingInterestRate = this.fromApiJsonHelper.extractBooleanNamed(LoanApiConstants.isFloatingInterestRateParameterName, element);

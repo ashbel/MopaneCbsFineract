@@ -87,23 +87,8 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         // determine the total charges due at time of disbursement
         final BigDecimal chargesDueAtTimeOfDisbursement = deriveTotalChargesDueAtTimeOfDisbursement(loanCharges);
         
-        //get Capitalised Charge Amount
-		final BigDecimal chargesCapitalisedAtTimeOfDisbursement = deriveTotalChargesCapitalisedAtTimeOfDisbursement(loanCharges);
-        
-		//Add Capitalised Amount to Principal
-        Money amt = loanApplicationTerms.getPrincipal().plus(chargesCapitalisedAtTimeOfDisbursement);
-		Money approvedPrincipalAmount = loanApplicationTerms.getPrincipal();
-        
-        loanApplicationTerms.setPrincipal(amt);
-        loanApplicationTerms.setTotalPrincipalAccounted(amt);
         loanApplicationTerms.setCapitalisedCharge(BigDecimal.ZERO);
-        
-		 logger.info("Charges " + chargesCapitalisedAtTimeOfDisbursement);
-		 logger.info("Principal " + loanApplicationTerms.getPrincipal());
 
-        
-
-        
         // setup variables for tracking important facts required for loan
         // schedule generation.
 
@@ -1940,16 +1925,6 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         return chargesDueAtTimeOfDisbursement;
     }
 	
-	private BigDecimal deriveTotalChargesCapitalisedAtTimeOfDisbursement(final Set<LoanCharge> loanCharges) {
-        BigDecimal chargesDueAtTimeOfDisbursement = BigDecimal.ZERO;
-        for (final LoanCharge loanCharge : loanCharges) {
-            if (loanCharge.isCapitalisedAtDisbursement()) {
-                chargesDueAtTimeOfDisbursement = chargesDueAtTimeOfDisbursement.add(loanCharge.amount());
-            }
-        }
-        return chargesDueAtTimeOfDisbursement;
-    }
-
     private BigDecimal getDisbursementAmount(final LoanApplicationTerms loanApplicationTerms, LocalDate disbursementDate,
             final Collection<LoanScheduleModelPeriod> periods, final BigDecimal chargesDueAtTimeOfDisbursement,
             final Map<LocalDate, Money> disurseDetail, final boolean excludePastUndisbursed) {

@@ -4847,19 +4847,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
         return loanCharges;
     }
-    
-    public void removeCapitalisedCharges() {
-        if (this.charges != null) {
-            for (LoanCharge charge : this.charges) {
-                if (charge.isCapitalisedAtDisbursement()) {                    
-                 this.charges.remove(charge);
-           		 logger.debug("removeCapitalisedCharges " + charge.amount());
-        		 logger.debug("Principal " + this.approvedPrincipal);
-        		 this.summary.removeCapitalisedChargesBeforeDeployment(charge.amount());
-               }
-            }
-        }
-    }
 
     public Set<LoanTrancheCharge> trancheCharges() {
         Set<LoanTrancheCharge> loanCharges = new HashSet<>();
@@ -4872,25 +4859,33 @@ public class Loan extends AbstractPersistableCustom<Long> {
     }
 
     public List<LoanInstallmentCharge> generateInstallmentLoanCharges(final LoanCharge loanCharge) {
-    	logger.debug(" generateInstallmentLoanCharges " );
+        logger.debug(" generateInstallmentLoanCharges ");
         final List<LoanInstallmentCharge> loanChargePerInstallments = new ArrayList<>();
-        if (loanCharge.isInstalmentFee() || loanCharge.isCapitalisedAtDisbursement()) {
-        	int count = 0;
-            List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments() ;
+        if (loanCharge.isCapitalisedAtDisbursement()) {
+            final List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+            final List<LoanRepaymentScheduleInstallment> targets = new ArrayList<>();
             for (final LoanRepaymentScheduleInstallment installment : installments) {
-            	logger.debug("Installments " + installment.getInstallmentNumber());
-            	logger.debug("Capitalised " + loanCharge.isCapitalisedAtDisbursement());
-            	if(installment.isRecalculatedInterestComponent()){
-            		continue;
-            	}
-            	if(installment.getInstallmentNumber()==1 && loanCharge.isCapitalisedAtDisbursement()) {
-            		BigDecimal amount = BigDecimal.ZERO;
-            		amount = loanCharge.amount();
-            		logger.debug("Capitalised " + amount);
-                    final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
-                    loanChargePerInstallments.add(loanInstallmentCharge);
-            	} 
-            	else {
+                if (!installment.isRecalculatedInterestComponent()) {
+                    targets.add(installment);
+                }
+            }
+            final int count = targets.size();
+            if (count > 0 && loanCharge.amount() != null) {
+                BigDecimal remaining = loanCharge.amount();
+                int periodsLeft = count;
+                for (final LoanRepaymentScheduleInstallment installment : targets) {
+                    final BigDecimal slice = remaining.divide(BigDecimal.valueOf(periodsLeft), 10, RoundingMode.HALF_UP);
+                    loanChargePerInstallments.add(new LoanInstallmentCharge(slice, loanCharge, installment));
+                    remaining = remaining.subtract(slice);
+                    periodsLeft--;
+                }
+            }
+        } else if (loanCharge.isInstalmentFee()) {
+            final List<LoanRepaymentScheduleInstallment> installments = getRepaymentScheduleInstallments();
+            for (final LoanRepaymentScheduleInstallment installment : installments) {
+                if (installment.isRecalculatedInterestComponent()) {
+                    continue;
+                }
                 BigDecimal amount = BigDecimal.ZERO;
                 if (loanCharge.getChargeCalculation().isFlat()) {
                     amount = loanCharge.amountOrPercentage();
@@ -4898,12 +4893,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     amount = calculateInstallmentChargeAmount(loanCharge.getChargeCalculation(), loanCharge.getPercentage(), installment)
                             .getAmount();
                 }
-                final LoanInstallmentCharge loanInstallmentCharge = new LoanInstallmentCharge(amount, loanCharge, installment);
-                loanChargePerInstallments.add(loanInstallmentCharge);
-            	}
-                
+                loanChargePerInstallments.add(new LoanInstallmentCharge(amount, loanCharge, installment));
             }
-        } 
+        }
 
         return loanChargePerInstallments;
     }

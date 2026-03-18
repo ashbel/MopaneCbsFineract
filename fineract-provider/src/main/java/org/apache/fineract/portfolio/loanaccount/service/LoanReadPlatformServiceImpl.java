@@ -700,9 +700,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     	}
     	
     	
-        BigDecimal capitalisedAmount = BigDecimal.ZERO;
-
-
         public String loanSchema() {
             return "l.id as id, l.account_no as accountNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName,"
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
@@ -823,15 +820,6 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         @Override
         public LoanAccountData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
-        	
-            if(chargesData!=null) {            	
-            	for(LoanChargeData chargesdata : chargesData) {
-            		if(chargesdata.isTimeOfDisbursementCapitalised()) {
-            		capitalisedAmount = capitalisedAmount.add(chargesdata.getAmount());
-            		}
-            	}
-            }
-
 
             final String currencyCode = rs.getString("currencyCode");
             final String currencyName = rs.getString("currencyName");
@@ -1268,26 +1256,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         	
             BigDecimal waivedChargeAmount = BigDecimal.ZERO;
-            BigDecimal capitalisedAmount = BigDecimal.ZERO;
             BigDecimal amountDisbursed = this.disbursement.amount();
             BigDecimal totalFeeChargesAtDisbursement =this.totalFeeChargesDueAtDisbursement;
-            
-            
-            
+
             for (DisbursementData disbursementDetail : disbursementData) {
                 waivedChargeAmount = waivedChargeAmount.add(disbursementDetail.getWaivedChargeAmount());
             }
-            
-            if(chargesData!=null) {            	
-            	for(LoanChargeData chargesdata : chargesData) {
-            		if(chargesdata.isTimeOfDisbursementCapitalised()) {
-            		capitalisedAmount = capitalisedAmount.add(chargesdata.getAmount());
-            		}
-            	}
-            }
-            this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(capitalisedAmount);
+
             final LoanSchedulePeriodData disbursementPeriod = LoanSchedulePeriodData.disbursementOnlyPeriod(
-                    this.disbursement.disbursementDate(), amountDisbursed.add(capitalisedAmount), totalFeeChargesAtDisbursement,
+                    this.disbursement.disbursementDate(), amountDisbursed, totalFeeChargesAtDisbursement,
                     this.disbursement.isDisbursed());
 
             final Collection<LoanSchedulePeriodData> periods = new ArrayList<>();
@@ -1352,10 +1329,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 principal = principal.add(data.amount());
                                 LoanSchedulePeriodData periodData = null;
                                 if (data.getChargeAmount() == null) {
-                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount().add(capitalisedAmount),
+                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
                                             disbursementChargeAmount, data.isDisbursed());
                                 } else {
-                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount().add(capitalisedAmount),
+                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
                                             disbursementChargeAmount.add(data.getChargeAmount()).subtract(waivedChargeAmount), data.isDisbursed());
                                 }
                                 if (periodData != null) {
@@ -1369,10 +1346,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 principal = principal.add(data.amount());
                                 LoanSchedulePeriodData periodData = null;
                                 if (data.getChargeAmount() == null) {
-                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount().add(capitalisedAmount),
+                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
                                             BigDecimal.ZERO, data.isDisbursed());
                                 } else {
-                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount().add(capitalisedAmount),
+                                    periodData = LoanSchedulePeriodData.disbursementOnlyPeriod(data.disbursementDate(), data.amount(),
                                             data.getChargeAmount(), data.isDisbursed());
                                 }
                                 if (periodData != null) {
