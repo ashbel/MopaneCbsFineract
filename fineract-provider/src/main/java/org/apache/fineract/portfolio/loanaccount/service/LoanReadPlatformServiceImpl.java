@@ -341,53 +341,67 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
         sqlBuilder.append(rm.loanSchema());
 
-        // TODO - for time being this will data scope list of loans returned to
-        // only loans that have a client associated.
-        // to support scenario where loan has group_id only OR client_id will
-        // probably require a UNION query
-        // but that at present is an edge case
         sqlBuilder.append(" join m_office o on o.id = c.office_id");
         sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
         sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
-        // add group loans via union
-        sqlBuilder.append(" union select ");
-        sqlBuilder.append(rm.loanSchema());
-        sqlBuilder.append(" left join m_office o on o.id = g.office_id");
-//        sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = g.transfer_to_office_id ");
-//        sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
 
-        int arrayPos = 2;
-        List<Object> extraCriterias = new ArrayList<>();
+        final List<Object> extraCriterias = new ArrayList<>();
         extraCriterias.add(hierarchySearchString);
         extraCriterias.add(hierarchySearchString);
 
-        if (searchParameters!=null) {
+        // Build the dynamic filter fragment once (validated against the schema built so far,
+        // which declares the same table aliases used by both union branches below) so it can
+        // be applied identically to the client-loan and group-loan branches. Previously this
+        // was appended only once, after both branches, which meant it silently attached to the
+        // group-loan branch's "left join ... on" clause (a no-op predicate against a LEFT JOIN)
+        // and was never applied to the client-loan branch at all.
+        final StringBuilder dynamicFilter = new StringBuilder();
+        final List<Object> dynamicParams = new ArrayList<>();
+        if (searchParameters != null) {
 
             String sqlQueryCriteria = searchParameters.getSqlSearch();
             if (StringUtils.isNotBlank(sqlQueryCriteria)) {
                 SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
                 sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
-                sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+                dynamicFilter.append(" and (").append(sqlQueryCriteria).append(")");
             }
 
             if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-                sqlBuilder.append(" and l.external_id = ?");
-                extraCriterias.add(searchParameters.getExternalId());
-                arrayPos = arrayPos + 1;
+                dynamicFilter.append(" and l.external_id = ?");
+                dynamicParams.add(searchParameters.getExternalId());
             }
-            if(searchParameters.getOfficeId()!=null){
-                sqlBuilder.append(" and c.office_id = ?");
-                extraCriterias.add(searchParameters.getOfficeId());
-                arrayPos = arrayPos + 1;
+            if (searchParameters.getOfficeId() != null) {
+                // coalesce so this filters correctly whether the loan is client-owned (c.office_id)
+                // or group-owned (g.office_id) - a plain c.office_id check always excluded group loans.
+                dynamicFilter.append(" and coalesce(c.office_id, g.office_id) = ?");
+                dynamicParams.add(searchParameters.getOfficeId());
             }
 
             if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-                sqlBuilder.append(" and l.account_no = ?");
-                extraCriterias.add(searchParameters.getAccountNo());
-                arrayPos = arrayPos + 1;
+                dynamicFilter.append(" and l.account_no = ?");
+                dynamicParams.add(searchParameters.getAccountNo());
             }
+        }
 
+        sqlBuilder.append(dynamicFilter);
+        extraCriterias.addAll(dynamicParams);
+
+        // add group loans via union all - both branches are now scoped by office hierarchy and
+        // the same dynamic filters, and a loan is either client-owned or group-owned (never
+        // both), so the branches are disjoint. UNION ALL avoids MySQL materializing and
+        // de-duplicating (the implicit DISTINCT of plain UNION) the full combined result before
+        // LIMIT/OFFSET can apply, which previously made every page equally slow regardless of
+        // offset.
+        sqlBuilder.append(" union all select ");
+        sqlBuilder.append(rm.loanSchema());
+        sqlBuilder.append(" left join m_office o on o.id = g.office_id");
+        sqlBuilder.append(" where ( o.hierarchy like ? )");
+        extraCriterias.add(hierarchySearchString);
+        sqlBuilder.append(dynamicFilter);
+        extraCriterias.addAll(dynamicParams);
+
+        if (searchParameters != null) {
             if (searchParameters.isOrderByRequested()) {
                 sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
@@ -405,8 +419,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 }
             }
         }
-        final Object[] objectArray = extraCriterias.toArray();
-        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+        final Object[] finalObjectArray = extraCriterias.toArray();
         final String sqlCountRows = "SELECT FOUND_ROWS()";
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), finalObjectArray,
                 rm);
@@ -1026,7 +1039,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 }
                 //Get Accrued Interest Of Loan
                 //Add accrued interest Ashbel, created a new method to calculate
-                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(id, true);
+                // Only initialize the two lazy collections retriveAccruedInterestTillToday actually reads
+                // (repaymentScheduleInstallments, charges) instead of all 8 via initializeLazyCollections() -
+                // this endpoint calls this per row, so the full init was multiplying page latency badly.
+                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(id, false);
+                loan.initializeRepaymentSchedule();
+                loan.getLoanCharges().size();
                 Money[] receivables = loan.retriveAccruedInterestTillToday(DateUtils.getLocalDateOfTenant());
                 BigDecimal accruedInterest = receivables[0].getAmount();
                 
