@@ -664,7 +664,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
         return sumPrincipalCapitalisingFeesForDisbursement(disbursementDate).compareTo(BigDecimal.ZERO) > 0;
     }
 
-    public void applyPrincipalCapitalisingFeesAtDisbursement(final AppUser currentUser, final LocalDate disbursementDate) {
+    public void applyPrincipalCapitalisingFeesAtDisbursement(final AppUser currentUser, final LocalDate disbursementDate,
+            final ScheduleGeneratorDTO scheduleGeneratorDTO) {
+        Money totalCapitalised = Money.zero(getCurrency());
         for (final LoanCharge c : new HashSet<>(charges())) {
             if (!c.isPrincipalCapitalizingFee() || c.isWaived() || !c.isActive()) {
                 continue;
@@ -683,6 +685,17 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     DateUtils.getLocalDateTimeOfTenant(), currentUser);
             cap.updateLoan(this);
             addLoanTransaction(cap);
+            totalCapitalised = totalCapitalised.plus(fee);
+        }
+        if (totalCapitalised.isGreaterThanZero()) {
+            final BigDecimal newPrincipal = getPrincpal().getAmount().add(totalCapitalised.getAmount());
+            this.loanRepaymentScheduleDetail.setPrincipal(newPrincipal);
+            if (repaymentScheduleDetail().isInterestRecalculationEnabled()) {
+                regenerateRepaymentScheduleWithInterestRecalculation(scheduleGeneratorDTO, currentUser);
+            } else {
+                regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
+                processPostDisbursementTransactions();
+            }
         }
     }
 
@@ -1329,27 +1342,12 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     interest = interest.plus(loanTransaction.getInterestPortion(getCurrency()));
                     fee = fee.plus(loanTransaction.getFeeChargesPortion(getCurrency()));
                     penalty = penalty.plus(loanTransaction.getPenaltyChargesPortion(getCurrency()));
-                    if(getAccruedTill()==null) {this.accruedTill =loanTransaction.getTransactionDate().toDate();}
-                    
-                    if (fee.isZero() && installment.getFeeChargesCharged(getCurrency()).isGreaterThanZero()) {
-                        Loan loan = installment.getLoan();
-                        boolean hasCapitalisedCharge = false;
-                        for (LoanCharge loanCharge : loan.charges) {
-                            if (loanCharge.isCapitalisedAtDisbursement()) {
-                                hasCapitalisedCharge = true;
-                                break;
-                            }
-                        }
-                        if (hasCapitalisedCharge) {
-                            fee = fee.plus(installment.getFeeChargesCharged(getCurrency()));
-                        }
-                    }
                     logger.debug(installment.getInstallmentNumber() + " T_Int " + interest + " I_Int " + installment.getInterestCharged(getCurrency()) + " T_Fee " + fee + " I_Fee " + installment.getFeeChargesCharged(getCurrency()));
 
                     if (installment.getFeeChargesCharged(getCurrency()).isLessThan(fee)
                             || installment.getInterestCharged(getCurrency()).isLessThan(interest)
                             || installment.getPenaltyChargesCharged(getCurrency()).isLessThan(penalty)
-                            || (getAccruedTill().isEqual(loanTransaction.getTransactionDate()) && !installment.getDueDate().isEqual(
+                            || (getAccruedTill() != null && getAccruedTill().isEqual(loanTransaction.getTransactionDate()) && !installment.getDueDate().isEqual(
                                     getAccruedTill()))) {
                         interest = interest.minus(loanTransaction.getInterestPortion(getCurrency()));
                         fee = fee.minus(loanTransaction.getFeeChargesPortion(getCurrency()));
@@ -1367,6 +1365,16 @@ public class Loan extends AbstractPersistableCustom<Long> {
             if (loanTransaction.getTransactionDate().isAfter(lastInstallment.getDueDate()) && !loanTransaction.isReversed()) {
                 loanTransaction.reverse();
             }
+        }
+        LocalDate latestAccrualDate = null;
+        for (LoanTransaction loanTransaction : accruals) {
+            if (!loanTransaction.isReversed()
+                    && (latestAccrualDate == null || loanTransaction.getTransactionDate().isAfter(latestAccrualDate))) {
+                latestAccrualDate = loanTransaction.getTransactionDate();
+            }
+        }
+        if (latestAccrualDate != null) {
+            this.accruedTill = latestAccrualDate.toDate();
         }
     }
 

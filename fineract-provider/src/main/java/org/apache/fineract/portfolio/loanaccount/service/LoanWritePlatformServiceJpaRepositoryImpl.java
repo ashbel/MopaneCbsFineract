@@ -395,7 +395,7 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 changedTransactionDetail = loan.disburse(currentUser, command, changes, scheduleGeneratorDTO, null);
             }
             if (!loan.isMultiDisburmentLoan() && loan.hasUnappliedPrincipalCapitalisingFeesAtDisbursement(actualDisbursementDate)) {
-                loan.applyPrincipalCapitalisingFeesAtDisbursement(currentUser, actualDisbursementDate);
+                loan.applyPrincipalCapitalisingFeesAtDisbursement(currentUser, actualDisbursementDate, scheduleGeneratorDTO);
             }
         }
         

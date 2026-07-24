@@ -323,9 +323,6 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
         if (this.loan != null && isInstalmentFee()) {
             updateInstallmentCharges();
         }
-        if (this.loan != null && isCapitalisedAtDisbursement()) {
-            //updateInstallmentCharges(true);
-        }
     }
 
     public void markAsFullyPaid() {
@@ -432,9 +429,6 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             if (this.loan != null && isInstalmentFee()) {
                 updateInstallmentCharges();
             }
-            if (this.loan != null && isCapitalisedAtDisbursement()) {
-                //updateInstallmentCharges(true);
-            }
         }
     }
 
@@ -532,9 +526,6 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             if (isInstalmentFee()) {
                 updateInstallmentCharges();
             }
-            if (isCapitalisedAtDisbursement()) {
-                //updateInstallmentCharges(true);
-            }
         }
         return actualChanges;
     }
@@ -557,45 +548,6 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 if (index == loanChargePerInstallmentArray.length) {
                     remove.add(chargePerInstallment);
                     logger.debug("Removing " + chargePerInstallment.getAmount());  
-                    chargePerInstallment.updateInstallment(null);
-                } else {
-                    chargePerInstallment.copyFrom(loanChargePerInstallmentArray[index++]);
-                }
-            }
-            this.loanInstallmentCharge.removeAll(remove);
-            while (index < loanChargePerInstallmentArray.length) {
-                LoanInstallmentCharge toAdd = loanChargePerInstallmentArray[index];
-                logger.debug("Adding " + toAdd.getAmount());
-                this.loanInstallmentCharge.add(toAdd);
-                index++;
-            }
-        }
-        Money amount = Money.zero(this.loan.getCurrency());
-        for(LoanInstallmentCharge charge:this.loanInstallmentCharge){
-        	logger.debug("Suming Charges " +charge.getAmount());
-            amount =amount.plus(charge.getAmount());
-        }
-        this.amount =amount.getAmount();
-    }
-    
-    private void updateInstallmentCharges(boolean isCapitalised ) {
-    	logger.debug("updateInstallmentCharges " );
-        final Collection<LoanInstallmentCharge> remove = new HashSet<>();
-        final List<LoanInstallmentCharge> newChargeInstallments = this.loan.generateInstallmentLoanCharges(this);
-        if (this.loanInstallmentCharge.isEmpty()) {
-            this.loanInstallmentCharge.addAll(newChargeInstallments);
-        } else {
-            int index = 0;
-            final List<LoanInstallmentCharge> oldChargeInstallments = new ArrayList<>();
-            if(this.loanInstallmentCharge != null && !this.loanInstallmentCharge.isEmpty()){
-                oldChargeInstallments.addAll(this.loanInstallmentCharge);
-            }
-            Collections.sort(oldChargeInstallments);
-            final LoanInstallmentCharge[] loanChargePerInstallmentArray = newChargeInstallments.toArray(new LoanInstallmentCharge[newChargeInstallments.size()]);
-            for (final LoanInstallmentCharge chargePerInstallment : oldChargeInstallments) {
-                if (index == loanChargePerInstallmentArray.length) {
-                    remove.add(chargePerInstallment);
-                    logger.debug("Removing " + chargePerInstallment.getAmount());
                     chargePerInstallment.updateInstallment(null);
                 } else {
                     chargePerInstallment.copyFrom(loanChargePerInstallmentArray[index++]);

@@ -21,15 +21,19 @@ package org.apache.fineract.portfolio.loanaccount.domain;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
 import org.joda.time.LocalDate;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -37,6 +41,13 @@ import org.mockito.Mockito;
  * Unit tests for Mambu-style capitalised fee flags on {@link LoanCharge}.
  */
 public class LoanCapitalizedFeeTest {
+
+    @Before
+    public void setUpMoneyRoundingMode() throws Exception {
+        Field field = MoneyHelper.class.getDeclaredField("roundingMode");
+        field.setAccessible(true);
+        field.set(null, RoundingMode.HALF_EVEN);
+    }
 
     @Test
     public void disbursementCapitalisedChargeTimeIsPrincipalCapitalizing() {

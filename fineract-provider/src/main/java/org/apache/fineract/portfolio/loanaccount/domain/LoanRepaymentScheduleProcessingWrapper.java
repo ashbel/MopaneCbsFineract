@@ -77,7 +77,7 @@ public class LoanRepaymentScheduleProcessingWrapper {
                 continue;
             }
             if (loanCharge.isFeeCharge() && !loanCharge.isDueAtDisbursement()) {
-                if ((loanCharge.isInstalmentFee()|| loanCharge.isCapitalisedAtDisbursement()) && isInstallmentChargeApplicable) {
+                if (loanCharge.isInstalmentFee() && isInstallmentChargeApplicable) {
                     if (loanCharge.getChargeCalculation().isPercentageBased()) {
                         BigDecimal amount = BigDecimal.ZERO;
                         if (loanCharge.getChargeCalculation().isPercentageOfAmountAndInterest()) {

@@ -370,7 +370,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         for (LoanChargeData loanCharge : chargesData) {
             BigDecimal chargeAmount = BigDecimal.ZERO;
             if (loanCharge.getDueDate() == null) {
-                if ((loanCharge.isInstallmentFee() || loanCharge.isTimeOfDisbursementCapitalised() )&& accrualData.getDueDateAsLocaldate().isEqual(endDate)) {
+                if (loanCharge.isInstallmentFee() && accrualData.getDueDateAsLocaldate().isEqual(endDate)) {
                     Collection<LoanInstallmentChargeData> installmentData = loanCharge.getInstallmentChargeData();
                     for (LoanInstallmentChargeData installmentChargeData : installmentData) {
 
