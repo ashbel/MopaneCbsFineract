@@ -703,6 +703,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             for (final LoanCharge c : capitalisedCharges) {
                 c.markAsFullyPaid();
             }
+            updateLoanOutstandingBalaces();
         }
     }
 
@@ -740,6 +741,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
         // Regen/reprocess can recalculate charge derived fields — keep capitalised charge paid.
         loanCharge.markAsFullyPaid();
+        updateLoanOutstandingBalaces();
         return capFeeResult;
     }
 
@@ -5718,6 +5720,9 @@ public class Loan extends AbstractPersistableCustom<Long> {
             if (loanTransaction.isDisbursement() || loanTransaction.isIncomePosting() || loanTransaction.isFee() || loanTransaction.isAccrual() 
             		|| loanTransaction.isCapitalisedFee()) {
                 outstanding = outstanding.plus(loanTransaction.getAmount(getCurrency()));
+                loanTransaction.updateOutstandingLoanBalance(outstanding.getAmount());
+            } else if (loanTransaction.isRepaymentAtDisbursement()) {
+                // Fee paid at disbursement has no matching Fees Charged add — do not move balance
                 loanTransaction.updateOutstandingLoanBalance(outstanding.getAmount());
             } else {
                 if (this.loanInterestRecalculationDetails != null

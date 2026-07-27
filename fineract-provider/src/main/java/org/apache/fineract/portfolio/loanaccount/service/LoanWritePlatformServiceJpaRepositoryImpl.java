@@ -371,8 +371,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 
                 LoanTransaction disbursementChargeTransaction = LoanTransaction.accrueAtDisbursement(loan.getOffice(), capitalisedCharge, paymentDetail,
                         actualDisbursementDate, txnExternalId, DateUtils.getLocalDateTimeOfTenant(), currentUser);
-                disbursementChargeTransaction.updateLoan(loan);
-                loan.addLoanTransaction(disbursementChargeTransaction);
+                // Capitalised fees now post via CAPITALIZED_FEE — skip empty Fees Charged (amount 0) rows.
+                if (capitalisedCharge.isGreaterThanZero()) {
+                    disbursementChargeTransaction.updateLoan(loan);
+                    loan.addLoanTransaction(disbursementChargeTransaction);
+                }
                 
                 LoanTransaction disbursementTransaction = LoanTransaction.disbursement(loan.getOffice(), amountToDisburse, paymentDetail,
                         actualDisbursementDate, txnExternalId, DateUtils.getLocalDateTimeOfTenant(), currentUser);
