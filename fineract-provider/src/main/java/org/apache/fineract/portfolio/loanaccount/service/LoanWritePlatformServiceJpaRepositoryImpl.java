@@ -324,13 +324,8 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             Money amountToDisburse = disburseAmount.copy();
             final Money capitalisedCharge = Money.zero(disburseAmount.getCurrency());
 
-            if (!loan.isMultiDisburmentLoan()) {
-                final java.math.BigDecimal capFees = loan.sumPrincipalCapitalisingFeesForDisbursement(actualDisbursementDate);
-                if (capFees.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                    loan.repaymentScheduleDetail().setPrincipal(loan.getPrincpal().getAmount().add(capFees));
-                }
-            }
-
+            // Principal for capitalised fees is bumped once in applyPrincipalCapitalisingFeesAtDisbursement
+            // (after disburse), which also posts CAPITALIZED_FEE and regenerates the schedule.
             boolean recalculateSchedule = amountBeforeAdjust.isNotEqualTo(loan.getPrincpal());
             final String txnExternalId = command.stringValueOfParameterNamedAllowingNull("externalId");
 
@@ -1488,11 +1483,11 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         this.loanChargeRepository.save(loanCharge);
 
         /**
-         * we want to apply charge transactions only for those loans charges
-         * that are applied when a loan is active and the loan product uses
-         * Upfront Accruals
+         * Apply charge transactions only for active loans on cash/upfront products.
+         * Skip principal-capitalising fees — those post CAPITALIZED_FEE instead.
          **/
-        if (loan.status().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+        if (loan.status().isActive() && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()
+                && !loanCharge.isPrincipalCapitalizingFee()) {
             final LoanTransaction applyLoanChargeTransaction = loan.handleChargeAppliedTransaction(loanCharge, null, currentUser);
             this.loanTransactionRepository.save(applyLoanChargeTransaction);
         }

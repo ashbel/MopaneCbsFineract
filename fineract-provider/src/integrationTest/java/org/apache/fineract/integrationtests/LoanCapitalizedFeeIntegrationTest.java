@@ -19,6 +19,7 @@
 package org.apache.fineract.integrationtests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +58,10 @@ public class LoanCapitalizedFeeIntegrationTest {
     private static final Integer CHARGE_TIME_TYPE_DISBURSEMENT_CAPITALISED = 17;
     private static final Integer CHARGE_TIME_TYPE_SPECIFIED_DUE_DATE = 2;
     private static final Integer CHARGE_CALCULATION_TYPE_FLAT = 1;
+    /** LoanTransactionType.FEE — must not be posted for capitalised charges. */
+    private static final Integer TXN_TYPE_FEES_CHARGED = 20;
+    /** LoanTransactionType.CAPITALIZED_FEE — sole income/principal txn for capitalised charges. */
+    private static final Integer TXN_TYPE_CAPITALIZED_FEE = 21;
 
     private final String DATE_OF_JOINING = "01 January 2011";
     private final Float LP_PRINCIPAL = 10000.0f;
@@ -122,11 +127,13 @@ public class LoanCapitalizedFeeIntegrationTest {
         loanStatusHashMap = this.loanTransactionHelper.disburseLoan(this.EXPECTED_DISBURSAL_DATE, loanID);
         LoanStatusChecker.verifyLoanIsActive(loanStatusHashMap);
 
-        // Principal/schedule must include both capitalised fees (10000 + 100 + 50), not just the disbursed cash.
+        // Principal/schedule must include both capitalised fees once (10000 + 100 + 50), not double-bumped.
         final ArrayList<HashMap> repaymentPeriods = this.loanTransactionHelper.getLoanRepaymentSchedule(this.requestSpec,
                 this.responseSpec, loanID);
-        assertEquals("Disbursement-time capitalised fees must be added to loan principal", Float.valueOf(this.LP_PRINCIPAL + 150.0f),
+        assertEquals("Disbursement-time capitalised fees must be added to loan principal once", Float.valueOf(this.LP_PRINCIPAL + 150.0f),
                 repaymentPeriods.get(0).get("principalLoanBalanceOutstanding"));
+
+        assertCapitalisedFeeTransactionsOnly(loanID, new float[] { 100f, 50f });
 
         // Each capitalised fee is booked once, in full, as fee income at capitalisation: Dr loan portfolio / Cr fee income.
         this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, this.EXPECTED_DISBURSAL_DATE,
@@ -166,8 +173,10 @@ public class LoanCapitalizedFeeIntegrationTest {
 
         final ArrayList<HashMap> scheduleAfterCapitalisation = this.loanTransactionHelper.getLoanRepaymentSchedule(this.requestSpec,
                 this.responseSpec, loanID);
-        assertEquals("Mid-term capitalised fee must bump principal and regenerate the schedule",
+        assertEquals("Mid-term capitalised fee must bump principal once and regenerate the schedule",
                 Float.valueOf(this.LP_PRINCIPAL + 200.0f), scheduleAfterCapitalisation.get(0).get("principalLoanBalanceOutstanding"));
+
+        assertCapitalisedFeeTransactionsOnly(loanID, new float[] { 200f });
 
         this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, capitalisationDate,
                 new JournalEntry(200f, JournalEntry.TransactionType.DEBIT));
@@ -262,5 +271,42 @@ public class LoanCapitalizedFeeIntegrationTest {
             map.put("isCapitalized", true);
         }
         return new Gson().toJson(map);
+    }
+
+    /**
+     * Capitalised fees must post exactly one CAPITALIZED_FEE txn per amount and must not also post Fees Charged.
+     */
+    private void assertCapitalisedFeeTransactionsOnly(final Integer loanID, final float[] expectedCapitalisedAmounts) {
+        final ArrayList<HashMap> transactions = (ArrayList<HashMap>) this.loanTransactionHelper.getLoanDetail(this.requestSpec,
+                this.responseSpec, loanID, "transactions");
+
+        final List<Float> capitalisedAmounts = new ArrayList<>();
+        for (final HashMap transaction : transactions) {
+            final HashMap type = (HashMap) transaction.get("type");
+            final Integer typeId = ((Number) type.get("id")).intValue();
+            final Float amount = Float.valueOf(String.valueOf(transaction.get("amount")));
+            if (TXN_TYPE_FEES_CHARGED.equals(typeId)) {
+                for (final float expected : expectedCapitalisedAmounts) {
+                    assertTrue("Capitalised fee amount " + expected + " must not also appear as Fees Charged",
+                            Math.abs(amount - expected) > 0.001f);
+                }
+            }
+            if (TXN_TYPE_CAPITALIZED_FEE.equals(typeId)) {
+                capitalisedAmounts.add(amount);
+            }
+        }
+
+        assertEquals("Expected one Capitalised fee (principal) transaction per capitalised charge", expectedCapitalisedAmounts.length,
+                capitalisedAmounts.size());
+        for (final float expected : expectedCapitalisedAmounts) {
+            boolean found = false;
+            for (final Float actual : capitalisedAmounts) {
+                if (Math.abs(actual - expected) < 0.001f) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue("Missing Capitalised fee (principal) transaction for amount " + expected, found);
+        }
     }
 }

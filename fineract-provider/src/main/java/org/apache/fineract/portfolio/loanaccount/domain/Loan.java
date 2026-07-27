@@ -2861,9 +2861,10 @@ public class Loan extends AbstractPersistableCustom<Long> {
             } else if (disbursedOn.equals(new LocalDate(this.actualDisbursementDate))) {
                 /**
                  * create a Charge applied transaction if Up front Accrual, None
-                 * or Cash based accounting is enabled
+                 * or Cash based accounting is enabled. Skip principal-capitalising
+                 * fees — those post CAPITALIZED_FEE instead (avoid double Fees Charged).
                  **/
-                if (isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+                if (isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() && !charge.isPrincipalCapitalizingFee()) {
                     handleChargeAppliedTransaction(charge, disbursedOn, currentUser);
                 }
             }
