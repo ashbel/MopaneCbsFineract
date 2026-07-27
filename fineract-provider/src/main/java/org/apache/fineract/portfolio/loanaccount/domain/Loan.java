@@ -6796,6 +6796,11 @@ public class Loan extends AbstractPersistableCustom<Long> {
     public void initializeRepaymentSchedule() {
         this.repaymentScheduleInstallments.size() ;
     }
+
+    public void initializeRepaymentScheduleAndCharges() {
+        this.repaymentScheduleInstallments.size() ;
+        this.charges.size() ;
+    }
     public boolean hasInvalidLoanType() {
         return AccountType.fromInt(this.loanType).isInvalid();
     }

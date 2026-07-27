@@ -62,6 +62,19 @@ public class LoanRepositoryWrapper {
         }
         return loan;
     }
+
+    /**
+     * Touches repaymentScheduleInstallments and charges while still inside this method's transaction, so
+     * they're populated before the entity is returned detached - accessing lazy collections after that point
+     * (e.g. in a caller that isn't itself transactional) leaves them null instead of lazily loading.
+     */
+    @Transactional(readOnly=true)
+    public Loan findOneWithNotFoundDetectionForAccruedInterest(final Long id) {
+        final Loan loan = this.repository.findOne(id);
+        if (loan == null) { throw new LoanNotFoundException(id); }
+        loan.initializeRepaymentScheduleAndCharges();
+        return loan;
+    }
     
     //Root Entities are enough
     public Collection<Loan> findActiveLoansByLoanIdAndGroupId(Long clientId, Long groupId) {

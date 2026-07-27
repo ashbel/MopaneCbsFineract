@@ -1042,9 +1042,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 // Only initialize the two lazy collections retriveAccruedInterestTillToday actually reads
                 // (repaymentScheduleInstallments, charges) instead of all 8 via initializeLazyCollections() -
                 // this endpoint calls this per row, so the full init was multiplying page latency badly.
-                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(id, false);
-                loan.initializeRepaymentSchedule();
-                loan.getLoanCharges().size();
+                // Both collections must be touched inside findOneWithNotFoundDetectionForAccruedInterest's own
+                // transaction - touching them here, after the entity comes back detached, leaves them null.
+                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetectionForAccruedInterest(id);
                 Money[] receivables = loan.retriveAccruedInterestTillToday(DateUtils.getLocalDateOfTenant());
                 BigDecimal accruedInterest = receivables[0].getAmount();
                 
