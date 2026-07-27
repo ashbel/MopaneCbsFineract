@@ -134,6 +134,8 @@ public class LoanCapitalizedFeeIntegrationTest {
                 repaymentPeriods.get(0).get("principalLoanBalanceOutstanding"));
 
         assertCapitalisedFeeTransactionsOnly(loanID, new float[] { 100f, 50f });
+        assertCapitalisedChargesFullyPaid(loanID, new float[] { 100f, 50f });
+        assertFeeSummaryZeroForCapitalisedOnlyLoan(loanID);
 
         // Each capitalised fee is booked once, in full, as fee income at capitalisation: Dr loan portfolio / Cr fee income.
         this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, this.EXPECTED_DISBURSAL_DATE,
@@ -177,6 +179,8 @@ public class LoanCapitalizedFeeIntegrationTest {
                 Float.valueOf(this.LP_PRINCIPAL + 200.0f), scheduleAfterCapitalisation.get(0).get("principalLoanBalanceOutstanding"));
 
         assertCapitalisedFeeTransactionsOnly(loanID, new float[] { 200f });
+        assertCapitalisedChargesFullyPaid(loanID, new float[] { 200f });
+        assertFeeSummaryZeroForCapitalisedOnlyLoan(loanID);
 
         this.journalEntryHelper.checkJournalEntryForAssetAccount(assetAccount, capitalisationDate,
                 new JournalEntry(200f, JournalEntry.TransactionType.DEBIT));
@@ -308,5 +312,41 @@ public class LoanCapitalizedFeeIntegrationTest {
             }
             assertTrue("Missing Capitalised fee (principal) transaction for amount " + expected, found);
         }
+    }
+
+    /**
+     * Charges tab must show capitalised fees as fully paid (not outstanding), even though income is in principal.
+     */
+    private void assertCapitalisedChargesFullyPaid(final Integer loanID, final float[] expectedAmounts) {
+        final ArrayList<HashMap> charges = this.loanTransactionHelper.getLoanCharges(loanID);
+        assertEquals("Expected one loan charge per capitalised fee", expectedAmounts.length, charges.size());
+        for (final float expected : expectedAmounts) {
+            boolean found = false;
+            for (final HashMap charge : charges) {
+                final Float due = Float.valueOf(String.valueOf(charge.get("amount")));
+                if (Math.abs(due - expected) < 0.001f) {
+                    found = true;
+                    final Float paid = Float.valueOf(String.valueOf(charge.get("amountPaid")));
+                    final Float outstanding = Float.valueOf(String.valueOf(charge.get("amountOutstanding")));
+                    assertEquals("Capitalised charge due " + expected + " must be fully paid", Float.valueOf(expected), paid);
+                    assertEquals("Capitalised charge due " + expected + " must have zero outstanding", Float.valueOf(0f), outstanding);
+                    break;
+                }
+            }
+            assertTrue("Missing capitalised loan charge for amount " + expected, found);
+        }
+    }
+
+    /**
+     * Capitalised fees must not appear under Fees Charged/Paid/Outstanding in the loan summary.
+     */
+    private void assertFeeSummaryZeroForCapitalisedOnlyLoan(final Integer loanID) {
+        final HashMap summary = this.loanTransactionHelper.getLoanSummary(this.requestSpec, this.responseSpec, loanID);
+        assertEquals("Fees charged must stay 0 for capitalised-only fees", Float.valueOf(0f),
+                Float.valueOf(String.valueOf(summary.get("feeChargesCharged"))));
+        assertEquals("Fees paid must stay 0 for capitalised-only fees", Float.valueOf(0f),
+                Float.valueOf(String.valueOf(summary.get("feeChargesPaid"))));
+        assertEquals("Fees outstanding must stay 0 for capitalised-only fees", Float.valueOf(0f),
+                Float.valueOf(String.valueOf(summary.get("feeChargesOutstanding"))));
     }
 }

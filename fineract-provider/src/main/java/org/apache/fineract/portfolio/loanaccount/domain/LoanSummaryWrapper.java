@@ -238,6 +238,11 @@ public final class LoanSummaryWrapper {
         Money total = Money.zero(currency);
         if(charges == null) return total ;
         for (final LoanCharge loanCharge : charges) {
+            // Capitalised fees are recognised as principal, not fee income in the summary —
+            // including their amountPaid here would make Fees Paid > Fees Charged.
+            if (loanCharge.isPrincipalCapitalizingFee()) {
+                continue;
+            }
             if (!loanCharge.isPenaltyCharge() && loanCharge.getAmountPaid(currency).isGreaterThanZero()) {
                 total = total.plus(loanCharge.getAmountPaid(currency));
             }

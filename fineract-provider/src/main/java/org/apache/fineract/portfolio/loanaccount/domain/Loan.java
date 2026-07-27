@@ -667,6 +667,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
     public void applyPrincipalCapitalisingFeesAtDisbursement(final AppUser currentUser, final LocalDate disbursementDate,
             final ScheduleGeneratorDTO scheduleGeneratorDTO) {
         Money totalCapitalised = Money.zero(getCurrency());
+        final List<LoanCharge> capitalisedCharges = new ArrayList<>();
         for (final LoanCharge c : new HashSet<>(charges())) {
             if (!c.isPrincipalCapitalizingFee() || c.isWaived() || !c.isActive()) {
                 continue;
@@ -683,8 +684,10 @@ public class Loan extends AbstractPersistableCustom<Long> {
             c.markAsFullyPaid();
             final LoanTransaction cap = LoanTransaction.capitalizedFee(this, getOffice(), fee, disbursementDate,
                     DateUtils.getLocalDateTimeOfTenant(), currentUser);
+            cap.getLoanChargesPaid().add(new LoanChargePaidBy(cap, c, fee.getAmount(), null));
             cap.updateLoan(this);
             addLoanTransaction(cap);
+            capitalisedCharges.add(c);
             totalCapitalised = totalCapitalised.plus(fee);
         }
         if (totalCapitalised.isGreaterThanZero()) {
@@ -695,6 +698,10 @@ public class Loan extends AbstractPersistableCustom<Long> {
             } else {
                 regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
                 processPostDisbursementTransactions();
+            }
+            // Regen/reprocess can recalculate charge derived fields — keep capitalised charges paid.
+            for (final LoanCharge c : capitalisedCharges) {
+                c.markAsFullyPaid();
             }
         }
     }
@@ -720,6 +727,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
         capFeeResult = LoanTransaction.capitalizedFee(this, getOffice(), fee, capitalizationDate, DateUtils.getLocalDateTimeOfTenant(),
                 currentUser);
+        capFeeResult.getLoanChargesPaid().add(new LoanChargePaidBy(capFeeResult, loanCharge, fee.getAmount(), null));
         capFeeResult.updateLoan(this);
         addLoanTransaction(capFeeResult);
         final BigDecimal newPrincipal = getPrincpal().getAmount().add(fee.getAmount());
@@ -730,6 +738,8 @@ public class Loan extends AbstractPersistableCustom<Long> {
             regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
             processPostDisbursementTransactions();
         }
+        // Regen/reprocess can recalculate charge derived fields — keep capitalised charge paid.
+        loanCharge.markAsFullyPaid();
         return capFeeResult;
     }
 

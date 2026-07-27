@@ -73,8 +73,16 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
 
         if (charges != null) {
             for (final LoanCharge loanCharge : charges) {
-                if (!loanCharge.isDueAtDisbursement()) {
+                // Principal-capitalising fees are settled via CAPITALIZED_FEE, not repayments —
+                // do not wipe their paid state (DISBURSEMENT_CAPITALISED is not isDueAtDisbursement).
+                if (!loanCharge.isDueAtDisbursement() && !loanCharge.isPrincipalCapitalizingFee()) {
                     loanCharge.resetPaidAmount(currency);
+                }
+                // Repair / keep disbursement-capitalised fees paid after reprocess (e.g. existing loans
+                // whose paid state was wiped before this fix).
+                if (loanCharge.isPrincipalCapitalizingFee() && !loanCharge.isWaived()
+                        && loanCharge.isCapitalisedAtDisbursement()) {
+                    loanCharge.markAsFullyPaid();
                 }
                 logger.debug("ChargesPassed " + loanCharge.amount());
             }
