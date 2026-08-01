@@ -1,0 +1,99 @@
+# Legacy Mopane / Apache Fineract (Java 8 + MySQL + Tomcat) — Docker only.
+# Host Nginx terminates TLS for fineract.mopane.co.zw and proxies here.
+
+name: fineract-legacy
+
+networks:
+  fineract-legacy-net:
+
+volumes:
+  mysql_data:
+
+services:
+  mysql:
+    # Match classic Mifos/Fineract docs (MySQL 5.5). More permissive DATE defaults than 5.7+.
+    image: mysql:5.5
+    container_name: fineract-legacy-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_general_ci
+      # Keep sql-mode minimal; legacy Flyway (e.g. V145) needs zero-date tolerance.
+      - --sql-mode=NO_ENGINE_SUBSTITUTION
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - fineract-legacy-net
+    # Do not bind 3306 on the host — mopane-apps already uses it.
+    ports:
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+    mem_limit: 1g
+
+  fineract:
+    build:
+      context: ./tomcat
+      dockerfile: Dockerfile
+    image: mopane/fineract-legacy-tomcat:1
+    container_name: fineract-legacy-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JAVA_OPTS: ${JAVA_OPTS:- -Xms512m -Xmx1536m}
+    ports:
+      - "127.0.0.1:8085:8080"
+    networks:
+      - fineract-legacy-net
+    mem_limit: 2g
+
+  # Community-app (AngularJS) static files from mopane-cbs-ui dist/community-app
+  ui:
+    image: nginx:1.27-alpine
+    container_name: fineract-legacy-ui
+    restart: unless-stopped
+    volumes:
+      - ./ui/dist:/usr/share/nginx/html:ro
+      - ./ui/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "127.0.0.1:3000:80"
+    networks:
+      - fineract-legacy-net
+    mem_limit: 128m
+
+  # Optional: after Windows DB restore, rewrite connection host if needed.
+  # Fresh installs keep localhost and rely on socat inside the app container.
+  db-fixup:
+    profiles: ["fixup"]
+    image: mysql:5.5
+    container_name: fineract-legacy-db-fixup
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./mysql/fixup-tenants.sh:/fixup-tenants.sh:ro
+    entrypoint: ["/bin/bash", "/fixup-tenants.sh"]
+    networks:
+      - fineract-legacy-net
+    restart: "no"

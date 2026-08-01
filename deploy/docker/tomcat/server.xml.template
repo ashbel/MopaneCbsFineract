@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+
+    <Resource type="javax.sql.DataSource"
+              name="jdbc/mifosplatform-tenants"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+              driverClassName="org.drizzle.jdbc.DrizzleDriver"
+              url="jdbc:mysql:thin://${MYSQL_HOST}:${MYSQL_PORT}/mifosplatform-tenants"
+              username="${MYSQL_USER}"
+              password="${MYSQL_PASSWORD}"
+              initialSize="3"
+              maxActive="20"
+              maxIdle="10"
+              minIdle="3"
+              validationQuery="SELECT 1"
+              testOnBorrow="true"
+              testOnReturn="true"
+              testWhileIdle="true"
+              timeBetweenEvictionRunsMillis="30000"
+              minEvictableIdleTimeMillis="60000"
+              logAbandoned="true"
+              suspectTimeout="60" />
+  </GlobalNamingResources>
+
+  <Service name="Catalina">
+    <!-- HTTP only — TLS terminated at host Nginx -->
+    <Connector port="8080"
+               protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               URIEncoding="UTF-8"
+               compression="on"
+               compressableMimeType="text/html,text/xml,text/plain,text/javascript,text/css,application/json"
+               maxThreads="200" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.LockOutRealm">
+        <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase" />
+      </Realm>
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+        <!-- Trust X-Forwarded-* from host Nginx so Spring Security HTTPS channel checks pass -->
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               remoteIpHeader="x-forwarded-for"
+               protocolHeader="x-forwarded-proto"
+               protocolHeaderHttpsValue="https" />
+        <Valve className="org.apache.catalina.valves.AccessLogValve"
+               directory="logs"
+               prefix="localhost_access_log"
+               suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>
