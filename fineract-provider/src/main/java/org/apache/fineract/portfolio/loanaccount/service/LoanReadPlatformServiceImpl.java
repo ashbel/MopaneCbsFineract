@@ -428,53 +428,55 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Page<LoanTransactionData> retrieveAllTransactions(final SearchParameters searchParameters) {
 
-        final AppUser currentUser = this.context.authenticatedUser();
-        final String hierarchy = currentUser.getOffice().getHierarchy();
-        final String hierarchySearchString = hierarchy + "%";
-
+        // Same pattern as retrieveAll(loans): build a dynamic filter once and apply it
+        // identically to the client-owned and group-owned branches. Previously sqlSearch
+        // was appended after the UNION (second branch only) and prepared-statement args
+        // were discarded (null), so paging/filters could not be trusted.
         final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");        
+        sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
         sqlBuilder.append(this.tranMapper.LoanPaymentsSchema());
         sqlBuilder.append(" join m_client e on c.client_id = e.id ");
         sqlBuilder.append(" where b.enum_name = 'transaction_type_enum' ");
-        // add group loans via union
-        sqlBuilder.append(" union select ");
-        sqlBuilder.append(this.tranMapper.LoanPaymentsSchema());
-        sqlBuilder.append(" join m_group e on c.group_id = e.id ");
-        sqlBuilder.append(" where b.enum_name = 'transaction_type_enum' ");
 
-        int arrayPos = 0;
-        List<Object> extraCriterias = new ArrayList<>();
-        extraCriterias.add(hierarchySearchString);
-        extraCriterias.add(hierarchySearchString);
-
-        if (searchParameters!=null) {
-
+        final StringBuilder dynamicFilter = new StringBuilder();
+        final List<Object> dynamicParams = new ArrayList<>();
+        if (searchParameters != null) {
             String sqlQueryCriteria = searchParameters.getSqlSearch();
             if (StringUtils.isNotBlank(sqlQueryCriteria)) {
                 SQLInjectionValidator.validateSQLInput(sqlQueryCriteria);
-                sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
+                // Ashbel mapper aliases m_loan as "c" (not "l").
+                sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "c.account_no");
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), sqlQueryCriteria);
-                sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+                dynamicFilter.append(" and (").append(sqlQueryCriteria).append(")");
             }
 
             if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-                sqlBuilder.append(" and l.external_id = ?");
-                extraCriterias.add(searchParameters.getExternalId());
-                arrayPos = arrayPos + 1;
+                dynamicFilter.append(" and c.external_id = ?");
+                dynamicParams.add(searchParameters.getExternalId());
             }
-            if(searchParameters.getOfficeId()!=null){
-                sqlBuilder.append("and c.office_id =?");
-                extraCriterias.add(searchParameters.getOfficeId());
-                arrayPos = arrayPos + 1;
+            if (searchParameters.getOfficeId() != null) {
+                dynamicFilter.append(" and a.office_id = ?");
+                dynamicParams.add(searchParameters.getOfficeId());
             }
-
             if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-                sqlBuilder.append(" and l.account_no = ?");
-                extraCriterias.add(searchParameters.getAccountNo());
-                arrayPos = arrayPos + 1;
+                dynamicFilter.append(" and c.account_no = ?");
+                dynamicParams.add(searchParameters.getAccountNo());
             }
+        }
 
+        sqlBuilder.append(dynamicFilter);
+
+        sqlBuilder.append(" union all select ");
+        sqlBuilder.append(this.tranMapper.LoanPaymentsSchema());
+        sqlBuilder.append(" join m_group e on c.group_id = e.id ");
+        sqlBuilder.append(" where b.enum_name = 'transaction_type_enum' ");
+        sqlBuilder.append(dynamicFilter);
+
+        final List<Object> extraCriterias = new ArrayList<>();
+        extraCriterias.addAll(dynamicParams);
+        extraCriterias.addAll(dynamicParams);
+
+        if (searchParameters != null) {
             if (searchParameters.isOrderByRequested()) {
                 sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
                 this.columnValidator.validateSqlInjection(sqlBuilder.toString(), searchParameters.getOrderBy());
@@ -492,11 +494,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 }
             }
         }
-        final Object[] objectArray = extraCriterias.toArray();
-        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
+
         final String sqlCountRows = "SELECT FOUND_ROWS()";
-        return this.paginationHelperTran.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(), null,
-                this.tranMapper);
+        return this.paginationHelperTran.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(),
+                extraCriterias.toArray(), this.tranMapper);
     }
 
     @Override
