@@ -25,12 +25,6 @@ export default function ReportList() {
       <div className="page-header">
         <h1>Reports</h1>
       </div>
-      <div className="regulatory-links">
-        <Link to="/reports/rbz-form-mfi1" className="regulatory-card">
-          <strong>RBZ FORM_MFI1</strong>
-          <span>Reserve Bank of Zimbabwe MFI regulatory return (Excel)</span>
-        </Link>
-      </div>
       <div className="report-table-wrap">
         <table className="report-table">
           <thead>

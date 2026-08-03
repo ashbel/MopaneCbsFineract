@@ -98,18 +98,7 @@ nginx -t && systemctl reload nginx
 
 ## 5. Deploy the UI
 
-Build community-app in `mopane-cbs-ui` with `grunt prod`, then copy `dist/community-app/` contents to `deploy/docker/ui/dist` (and sync to `/opt/fineract/ui/dist` on the VPS; served by `fineract-legacy-ui`). Details in that repo’s `DEPLOY.md`.
-
-After every fresh UI copy, apply Mopane subdomain tenant resolution (so `million.mopane.co.zw` sends tenant `million`, not `default`):
-
-```bash
-chmod +x deploy/docker/ui/apply-mopane-tenant-host.sh
-./deploy/docker/ui/apply-mopane-tenant-host.sh deploy/docker/ui/dist
-# On the VPS after rsync:
-# /opt/fineract/ui/apply-mopane-tenant-host.sh /opt/fineract/ui/dist
-```
-
-Hard-refresh browsers after deploy (filenames are cache-busted to `*.mtenant1.js`).
+Build community-app in `mopane-cbs-ui` with `grunt prod`, then copy `dist/community-app/` contents to `deploy/docker/ui/dist` (and sync to `/opt/fineract/ui/dist` on the VPS; served by `fineract-legacy-ui`). Tenant subdomain resolution (`million.mopane.co.zw` → tenant `million`) lives in that repo’s `app/scripts/initialTasks.js` — see its `DEPLOY.md`.
 
 ## Optional: Windows DB restore
 
