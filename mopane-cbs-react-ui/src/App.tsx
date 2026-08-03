@@ -38,6 +38,7 @@ import UserView from './pages/Users/UserView';
 import UserForm from './pages/Users/UserForm';
 import ReportList from './pages/Reports/ReportList';
 import RunReport from './pages/Reports/RunReport';
+import RbzFormMfi1 from './pages/Reports/RbzFormMfi1';
 import RoleList from './pages/Roles/RoleList';
 import RoleView from './pages/Roles/RoleView';
 import RoleForm from './pages/Roles/RoleForm';
@@ -115,6 +116,7 @@ function App() {
               <Route path="roles/:id" element={<RoleView />} />
               <Route path="roles/:id/edit" element={<RoleForm />} />
               <Route path="reports" element={<ReportList />} />
+              <Route path="reports/rbz-form-mfi1" element={<RbzFormMfi1 />} />
               <Route path="reports/run/:reportName" element={<RunReport />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

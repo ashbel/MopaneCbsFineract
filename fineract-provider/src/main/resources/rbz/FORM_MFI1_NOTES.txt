@@ -1,0 +1,29 @@
+RBZ FORM_MFI1 generation notes
+==============================
+
+Template: classpath:rbz/FORM_MFI1.xlsx
+
+Portfolio-driven sheets filled from Fineract core data:
+  - Schedule 3 Asset Quality (arrears aging + RbzLoanClass)
+  - Schedule 4 / 5 Distribution & Gender (LoanPurpose + Gender)
+  - Schedule 6 Maturity (loan expected maturity + rbz_long_term_debt)
+  - Schedule 7 Top 20 borrowers
+  - Schedule 9 Portfolio Management (disbursements, clients, write-offs)
+
+Datatable-backed sheets (create with exact names):
+  - rbz_loan_details (m_loan)
+  - rbz_office_channels (m_office)
+  - rbz_institution_profile (m_office HQ)
+  - rbz_long_term_debt (m_office HQ, multi-row)
+
+Codes (exact names):
+  - RbzLoanClass: Consumer, Commercial, Other
+  - RbzRelatedPartyType: Shareholder, Director, Related Party, Other
+  - RbzLocationType: Urban, Rural
+  - LoanPurpose: extend to RBZ purpose list
+  - Gender: Female / Male on clients
+
+Comprehensive Income and Statement of Financial Position:
+  - Loan interest / fee / penalty income and gross loan outstanding by class are filled.
+  - Investment, cash, fixed-asset, equity and other non-loan GL lines remain 0 until a
+    GL-to-line mapping (e.g. table rbz_form_mfi1_gl_mapping) is added.
