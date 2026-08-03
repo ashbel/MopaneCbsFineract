@@ -16,5 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-rootProject.projectDir = new File(settingsDir, "./fineract-provider")
-rootProject.name="fineract-provider"
+
+// Plugin management MUST come first
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'fineract-provider'
+rootProject.projectDir = new File(settingsDir, './fineract-provider')
