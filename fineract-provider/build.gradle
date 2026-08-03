@@ -37,7 +37,7 @@ version = qualifyVersionIfNecessary('17.07.01.RELEASE')
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 

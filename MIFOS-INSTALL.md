@@ -71,7 +71,7 @@ $ ./runmifosx.sh
  - Name: Mifos Platform 16.03.3.RELEASE Public AMI
  - Owner: 540782944231
  - Architecture: Ubuntu 14.04.4 LTS x86_64
- - Java 1.8.0_77 64 bit JVM
+ - Java 25 64 bit JVM
  - Tomcat 7.0.68 
  - MySql 5.5.47
 
@@ -80,7 +80,7 @@ $ ./runmifosx.sh
 ### 3.1 Prerequisite Software
 
   Before running mifos platform you must have the following software installed:
-  - Oracle Java - JDK 8 (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+  - Oracle Java - JDK 25 (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
   - MySQL server - 5.5 or 5.6  (http://dev.mysql.com/downloads/mysql/5.5.html#downloads/)
   - Apache Tomcat - 7.0.68 (http://tomcat.apache.org/download-70.cgi)
 
@@ -185,7 +185,7 @@ INSERT INTO `schema_version` (`version_rank`, `installed_rank`, `version`, `desc
 #### 3.3.1 Environment Variables Check
 
   Check that the following environment variables exist:
-  - JAVA_HOME ... should point to directory where a 1.8 JDK is on machine
+  - JAVA_HOME ... should point to directory where a Java 25 JDK is on machine
   - CATALINA_HOME ... should point to a directory where a Tomcat 7 instance is installed
 
   Check that the following is on your path:
