@@ -19,6 +19,7 @@
 
 package org.apache.fineract.notification;
 
+import org.apache.fineract.mopane.mobiledevice.service.StaffMobilePushNotificationService;
 import org.apache.fineract.notification.domain.Notification;
 import org.apache.fineract.notification.domain.NotificationMapper;
 import org.apache.fineract.notification.service.NotificationGeneratorReadRepositoryWrapper;
@@ -56,13 +57,17 @@ public class StorageTest {
     @Mock
     private AppUserRepository appUserRepository;
 
+    @Mock
+    private StaffMobilePushNotificationService staffMobilePushNotificationService;
+
     @Before
     public void setUp() {
         notificationWritePlatformServiceImpl = new NotificationWritePlatformServiceImpl(
                 notificationGeneratorWritePlatformService,
                 notificationGeneratorReadRepositoryWrapper,
                 appUserRepository,
-                notificationMapperWritePlatformService);
+                notificationMapperWritePlatformService,
+                staffMobilePushNotificationService);
     }
 
     @Test

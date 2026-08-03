@@ -18,20 +18,26 @@
  */
 package org.apache.fineract.notification.service;
 
+import org.apache.fineract.mopane.mobiledevice.service.StaffMobilePushNotificationService;
 import org.apache.fineract.notification.domain.Notification;
 import org.apache.fineract.notification.domain.NotificationMapper;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 @Service
 public class NotificationWritePlatformServiceImpl implements NotificationWritePlatformService {
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationWritePlatformServiceImpl.class);
 
     private final NotificationGeneratorWritePlatformService notificationGeneratorWritePlatformService;
 
@@ -41,16 +47,20 @@ public class NotificationWritePlatformServiceImpl implements NotificationWritePl
 
     private final NotificationMapperWritePlatformService notificationMapperWritePlatformService;
 
+    private final StaffMobilePushNotificationService staffMobilePushNotificationService;
+
     @Autowired
     public NotificationWritePlatformServiceImpl(
             final NotificationGeneratorWritePlatformService notificationGeneratorWritePlatformService,
             final NotificationGeneratorReadRepositoryWrapper notificationGeneratorReadRepositoryWrapper,
             final AppUserRepository appUserRepository,
-            final NotificationMapperWritePlatformService notificationMapperWritePlatformService) {
+            final NotificationMapperWritePlatformService notificationMapperWritePlatformService,
+            final StaffMobilePushNotificationService staffMobilePushNotificationService) {
         this.notificationGeneratorWritePlatformService = notificationGeneratorWritePlatformService;
         this.notificationGeneratorReadRepositoryWrapper = notificationGeneratorReadRepositoryWrapper;
         this.appUserRepository = appUserRepository;
         this.notificationMapperWritePlatformService = notificationMapperWritePlatformService;
+        this.staffMobilePushNotificationService = staffMobilePushNotificationService;
     }
 
 
@@ -61,6 +71,7 @@ public class NotificationWritePlatformServiceImpl implements NotificationWritePl
         Long generatedNotificationId = insertIntoNotificationGenerator(objectType, objectIdentifier, action,
                 actorId, notificationContent, isSystemGenerated);
         insertIntoNotificationMapper(userId, generatedNotificationId);
+        pushToStaffDevices(Collections.singletonList(userId), objectType, action, notificationContent);
         return generatedNotificationId;
     }
 
@@ -102,7 +113,17 @@ public class NotificationWritePlatformServiceImpl implements NotificationWritePl
                 actorId, notificationContent, isSystemGenerated);
 
         insertIntoNotificationMapper(userIds, generatedNotificationId);
+        pushToStaffDevices(userIds, objectType, action, notificationContent);
         return generatedNotificationId;
+    }
+
+    private void pushToStaffDevices(final List<Long> userIds, final String objectType, final String action,
+            final String notificationContent) {
+        try {
+            this.staffMobilePushNotificationService.sendPushToUsers(userIds, objectType, action, notificationContent);
+        } catch (final Exception e) {
+            logger.warn("Staff mobile push notification failed: {}", e.getMessage());
+        }
     }
 
     private List<Long> insertIntoNotificationMapper(List<Long> userIds, Long generatedNotificationId) {
