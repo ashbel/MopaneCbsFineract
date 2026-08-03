@@ -25,8 +25,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;

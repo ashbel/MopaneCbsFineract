@@ -20,7 +20,7 @@ package org.apache.fineract.organisation.monetary.domain;
 
 import java.math.RoundingMode;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.springframework.beans.factory.annotation.Autowired;

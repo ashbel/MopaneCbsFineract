@@ -21,7 +21,7 @@ package org.apache.fineract.infrastructure.dataqueries.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;

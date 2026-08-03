@@ -22,7 +22,7 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang.BooleanUtils;

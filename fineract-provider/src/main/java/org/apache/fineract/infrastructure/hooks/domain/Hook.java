@@ -28,7 +28,7 @@ import org.apache.fineract.template.domain.Template;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.util.CollectionUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;

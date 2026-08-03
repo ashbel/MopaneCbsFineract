@@ -24,7 +24,7 @@ import org.apache.fineract.organisation.staff.domain.Staff;
 import org.joda.time.LocalDate;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;

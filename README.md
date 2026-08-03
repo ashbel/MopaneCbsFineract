@@ -8,9 +8,9 @@ The next evolution of Apache Fineract focuses on being faster, lighter and cheap
 
 Requirements
 ============
-* Java >= 1.8 (Oracle JVMS have been tested)
-* gradle-wrapper.jar version 2.10
-* MySQL 5.5
+* Java >= 21 LTS (OpenJDK or Oracle JDK) - Java 25 when available
+* gradle-wrapper.jar version 8.11.1
+* MySQL 5.5+
 
 Instructions to download gradle wrapper
 ============

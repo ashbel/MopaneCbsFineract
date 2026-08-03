@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.charge.service;
 import java.util.Collection;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang.exception.ExceptionUtils;

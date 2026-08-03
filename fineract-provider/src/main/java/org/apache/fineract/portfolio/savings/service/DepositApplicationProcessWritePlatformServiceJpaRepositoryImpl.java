@@ -26,7 +26,7 @@ import static org.apache.fineract.portfolio.savings.DepositsApiConstants.transfe
 import java.math.MathContext;
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;

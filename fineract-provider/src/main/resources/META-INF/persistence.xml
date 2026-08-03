@@ -20,19 +20,26 @@
 
 -->
 
-
-<persistence version="2.0"
-	xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+<persistence version="3.0"
+	xmlns="https://jakarta.ee/xml/ns/persistence" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
 
 	<persistence-unit name="jpa-pu" transaction-type="RESOURCE_LOCAL">
-		<provider>org.apache.openjpa.persistence.PersistenceProviderImpl</provider>
-	<properties>
-        <property name="openjpa.Compatibility" value="QuotedNumbersInQueries=true"/>
-        <property name="openjpa.jdbc.DBDictionary" value="org.apache.fineract.infrastructure.core.domain.MySQLDictionaryCustom"/>
-        <!--<property name="openjpa.InverseManager" value="true(Action=warn)"/> -->
-      <!-- <property name="openjpa.Log" value="DefaultLevel=WARN, Runtime=INFO, Tool=INFO, SQL=TRACE"/>-->
-       <property name="openjpa.jdbc.MappingDefaults" value="ForeignKeyDeleteAction=CASCADE"/>
-	</properties>
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<properties>
+			<!-- Hibernate specific properties -->
+			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+			<property name="hibernate.show_sql" value="false"/>
+			<property name="hibernate.format_sql" value="false"/>
+			<property name="hibernate.jdbc.batch_size" value="20"/>
+			<property name="hibernate.order_inserts" value="true"/>
+			<property name="hibernate.order_updates" value="true"/>
+			<property name="hibernate.jdbc.batch_versioned_data" value="true"/>
+			<property name="hibernate.query.fail_on_pagination_over_collection_fetch" value="true"/>
+			<property name="hibernate.query.in_clause_parameter_padding" value="true"/>
+			<!-- Enable foreign key cascade delete -->
+			<property name="hibernate.enable_lazy_load_no_trans" value="false"/>
+		</properties>
 	</persistence-unit>
 </persistence>

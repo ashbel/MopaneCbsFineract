@@ -28,7 +28,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.fineract.infrastructure.campaigns.helper.SmsConfigUtils;
 import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignConstants;

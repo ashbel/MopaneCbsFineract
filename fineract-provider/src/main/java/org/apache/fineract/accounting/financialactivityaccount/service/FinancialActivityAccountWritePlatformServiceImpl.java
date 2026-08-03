@@ -21,7 +21,7 @@ package org.apache.fineract.accounting.financialactivityaccount.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;

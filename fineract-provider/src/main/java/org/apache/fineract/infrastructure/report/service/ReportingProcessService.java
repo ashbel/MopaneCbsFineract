@@ -18,8 +18,8 @@
  */
 package org.apache.fineract.infrastructure.report.service;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 public interface ReportingProcessService {
 
