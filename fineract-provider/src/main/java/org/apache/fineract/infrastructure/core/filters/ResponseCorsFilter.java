@@ -18,12 +18,10 @@
  */
 package org.apache.fineract.infrastructure.core.filters;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
-
-import jakarta.ws.rs.container.ContainerRequest;
-import jakarta.ws.rs.container.ContainerResponse;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
+import java.io.IOException;
 
 /**
  * Filter that returns a response with headers that allows for Cross-Origin
@@ -32,22 +30,13 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 public class ResponseCorsFilter implements ContainerResponseFilter {
 
     @Override
-    public ContainerResponse filter(final ContainerRequest request, final ContainerResponse response) {
-
-        final ResponseBuilder resp = Response.fromResponse(response.getResponse());
-
-        resp.header("Access-Control-Allow-Origin", "*")
-        // .header("Access-Control-Expose-Headers", "Fineract-Platform-TenantId")
-                .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-
-        final String reqHead = request.getHeaderValue("Access-Control-Request-Headers");
-
-        if (null != reqHead && !reqHead.equals(null)) {
-            resp.header("Access-Control-Allow-Headers", reqHead);
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+        responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
+        responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        
+        String reqHead = requestContext.getHeaderString("Access-Control-Request-Headers");
+        if (reqHead != null && !reqHead.isEmpty()) {
+            responseContext.getHeaders().add("Access-Control-Allow-Headers", reqHead);
         }
-
-        response.setResponse(resp.build());
-
-        return response;
     }
 }
