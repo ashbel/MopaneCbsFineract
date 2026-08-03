@@ -1,4 +1,4 @@
-FROM tomcat:10.1-jdk25-temurin-noble
+FROM tomcat:10.1-jdk21-temurin-noble
 
 ENV CATALINA_HOME=/usr/local/tomcat
 WORKDIR $CATALINA_HOME

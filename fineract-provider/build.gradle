@@ -37,7 +37,7 @@ version = qualifyVersionIfNecessary('17.07.01.RELEASE')
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -57,7 +57,7 @@ ext {
     jakartaServletApiVersion = '6.1.0'
     jakartaValidationApiVersion = '3.1.0'
     jerseyVersion = '3.1.9'
-    flywayVersion = '10.22.1'
+    flywayVersion = '10.22.0'
     mysqlConnectorVersion = '8.4.0'
     guavaVersion = '33.4.0-jre'
     gsonVersion = '2.11.0'
@@ -87,7 +87,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-jms'
+    // implementation 'org.springframework.boot:spring-boot-starter-jms' // Comment out for now
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     
     // Spring Security OAuth2
@@ -145,31 +145,31 @@ dependencies {
     implementation "org.apache.poi:poi:${poiVersion}"
     implementation "org.apache.poi:poi-ooxml:${poiVersion}"
     
-    // Pentaho Reporting (keeping versions for now)
-    implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-core:3.9.1.1'
-    implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-extensions:3.9.1-GA'
-    implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-extensions-scripting:3.9.1-GA'
-    implementation 'pentaho-reporting-engine:pentaho-reporting-engine-wizard-core:3.9.1-GA'
-    implementation 'pentaho-report-designer:pentaho-reporting-engine-wizard-xul:3.9.1-GA'
-    implementation 'pentaho-library:libbase:1.2.8'
-    implementation 'pentaho-library:libdocbundle:1.2.8'
-    implementation 'pentaho-library:libfonts:1.2.8'
-    implementation 'pentaho-library:libformat:1.2.8'
-    implementation 'pentaho-library:libformula:1.2.8'
-    implementation 'pentaho-library:libloader:1.2.8'
-    implementation 'pentaho-library:librepository:1.2.8'
-    implementation 'pentaho-library:libserializer:1.2.8'
-    implementation 'pentaho-library:libsparkline:1.2.8'
-    implementation 'pentaho-library:libxml:1.2.8'
-    implementation 'com.lowagie:itext:2.1.7'
+    // Pentaho Reporting (optional - comment out if pentaho-m2-local not populated)
+    // implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-core:3.9.1.1'
+    // implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-extensions:3.9.1-GA'
+    // implementation 'pentaho-reporting-engine:pentaho-reporting-engine-classic-extensions-scripting:3.9.1-GA'
+    // implementation 'pentaho-reporting-engine:pentaho-reporting-engine-wizard-core:3.9.1-GA'
+    // implementation 'pentaho-report-designer:pentaho-reporting-engine-wizard-xul:3.9.1-GA'
+    // implementation 'pentaho-library:libbase:1.2.8'
+    // implementation 'pentaho-library:libdocbundle:1.2.8'
+    // implementation 'pentaho-library:libfonts:1.2.8'
+    // implementation 'pentaho-library:libformat:1.2.8'
+    // implementation 'pentaho-library:libformula:1.2.8'
+    // implementation 'pentaho-library:libloader:1.2.8'
+    // implementation 'pentaho-library:librepository:1.2.8'
+    // implementation 'pentaho-library:libserializer:1.2.8'
+    // implementation 'pentaho-library:libsparkline:1.2.8'
+    // implementation 'pentaho-library:libxml:1.2.8'
+    // implementation 'com.lowagie:itext:2.1.7'
     
     // AWS SDK
     implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
     implementation 'software.amazon.awssdk:s3'
     
-    // ActiveMQ
-    implementation "org.apache.activemq:activemq-broker:${activeMqVersion}"
-    implementation "org.apache.activemq:activemq-spring:${activeMqVersion}"
+    // ActiveMQ (commented out for now - requires spring-boot-starter-jms)
+    // implementation "org.apache.activemq:activemq-broker:${activeMqVersion}"
+    // implementation "org.apache.activemq:activemq-spring:${activeMqVersion}"
     
     // Tika
     implementation "org.apache.tika:tika-core:${tikaVersion}"
