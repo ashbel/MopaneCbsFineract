@@ -37,7 +37,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 @Service
 public class SpmService {

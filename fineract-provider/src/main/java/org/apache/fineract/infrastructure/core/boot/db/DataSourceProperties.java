@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.boot.db;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.springframework.beans.factory.annotation.Value;

@@ -28,9 +28,9 @@ import org.springframework.jms.core.MessageCreator;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
 
 @ContextConfiguration(locations = {
         "classpath:META-INF/testNotificationContext.xml",

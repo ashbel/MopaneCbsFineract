@@ -18,12 +18,12 @@
  */
 package org.apache.fineract.infrastructure.core.filters;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerResponse;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.ContainerRequest;
+import jakarta.ws.rs.container.ContainerResponse;
+import jakarta.ws.rs.container.ContainerResponseFilter;
 
 /**
  * Filter that returns a response with headers that allows for Cross-Origin

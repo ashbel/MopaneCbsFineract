@@ -22,7 +22,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity

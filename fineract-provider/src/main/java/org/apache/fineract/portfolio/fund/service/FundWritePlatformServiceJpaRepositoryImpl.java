@@ -20,7 +20,7 @@ package org.apache.fineract.portfolio.fund.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;

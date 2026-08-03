@@ -20,7 +20,7 @@ package org.apache.fineract.portfolio.group.service;
 
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;

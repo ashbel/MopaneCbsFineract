@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.gcm.service;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;

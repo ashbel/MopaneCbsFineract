@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;

@@ -20,7 +20,7 @@ package org.apache.fineract.organisation.staff.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;

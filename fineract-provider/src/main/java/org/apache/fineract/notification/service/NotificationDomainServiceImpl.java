@@ -46,8 +46,8 @@ import org.apache.fineract.useradministration.domain.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.jms.Queue;
+import jakarta.annotation.PostConstruct;
+import jakarta.jms.Queue;
 
 import java.util.ArrayList;
 import java.util.Collection;
