@@ -17,12 +17,16 @@
 -- under the License.
 --
 
+-- RBZ FORM_MFI1 seed (codes, code values, datatables, permissions).
+-- Included at the end of barebones_db.sql and load_sample_data.sql so every
+-- new MFI tenant created from seed has the same regulatory report structure.
+-- Keep in sync with core_db/V5004__rbz_form_mfi1_codes_and_datatables.sql
+-- (Flyway applies V5004 on existing tenants / first app boot after seed).
+-- Note: READ_RBZ_FORM_MFI1 is added by V5001 (not duplicated here).
+
 -- RBZ FORM_MFI1 supporting codes + datatables.
 -- Dropdown physical columns follow Fineract naming: {CodeName}_cd_{fieldName}
 -- (constraint_approach_for_datatables disabled).
---
--- Keep in sync with sample_data/rbz_form_mfi1_seed.sql (also appended into
--- barebones_db.sql and load_sample_data.sql for new MFI setup from seed).
 
 -- ---------------------------------------------------------------------------
 -- Codes

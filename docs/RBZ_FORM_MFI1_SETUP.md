@@ -2,7 +2,16 @@
 
 This guide explains how to prepare a tenant so **Reports → RBZ FORM_MFI1** can fill regulatory sheets that depend on codes and datatables.
 
-After deploy of migration `V5004`, codes and datatable **structures** are created automatically on each tenant. Staff still need to **enter data** (and optionally extend code values).
+## Automatic setup (all MFIs)
+
+Every MFI tenant gets the same codes and datatable structures from:
+
+| Path | When it runs |
+|------|----------------|
+| Flyway `V5004__rbz_form_mfi1_codes_and_datatables.sql` | App startup on each tenant schema (existing + new tenants) |
+| Seed `sample_data/rbz_form_mfi1_seed.sql` | Included at the end of `barebones_db.sql` and `load_sample_data.sql` |
+
+So a new MFI created from seed **or** upgraded via Flyway already has the RBZ structures. Staff still need to **enter data** (and may extend code values). Permission `READ_RBZ_FORM_MFI1` comes from Flyway `V5001`.
 
 ## What the report uses
 

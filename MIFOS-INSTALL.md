@@ -177,6 +177,11 @@ INSERT INTO `schema_version` (`version_rank`, `installed_rank`, `version`, `desc
   mysql -uroot -pmysql mifostenant-default < database/migrations/sample_data/load_sample_data.sql
   ```
 
+  Both `load_sample_data.sql` and `barebones_db.sql` include the Mopane RBZ FORM_MFI1 seed
+  (`sample_data/rbz_form_mfi1_seed.sql`): codes, code values, and `rbz_*` datatables used by all MFIs.
+  On first application start, Flyway also applies `V5004` for the same structures on any tenant that
+  was not loaded from these seeds. See `docs/RBZ_FORM_MFI1_SETUP.md`.
+
   
 ### 3.3 Tomcat 7.0.68 & above Setup
 
