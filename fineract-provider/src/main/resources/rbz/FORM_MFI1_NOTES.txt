@@ -2,6 +2,8 @@ RBZ FORM_MFI1 generation notes
 ==============================
 
 Template: classpath:rbz/FORM_MFI1.xlsx
+User setup guide: docs/RBZ_FORM_MFI1_SETUP.md
+Migration: V5004__rbz_form_mfi1_codes_and_datatables.sql
 
 Portfolio-driven sheets filled from Fineract core data:
   - Schedule 3 Asset Quality (arrears aging + RbzLoanClass)
@@ -10,10 +12,10 @@ Portfolio-driven sheets filled from Fineract core data:
   - Schedule 7 Top 20 borrowers
   - Schedule 9 Portfolio Management (disbursements, clients, write-offs)
 
-Datatable-backed sheets (create with exact names):
-  - rbz_loan_details (m_loan)
-  - rbz_office_channels (m_office)
-  - rbz_institution_profile (m_office HQ)
+Datatable-backed sheets (exact names; created by V5004):
+  - rbz_loan_details (m_loan, multi-row)
+  - rbz_office_channels (m_office, one-to-one)
+  - rbz_institution_profile (m_office HQ, one-to-one)
   - rbz_long_term_debt (m_office HQ, multi-row)
 
 Codes (exact names):
@@ -22,6 +24,14 @@ Codes (exact names):
   - RbzLocationType: Urban, Rural
   - LoanPurpose: extend to RBZ purpose list
   - Gender: Female / Male on clients
+
+Dropdown physical columns (Fineract naming {Code}_cd_{field}):
+  - RbzLoanClass_cd_loan_class
+  - RbzRelatedPartyType_cd_related_party_type
+  - RbzLocationType_cd_location_type
+
+When creating dropdowns in Admin UI, set Column name = field (loan_class),
+Code = RbzLoanClass — do not name the column the same as the code.
 
 Comprehensive Income and Statement of Financial Position:
   - Loan interest / fee / penalty income and gross loan outstanding by class are filled.

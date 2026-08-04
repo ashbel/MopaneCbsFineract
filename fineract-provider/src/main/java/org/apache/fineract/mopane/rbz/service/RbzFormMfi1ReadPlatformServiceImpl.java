@@ -350,7 +350,7 @@ public class RbzFormMfi1ReadPlatformServiceImpl implements RbzFormMfi1ReadPlatfo
                 final List<Map<String, Object>> locRows = this.jdbcTemplate.queryForList(
                         "SELECT cv.code_value AS loc FROM `" + RbzFormMfi1Constants.DT_OFFICE_CHANNELS + "` ch "
                                 + "JOIN m_office o ON o.id = ch." + officeFkColumn() + " "
-                                + "LEFT JOIN m_code_value cv ON cv.id = ch.location_type_cd_RbzLocationType "
+                                + "LEFT JOIN m_code_value cv ON cv.id = ch." + RbzFormMfi1Constants.COL_LOCATION_TYPE + " "
                                 + "WHERE o.hierarchy LIKE ?",
                         hierarchy + "%");
                 for (final Map<String, Object> r : locRows) {
@@ -446,7 +446,7 @@ public class RbzFormMfi1ReadPlatformServiceImpl implements RbzFormMfi1ReadPlatfo
                     + "FROM `" + RbzFormMfi1Constants.DT_LOAN_DETAILS + "` d "
                     + "JOIN m_loan l ON l.id = d.loan_id JOIN m_client c ON c.id = l.client_id "
                     + "JOIN m_office o ON o.id = c.office_id "
-                    + "LEFT JOIN m_code_value rp ON rp.id = d.related_party_type_cd_RbzRelatedPartyType "
+                    + "LEFT JOIN m_code_value rp ON rp.id = d." + RbzFormMfi1Constants.COL_RELATED_PARTY_TYPE + " "
                     + "WHERE d.is_insider_loan = 1 AND l.loan_status_id = 300 AND o.hierarchy LIKE ?";
             this.jdbcTemplate.query(sql, new Object[] { hierarchy + "%" }, new RowMapper<InsiderLoanRow>() {
                 @Override
@@ -498,7 +498,7 @@ public class RbzFormMfi1ReadPlatformServiceImpl implements RbzFormMfi1ReadPlatfo
                     + "COALESCE(ch.num_agents,0) AS num_agents, COALESCE(ch.num_banking_kiosks,0) AS num_banking_kiosks "
                     + "FROM `" + RbzFormMfi1Constants.DT_OFFICE_CHANNELS + "` ch "
                     + "JOIN m_office o ON o.id = ch." + officeFkColumn() + " "
-                    + "LEFT JOIN m_code_value cv ON cv.id = ch.location_type_cd_RbzLocationType "
+                    + "LEFT JOIN m_code_value cv ON cv.id = ch." + RbzFormMfi1Constants.COL_LOCATION_TYPE + " "
                     + "WHERE o.hierarchy LIKE ?";
             this.jdbcTemplate.query(sql, new Object[] { hierarchy + "%" }, new RowMapper<OfficeChannelRow>() {
                 @Override
@@ -535,7 +535,7 @@ public class RbzFormMfi1ReadPlatformServiceImpl implements RbzFormMfi1ReadPlatfo
             return "";
         }
         return "LEFT JOIN `" + RbzFormMfi1Constants.DT_LOAN_DETAILS + "` d ON d.loan_id = l.id "
-                + "LEFT JOIN m_code_value lc_cv ON lc_cv.id = d.loan_class_cd_RbzLoanClass ";
+                + "LEFT JOIN m_code_value lc_cv ON lc_cv.id = d." + RbzFormMfi1Constants.COL_LOAN_CLASS + " ";
     }
 
     private boolean tableExists(final String tableName) {

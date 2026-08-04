@@ -46,6 +46,14 @@ public final class RbzFormMfi1Constants {
     public static final String CODE_RELATED_PARTY = "RbzRelatedPartyType";
     public static final String CODE_LOCATION_TYPE = "RbzLocationType";
 
+    /**
+     * Fineract dropdown physical column naming is {@code {CodeName}_cd_{fieldName}} when
+     * constraint-approach-for-datatables is disabled (the usual case).
+     */
+    public static final String COL_LOAN_CLASS = "RbzLoanClass_cd_loan_class";
+    public static final String COL_RELATED_PARTY_TYPE = "RbzRelatedPartyType_cd_related_party_type";
+    public static final String COL_LOCATION_TYPE = "RbzLocationType_cd_location_type";
+
     public static final String[] RBZ_PURPOSES = new String[] { "Manufacturing", "Retail", "Consumption", "Services", "Health",
             "Education", "Mining", "Agriculture", "Cross Border Traders", "Vendors", "Funeral Assistance", "Other" };
 
