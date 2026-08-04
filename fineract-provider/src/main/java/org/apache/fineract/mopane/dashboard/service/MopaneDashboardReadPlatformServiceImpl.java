@@ -34,6 +34,7 @@ import java.util.Map;
 
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.mopane.dashboard.data.MopaneDashboardApiConstants;
@@ -68,11 +69,14 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
 
     private final PlatformSecurityContext context;
     private final JdbcTemplate jdbcTemplate;
+    private final MopaneDashboardMetricsCache metricsCache;
 
     @Autowired
-    public MopaneDashboardReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource) {
+    public MopaneDashboardReadPlatformServiceImpl(final PlatformSecurityContext context, final RoutingDataSource dataSource,
+            final MopaneDashboardMetricsCache metricsCache) {
         this.context = context;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.metricsCache = metricsCache;
     }
 
     @Override
@@ -85,6 +89,12 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         final int activityLimit = normalizeActivityLimit(activityLimitParam);
         final Date asOf = DateUtils.getDateOfTenant();
         final Date monthStart = startOfMonth(asOf);
+        final String tenantId = ThreadLocalContextUtil.getTenant().getTenantIdentifier();
+        final String asOfKey = DateUtils.getLocalDateOfTenant().toString();
+        final String cacheKey = MopaneDashboardMetricsCache.buildKey(tenantId, office.id, trendPeriod, activityLimit, asOfKey);
+
+        final MopaneDashboardLoanMetricsData cached = this.metricsCache.get(cacheKey);
+        if (cached != null) { return cached; }
 
         final MopaneDashboardLoanMetricsData data = new MopaneDashboardLoanMetricsData();
         data.setOfficeId(office.id);
@@ -97,6 +107,7 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         data.setAging(loadAging(office.hierarchyLike, asOf));
         data.setTrends(loadTrends(office.hierarchyLike, trendPeriod, asOf));
         data.setRecentActivity(loadRecentActivity(office.hierarchyLike, activityLimit));
+        this.metricsCache.put(cacheKey, data);
         return data;
     }
 
