@@ -382,6 +382,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 dynamicFilter.append(" and l.account_no = ?");
                 dynamicParams.add(searchParameters.getAccountNo());
             }
+
+            if (searchParameters.isCurrencyCodePassed()) {
+                dynamicFilter.append(" and l.currency_code = ?");
+                dynamicParams.add(searchParameters.getCurrencyCode());
+            }
         }
 
         sqlBuilder.append(dynamicFilter);
