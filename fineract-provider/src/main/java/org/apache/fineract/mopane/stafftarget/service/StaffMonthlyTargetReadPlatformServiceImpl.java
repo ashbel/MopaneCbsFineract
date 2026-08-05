@@ -75,10 +75,10 @@ public class StaffMonthlyTargetReadPlatformServiceImpl implements StaffMonthlyTa
             params.add(officeId);
         }
         if (yearMonth != null && !yearMonth.trim().isEmpty()) {
-            sql.append(" and t.year_month = ? ");
+            sql.append(" and t.target_year_month = ? ");
             params.add(yearMonth.trim());
         }
-        sql.append(" order by t.year_month desc, s.display_name asc ");
+        sql.append(" order by t.target_year_month desc, s.display_name asc ");
         return this.jdbcTemplate.query(sql.toString(), mapper, params.toArray());
     }
 
@@ -133,7 +133,7 @@ public class StaffMonthlyTargetReadPlatformServiceImpl implements StaffMonthlyTa
         TargetMapper() {
             final StringBuilder sql = new StringBuilder(500);
             sql.append(" t.id as id, t.staff_id as staffId, s.display_name as staffDisplayName, ");
-            sql.append(" t.office_id as officeId, o.name as officeName, t.year_month as yearMonth, ");
+            sql.append(" t.office_id as officeId, o.name as officeName, t.target_year_month as yearMonth, ");
             sql.append(" t.currency_code as currencyCode, t.collections_target_amount as collectionsTargetAmount, ");
             sql.append(" t.disbursements_target_amount as disbursementsTargetAmount, t.new_clients_target as newClientsTarget, ");
             sql.append(" t.createdby_id as createdById, t.created_on_utc as createdOnUtc, ");

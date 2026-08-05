@@ -147,7 +147,7 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
         try {
             final Map<String, Object> row = this.jdbcTemplate.queryForMap(
                     "SELECT id, collections_target_amount, disbursements_target_amount, new_clients_target "
-                            + "FROM m_staff_monthly_target WHERE staff_id = ? AND year_month = ? AND currency_code = ?",
+                            + "FROM m_staff_monthly_target WHERE staff_id = ? AND target_year_month = ? AND currency_code = ?",
                     staffId, yearMonth, currencyCode);
             targets.setTargetId(toLong(row.get("id")));
             targets.setCollectionsTarget(toBd(row.get("collections_target_amount")));

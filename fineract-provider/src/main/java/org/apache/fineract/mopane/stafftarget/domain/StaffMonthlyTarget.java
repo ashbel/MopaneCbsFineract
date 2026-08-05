@@ -35,7 +35,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 @Entity
 @Table(name = "m_staff_monthly_target", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "staff_id", "year_month", "currency_code" }, name = "uk_staff_monthly_target") })
+        @UniqueConstraint(columnNames = { "staff_id", "target_year_month", "currency_code" }, name = "uk_staff_monthly_target") })
 public class StaffMonthlyTarget extends AbstractPersistableCustom<Long> {
 
     @Column(name = "staff_id", nullable = false)
@@ -44,7 +44,7 @@ public class StaffMonthlyTarget extends AbstractPersistableCustom<Long> {
     @Column(name = "office_id", nullable = false)
     private Long officeId;
 
-    @Column(name = "year_month", nullable = false, length = 7)
+    @Column(name = "target_year_month", nullable = false, length = 7)
     private String yearMonth;
 
     @Column(name = "currency_code", nullable = false, length = 3)
