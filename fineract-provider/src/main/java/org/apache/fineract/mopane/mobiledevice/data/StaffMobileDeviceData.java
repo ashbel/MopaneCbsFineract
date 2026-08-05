@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.mopane.mobiledevice.data;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class StaffMobileDeviceData {
@@ -40,11 +41,15 @@ public class StaffMobileDeviceData {
     private final Date lastSeenOnUtc;
     private final Date createdOnUtc;
     private final Date updatedOnUtc;
+    private final BigDecimal lastLatitude;
+    private final BigDecimal lastLongitude;
+    private final Date lastLocationOnUtc;
 
     private StaffMobileDeviceData(final Long id, final Long appUserId, final String username, final String userDisplayName,
             final Long staffId, final String staffDisplayName, final Long officeId, final String officeName, final String deviceUid,
             final String platform, final String model, final String appVersion, final String status, final boolean hasFcmToken,
-            final Date activatedOnUtc, final Date lastSeenOnUtc, final Date createdOnUtc, final Date updatedOnUtc) {
+            final Date activatedOnUtc, final Date lastSeenOnUtc, final Date createdOnUtc, final Date updatedOnUtc,
+            final BigDecimal lastLatitude, final BigDecimal lastLongitude, final Date lastLocationOnUtc) {
         this.id = id;
         this.appUserId = appUserId;
         this.username = username;
@@ -63,14 +68,19 @@ public class StaffMobileDeviceData {
         this.lastSeenOnUtc = lastSeenOnUtc;
         this.createdOnUtc = createdOnUtc;
         this.updatedOnUtc = updatedOnUtc;
+        this.lastLatitude = lastLatitude;
+        this.lastLongitude = lastLongitude;
+        this.lastLocationOnUtc = lastLocationOnUtc;
     }
 
     public static StaffMobileDeviceData instance(final Long id, final Long appUserId, final String username, final String userDisplayName,
             final Long staffId, final String staffDisplayName, final Long officeId, final String officeName, final String deviceUid,
             final String platform, final String model, final String appVersion, final String status, final boolean hasFcmToken,
-            final Date activatedOnUtc, final Date lastSeenOnUtc, final Date createdOnUtc, final Date updatedOnUtc) {
+            final Date activatedOnUtc, final Date lastSeenOnUtc, final Date createdOnUtc, final Date updatedOnUtc,
+            final BigDecimal lastLatitude, final BigDecimal lastLongitude, final Date lastLocationOnUtc) {
         return new StaffMobileDeviceData(id, appUserId, username, userDisplayName, staffId, staffDisplayName, officeId, officeName,
-                deviceUid, platform, model, appVersion, status, hasFcmToken, activatedOnUtc, lastSeenOnUtc, createdOnUtc, updatedOnUtc);
+                deviceUid, platform, model, appVersion, status, hasFcmToken, activatedOnUtc, lastSeenOnUtc, createdOnUtc, updatedOnUtc,
+                lastLatitude, lastLongitude, lastLocationOnUtc);
     }
 
     public Long getId() {
@@ -143,5 +153,17 @@ public class StaffMobileDeviceData {
 
     public Date getUpdatedOnUtc() {
         return this.updatedOnUtc;
+    }
+
+    public BigDecimal getLastLatitude() {
+        return this.lastLatitude;
+    }
+
+    public BigDecimal getLastLongitude() {
+        return this.lastLongitude;
+    }
+
+    public Date getLastLocationOnUtc() {
+        return this.lastLocationOnUtc;
     }
 }

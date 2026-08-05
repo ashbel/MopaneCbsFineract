@@ -16,23 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.mopane.mobiledevice.service;
+package org.apache.fineract.mopane.stafftarget.exception;
 
-import java.util.Collection;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-import org.apache.fineract.mopane.mobiledevice.data.StaffLocationPingData;
-import org.apache.fineract.mopane.mobiledevice.data.StaffMobileActivationCodeData;
-import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceData;
+public class StaffMonthlyTargetNotFoundException extends AbstractPlatformResourceNotFoundException {
 
-public interface StaffMobileDeviceReadPlatformService {
-
-    Collection<StaffMobileDeviceData> retrieveAll(Long userId, Long officeId, String status);
-
-    StaffMobileDeviceData retrieveOne(Long id);
-
-    Collection<StaffMobileActivationCodeData> retrieveActivationCodes(Long userId, String status);
-
-    Collection<StaffLocationPingData> retrieveDeviceLocations(Long deviceId, String fromDate, String toDate, Integer limit);
-
-    StaffLocationPingData retrieveMyLatestLocation();
+    public StaffMonthlyTargetNotFoundException(final Long id) {
+        super("error.msg.staff.monthly.target.id.invalid", "Staff monthly target with identifier " + id + " does not exist", id);
+    }
 }

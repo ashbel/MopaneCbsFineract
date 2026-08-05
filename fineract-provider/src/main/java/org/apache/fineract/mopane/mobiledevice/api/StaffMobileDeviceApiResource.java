@@ -38,6 +38,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.mopane.mobiledevice.data.StaffLocationPingData;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileActivationCodeData;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceApiConstants;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceData;
@@ -58,6 +59,7 @@ public class StaffMobileDeviceApiResource {
     private final StaffMobileDeviceWritePlatformService writePlatformService;
     private final DefaultToApiJsonSerializer<StaffMobileDeviceData> deviceSerializer;
     private final DefaultToApiJsonSerializer<StaffMobileActivationCodeData> activationCodeSerializer;
+    private final DefaultToApiJsonSerializer<StaffLocationPingData> locationSerializer;
     private final ToApiJsonSerializer<CommandProcessingResult> commandSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
 
@@ -67,6 +69,7 @@ public class StaffMobileDeviceApiResource {
             final StaffMobileDeviceWritePlatformService writePlatformService,
             final DefaultToApiJsonSerializer<StaffMobileDeviceData> deviceSerializer,
             final DefaultToApiJsonSerializer<StaffMobileActivationCodeData> activationCodeSerializer,
+            final DefaultToApiJsonSerializer<StaffLocationPingData> locationSerializer,
             final ToApiJsonSerializer<CommandProcessingResult> commandSerializer,
             final ApiRequestParameterHelper apiRequestParameterHelper) {
         this.context = context;
@@ -74,6 +77,7 @@ public class StaffMobileDeviceApiResource {
         this.writePlatformService = writePlatformService;
         this.deviceSerializer = deviceSerializer;
         this.activationCodeSerializer = activationCodeSerializer;
+        this.locationSerializer = locationSerializer;
         this.commandSerializer = commandSerializer;
         this.apiRequestParameterHelper = apiRequestParameterHelper;
     }
@@ -135,6 +139,29 @@ public class StaffMobileDeviceApiResource {
     public String ingestLocations(final String apiRequestBodyAsJson) {
         final CommandProcessingResult result = this.writePlatformService.ingestMyLocations(apiRequestBodyAsJson);
         return this.commandSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("my/locations/latest")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveMyLatestLocation(@Context final UriInfo uriInfo) {
+        final StaffLocationPingData location = this.readPlatformService.retrieveMyLatestLocation();
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.locationSerializer.serialize(settings, location);
+    }
+
+    @GET
+    @Path("{deviceId}/locations")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String retrieveDeviceLocations(@PathParam("deviceId") final Long deviceId, @Context final UriInfo uriInfo,
+            @QueryParam("fromDate") final String fromDate, @QueryParam("toDate") final String toDate,
+            @QueryParam("limit") final Integer limit) {
+        final Collection<StaffLocationPingData> locations = this.readPlatformService.retrieveDeviceLocations(deviceId, fromDate, toDate,
+                limit);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        return this.locationSerializer.serialize(settings, locations);
     }
 
     @GET

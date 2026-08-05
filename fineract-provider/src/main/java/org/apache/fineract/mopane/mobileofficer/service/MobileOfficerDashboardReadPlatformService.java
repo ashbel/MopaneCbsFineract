@@ -16,23 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.mopane.mobiledevice.service;
+package org.apache.fineract.mopane.mobileofficer.service;
 
-import java.util.Collection;
+import org.apache.fineract.mopane.mobileofficer.data.MobileOfficerDashboardData;
 
-import org.apache.fineract.mopane.mobiledevice.data.StaffLocationPingData;
-import org.apache.fineract.mopane.mobiledevice.data.StaffMobileActivationCodeData;
-import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceData;
+public interface MobileOfficerDashboardReadPlatformService {
 
-public interface StaffMobileDeviceReadPlatformService {
-
-    Collection<StaffMobileDeviceData> retrieveAll(Long userId, Long officeId, String status);
-
-    StaffMobileDeviceData retrieveOne(Long id);
-
-    Collection<StaffMobileActivationCodeData> retrieveActivationCodes(Long userId, String status);
-
-    Collection<StaffLocationPingData> retrieveDeviceLocations(Long deviceId, String fromDate, String toDate, Integer limit);
-
-    StaffLocationPingData retrieveMyLatestLocation();
+    MobileOfficerDashboardData retrieveDashboard(Long staffId, String currencyCode, String yearMonth);
 }

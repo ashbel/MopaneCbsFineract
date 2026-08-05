@@ -18,8 +18,11 @@
  */
 package org.apache.fineract.mopane.mobiledevice.service;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -27,11 +30,14 @@ import java.util.List;
 
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
+import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.mopane.mobiledevice.data.StaffLocationPingData;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileActivationCodeData;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceApiConstants;
 import org.apache.fineract.mopane.mobiledevice.data.StaffMobileDeviceData;
+import org.apache.fineract.mopane.mobiledevice.exception.StaffMobileDeviceDomainRuleException;
 import org.apache.fineract.mopane.mobiledevice.exception.StaffMobileDeviceNotFoundException;
-import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,6 +46,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class StaffMobileDeviceReadPlatformServiceImpl implements StaffMobileDeviceReadPlatformService {
+
+    private static final int DEFAULT_LOCATION_LIMIT = 50;
+    private static final int MAX_LOCATION_LIMIT = 500;
 
     private final JdbcTemplate jdbcTemplate;
     private final PlatformSecurityContext context;
@@ -102,12 +111,72 @@ public class StaffMobileDeviceReadPlatformServiceImpl implements StaffMobileDevi
         return this.jdbcTemplate.query(sql.toString(), mapper, params.toArray());
     }
 
+    @Override
+    public Collection<StaffLocationPingData> retrieveDeviceLocations(final Long deviceId, final String fromDate, final String toDate,
+            final Integer limit) {
+        this.context.authenticatedUser().validateHasReadPermission(StaffMobileDeviceApiConstants.RESOURCE_NAME);
+        ensureDeviceExists(deviceId);
+
+        final int resolvedLimit = normalizeLimit(limit);
+        final LocationMapper mapper = new LocationMapper();
+        final StringBuilder sql = new StringBuilder("select ").append(mapper.schema()).append(" where p.device_id = ? ");
+        final List<Object> params = new ArrayList<>();
+        params.add(deviceId);
+        if (fromDate != null && !fromDate.trim().isEmpty()) {
+            sql.append(" and p.recorded_on_utc >= ? ");
+            params.add(parseDateTime(fromDate.trim()));
+        }
+        if (toDate != null && !toDate.trim().isEmpty()) {
+            sql.append(" and p.recorded_on_utc <= ? ");
+            params.add(parseDateTime(toDate.trim()));
+        }
+        sql.append(" order by p.recorded_on_utc desc limit ? ");
+        params.add(resolvedLimit);
+        return this.jdbcTemplate.query(sql.toString(), mapper, params.toArray());
+    }
+
+    @Override
+    public StaffLocationPingData retrieveMyLatestLocation() {
+        final AppUser user = this.context.authenticatedUser();
+        final LocationMapper mapper = new LocationMapper();
+        final String sql = "select " + mapper.schema() + " where p.appuser_id = ? order by p.recorded_on_utc desc limit 1";
+        try {
+            return this.jdbcTemplate.queryForObject(sql, mapper, user.getId());
+        } catch (final EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    private void ensureDeviceExists(final Long deviceId) {
+        final Integer count = this.jdbcTemplate.queryForObject("select count(*) from m_staff_mobile_device where id = ?", Integer.class,
+                deviceId);
+        if (count == null || count == 0) { throw new StaffMobileDeviceNotFoundException(deviceId); }
+    }
+
+    private int normalizeLimit(final Integer limit) {
+        if (limit == null || limit <= 0) { return DEFAULT_LOCATION_LIMIT; }
+        return Math.min(limit, MAX_LOCATION_LIMIT);
+    }
+
+    private Date parseDateTime(final String value) {
+        final String[] patterns = { "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd" };
+        for (final String pattern : patterns) {
+            try {
+                return new SimpleDateFormat(pattern).parse(value);
+            } catch (final ParseException ignored) {
+                // try next
+            }
+        }
+        throw new StaffMobileDeviceDomainRuleException("error.msg.staff.mobile.location.invalid.date",
+                "Invalid date value '" + value + "'. Expected yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss.", value);
+    }
+
     private static final class DeviceMapper implements RowMapper<StaffMobileDeviceData> {
 
         private final String schema;
 
         DeviceMapper() {
-            final StringBuilder sql = new StringBuilder(400);
+            final StringBuilder sql = new StringBuilder(700);
             sql.append(" d.id as id, d.appuser_id as appUserId, u.username as username, ");
             sql.append(" concat(coalesce(u.firstname,''), ' ', coalesce(u.lastname,'')) as userDisplayName, ");
             sql.append(" d.staff_id as staffId, s.display_name as staffDisplayName, ");
@@ -115,11 +184,20 @@ public class StaffMobileDeviceReadPlatformServiceImpl implements StaffMobileDevi
             sql.append(" d.device_uid as deviceUid, d.platform as platform, d.model as model, d.app_version as appVersion, ");
             sql.append(" d.status as status, (d.fcm_token is not null) as hasFcmToken, ");
             sql.append(" d.activated_on_utc as activatedOnUtc, d.last_seen_on_utc as lastSeenOnUtc, ");
-            sql.append(" d.created_on_utc as createdOnUtc, d.updated_on_utc as updatedOnUtc ");
+            sql.append(" d.created_on_utc as createdOnUtc, d.updated_on_utc as updatedOnUtc, ");
+            sql.append(" lp.latitude as lastLatitude, lp.longitude as lastLongitude, lp.recorded_on_utc as lastLocationOnUtc ");
             sql.append(" from m_staff_mobile_device d ");
             sql.append(" join m_appuser u on u.id = d.appuser_id ");
             sql.append(" left join m_staff s on s.id = d.staff_id ");
             sql.append(" left join m_office o on o.id = u.office_id ");
+            sql.append(" left join ( ");
+            sql.append("   select p1.device_id, p1.latitude, p1.longitude, p1.recorded_on_utc ");
+            sql.append("   from m_staff_location_ping p1 ");
+            sql.append("   inner join ( ");
+            sql.append("     select device_id, max(recorded_on_utc) as max_recorded ");
+            sql.append("     from m_staff_location_ping group by device_id ");
+            sql.append("   ) latest on latest.device_id = p1.device_id and latest.max_recorded = p1.recorded_on_utc ");
+            sql.append(" ) lp on lp.device_id = d.id ");
             this.schema = sql.toString();
         }
 
@@ -147,9 +225,37 @@ public class StaffMobileDeviceReadPlatformServiceImpl implements StaffMobileDevi
             final Date lastSeenOnUtc = rs.getTimestamp("lastSeenOnUtc");
             final Date createdOnUtc = rs.getTimestamp("createdOnUtc");
             final Date updatedOnUtc = rs.getTimestamp("updatedOnUtc");
+            final BigDecimal lastLatitude = rs.getBigDecimal("lastLatitude");
+            final BigDecimal lastLongitude = rs.getBigDecimal("lastLongitude");
+            final Date lastLocationOnUtc = rs.getTimestamp("lastLocationOnUtc");
             return StaffMobileDeviceData.instance(id, appUserId, username, userDisplayName, staffId, staffDisplayName, officeId, officeName,
-                    deviceUid, platform, model, appVersion, status, hasFcmToken, activatedOnUtc, lastSeenOnUtc, createdOnUtc,
-                    updatedOnUtc);
+                    deviceUid, platform, model, appVersion, status, hasFcmToken, activatedOnUtc, lastSeenOnUtc, createdOnUtc, updatedOnUtc,
+                    lastLatitude, lastLongitude, lastLocationOnUtc);
+        }
+    }
+
+    private static final class LocationMapper implements RowMapper<StaffLocationPingData> {
+
+        private final String schema;
+
+        LocationMapper() {
+            final StringBuilder sql = new StringBuilder(300);
+            sql.append(" p.id as id, p.device_id as deviceId, p.appuser_id as appUserId, ");
+            sql.append(" p.latitude as latitude, p.longitude as longitude, p.accuracy_meters as accuracyMeters, ");
+            sql.append(" p.recorded_on_utc as recordedOnUtc, p.received_on_utc as receivedOnUtc ");
+            sql.append(" from m_staff_location_ping p ");
+            this.schema = sql.toString();
+        }
+
+        public String schema() {
+            return this.schema;
+        }
+
+        @Override
+        public StaffLocationPingData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            return StaffLocationPingData.instance(JdbcSupport.getLong(rs, "id"), JdbcSupport.getLong(rs, "deviceId"),
+                    JdbcSupport.getLong(rs, "appUserId"), rs.getBigDecimal("latitude"), rs.getBigDecimal("longitude"),
+                    rs.getBigDecimal("accuracyMeters"), rs.getTimestamp("recordedOnUtc"), rs.getTimestamp("receivedOnUtc"));
         }
     }
 
