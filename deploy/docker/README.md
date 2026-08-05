@@ -65,6 +65,7 @@ Never commit `.env`.
 ```bash
 rsync -az --delete \
   --exclude '.env' \
+  --exclude 'ui/dist' \
   -e 'ssh -i ~/.ssh/mopane_vps -o IdentitiesOnly=yes' \
   ./ root@mysql.mopane.co.zw:/opt/fineract/
 ```
