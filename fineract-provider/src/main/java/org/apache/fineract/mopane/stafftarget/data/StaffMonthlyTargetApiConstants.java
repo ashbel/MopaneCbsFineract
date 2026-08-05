@@ -26,6 +26,7 @@ public final class StaffMonthlyTargetApiConstants {
 
     public static final String RESOURCE_NAME = "STAFFMONTHLYTARGET";
 
+    public static final String localeParamName = "locale";
     public static final String staffIdParamName = "staffId";
     public static final String yearMonthParamName = "yearMonth";
     public static final String currencyCodeParamName = "currencyCode";
@@ -33,11 +34,13 @@ public final class StaffMonthlyTargetApiConstants {
     public static final String disbursementsTargetAmountParamName = "disbursementsTargetAmount";
     public static final String newClientsTargetParamName = "newClientsTarget";
 
-    public static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(staffIdParamName, yearMonthParamName,
-            currencyCodeParamName, collectionsTargetAmountParamName, disbursementsTargetAmountParamName, newClientsTargetParamName));
+    public static final Set<String> CREATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName, staffIdParamName,
+            yearMonthParamName, currencyCodeParamName, collectionsTargetAmountParamName, disbursementsTargetAmountParamName,
+            newClientsTargetParamName));
 
-    public static final Set<String> UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(collectionsTargetAmountParamName,
-            disbursementsTargetAmountParamName, newClientsTargetParamName, currencyCodeParamName, yearMonthParamName));
+    public static final Set<String> UPDATE_REQUEST_DATA_PARAMETERS = new HashSet<>(Arrays.asList(localeParamName,
+            collectionsTargetAmountParamName, disbursementsTargetAmountParamName, newClientsTargetParamName, currencyCodeParamName,
+            yearMonthParamName));
 
     private StaffMonthlyTargetApiConstants() {}
 }
