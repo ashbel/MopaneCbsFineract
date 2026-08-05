@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -300,12 +301,12 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
         final List<StaffLocationPing> pings = new ArrayList<>();
         for (int i = 0; i < locations.size(); i++) {
             final JsonElement locationElement = locations.get(i);
-            final BigDecimal latitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
-                    StaffMobileDeviceApiConstants.latitudeParamName, locationElement);
-            final BigDecimal longitude = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
-                    StaffMobileDeviceApiConstants.longitudeParamName, locationElement);
-            final BigDecimal accuracyMeters = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed(
-                    StaffMobileDeviceApiConstants.accuracyMetersParamName, locationElement);
+            final BigDecimal latitude = this.fromApiJsonHelper.extractBigDecimalNamed(
+                    StaffMobileDeviceApiConstants.latitudeParamName, locationElement, Locale.US);
+            final BigDecimal longitude = this.fromApiJsonHelper.extractBigDecimalNamed(
+                    StaffMobileDeviceApiConstants.longitudeParamName, locationElement, Locale.US);
+            final BigDecimal accuracyMeters = this.fromApiJsonHelper.extractBigDecimalNamed(
+                    StaffMobileDeviceApiConstants.accuracyMetersParamName, locationElement, Locale.US);
             final String recordedOn = this.fromApiJsonHelper.extractStringNamed(StaffMobileDeviceApiConstants.recordedOnParamName,
                     locationElement);
 
