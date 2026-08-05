@@ -41,13 +41,18 @@ Add LMS-focused metrics that were not prominent before: NPL, interest collected 
 | Param | Required | Default | Notes |
 |-------|----------|---------|--------|
 | `officeId` | No | Authenticated user’s office | Must be within the user’s office hierarchy |
+| `currencyCode` | No | Resolved (see below) | Filters all loan/money metrics to one currency (e.g. `USD`, `ZWL`) |
 | `trendPeriod` | No | `day` | `day` \| `week` \| `month` — controls trend bucket labels and series |
 | `activityLimit` | No | `20` | Max `50` recent audit rows |
+
+**Default `currencyCode` (when omitted):** currencies that have loans in the selected office hierarchy; prefer `USD` if present, otherwise the first code alphabetically. If the office has no loans, `currencyCode` is `null` and loan/money metrics are zero.
+
+**Invalid `currencyCode`:** HTTP `404` (`CurrencyNotFoundException`) when the code is not among currencies with loans in that office.
 
 ### Example request
 
 ```http
-GET /fineract-provider/api/v1/mopane/dashboard/loan-metrics?officeId=1&trendPeriod=day&activityLimit=20
+GET /fineract-provider/api/v1/mopane/dashboard/loan-metrics?officeId=1&currencyCode=USD&trendPeriod=day&activityLimit=20
 Authorization: Basic <base64(user:password)>
 Fineract-Platform-TenantId: million
 Accept: application/json
@@ -61,7 +66,7 @@ Tenant subdomain mapping (already in `mopane-cbs-ui`):
 ```bash
 curl -sk -u 'USER:PASSWORD' \
   -H 'Fineract-Platform-TenantId: intercrest' \
-  'https://fineract.mopane.co.zw/fineract-provider/api/v1/mopane/dashboard/loan-metrics?trendPeriod=day'
+  'https://fineract.mopane.co.zw/fineract-provider/api/v1/mopane/dashboard/loan-metrics?currencyCode=USD&trendPeriod=day'
 ```
 
 ---
@@ -75,12 +80,15 @@ Top-level object:
 | `officeId` | number | Resolved office |
 | `officeName` | string | Office display name |
 | `asOfDate` | string (date) | Tenant “today” (serialized by Fineract Gson — often `"MMM d, yyyy h:mm:ss a"`) |
-| `currencyCode` | string \| null | Dominant currency among active loans (e.g. `USD`); may be `null` if no active loans |
+| `currencyCode` | string \| null | Currency used for all loan/money aggregates (echo of filter / default); `null` if office has no loans |
+| `availableCurrencies` | string[] | Currencies that have loans in this office hierarchy; sorted with `USD` first then A–Z — use for the currency switcher |
 | `portfolio` | object | Portfolio Performance + LMS extras |
 | `pipeline` | object | Pipeline / ops KPIs |
 | `aging` | array | Always 5 buckets in fixed order |
 | `trends` | object | Chart series |
 | `recentActivity` | array | Newest first |
+
+**Currency scope:** all monetary fields and loan counts in `portfolio` / `pipeline` / `aging` / `trends.loansDisbursed` are filtered by `currencyCode`. Office-scoped only (not currency-filtered): `portfolio.activeClients`, `portfolio.activeGroups`, `trends.newClients`, `recentActivity`.
 
 ### `portfolio`
 
@@ -173,6 +181,7 @@ Display like classic: `{maker} - {actionName}` / `{entityName}` with date.
   "officeName": "Head Office",
   "asOfDate": "Aug 3, 2026 12:00:00 AM",
   "currencyCode": "USD",
+  "availableCurrencies": ["USD", "ZWL"],
   "portfolio": {
     "activeClients": 369,
     "activeGroups": 0,
@@ -277,14 +286,15 @@ Display like classic: `{maker} - {actionName}` / `{entityName}` with date.
 1. **Replace** home report fan-out (`ClientTrendsByDay`, `Demand_Vs_Collection`, `Active Loans - Summary`, etc.) with this single Resource call.
 2. Reuse existing HTTP stack (`ResourceFactory`, `$http`, Basic auth + tenant header) — do not invent a new client.
 3. Office filter: load offices from existing `GET /offices` (or user office) and pass selected `officeId`.
-4. Format money with existing currency filters; treat amounts as numbers (not strings).
-5. Parse `asOfDate` / `madeOnDate` carefully — Fineract Gson date format is **not** ISO-8601 by default.
-6. On office or trend period change, refetch the same endpoint (one call).
-7. Empty / zero data is valid — show zeros and empty charts, not hard errors.
-8. Handle HTTP errors:
+4. Currency filter: on first load omit `currencyCode` (API defaults to USD if present among office loan currencies). Populate a switcher from `availableCurrencies` and refetch with `currencyCode` when the user switches (e.g. USD → ZWL).
+5. Format money with existing currency filters using response `currencyCode`; treat amounts as numbers (not strings).
+6. Parse `asOfDate` / `madeOnDate` carefully — Fineract Gson date format is **not** ISO-8601 by default.
+7. On office, currency, or trend period change, refetch the same endpoint (one call).
+8. Empty / zero data is valid — show zeros and empty charts, not hard errors.
+9. Handle HTTP errors:
    - `401` — session/credentials
    - `403` — missing `READ_MOPANE_DASHBOARD` (show permission message)
-   - `404` — wrong base path / old WAR
+   - `404` — wrong base path / old WAR, or invalid `currencyCode` for that office
    - Network — toast + retry
 
 ### Permission
@@ -297,8 +307,10 @@ Grant via Administration → Roles for other roles after deploy.
 ```js
 // Pseudocode for mopane-cbs-ui resource
 ResourceFactory.mopaneDashboardLoanMetrics.get(
-  { officeId: officeId, trendPeriod: period, activityLimit: 20 },
+  { officeId: officeId, currencyCode: currencyCode, trendPeriod: period, activityLimit: 20 },
   function (data) {
+    $scope.currencyCode = data.currencyCode;
+    $scope.availableCurrencies = data.availableCurrencies;
     $scope.portfolio = data.portfolio;
     $scope.pipeline = data.pipeline;
     $scope.aging = data.aging;
@@ -332,7 +344,7 @@ Do not expect these fields yet:
 
 - Staff / loan-officer leaderboard  
 - Savings KPIs  
-- Multi-currency breakdown (one `currencyCode` only)  
+- FX conversion / cross-currency totals (switch currency instead; never sum across codes)  
 - RBZ Form MFI-1 (separate: `GET /rbz/form-mfi1`)
 
 ---
@@ -352,6 +364,8 @@ Do not expect these fields yet:
 ## Acceptance checklist for UI
 
 - [ ] Dashboard loads with a single `loan-metrics` request after login  
+- [ ] Initial load defaults to USD when that currency has loans in the office  
+- [ ] Currency switcher uses `availableCurrencies` and refetches with `currencyCode`  
 - [ ] Office change refetches metrics  
 - [ ] Day / Week / Month trend toggle works  
 - [ ] All classic KPI cards populated from `portfolio` / `pipeline`  

@@ -22,5 +22,5 @@ import org.apache.fineract.mopane.dashboard.data.MopaneDashboardLoanMetricsData;
 
 public interface MopaneDashboardReadPlatformService {
 
-    MopaneDashboardLoanMetricsData retrieveLoanMetrics(Long officeId, String trendPeriod, Integer activityLimit);
+    MopaneDashboardLoanMetricsData retrieveLoanMetrics(Long officeId, String currencyCode, String trendPeriod, Integer activityLimit);
 }

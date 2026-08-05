@@ -25,6 +25,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -46,6 +48,7 @@ import org.apache.fineract.mopane.dashboard.data.MopaneDashboardLoanMetricsData.
 import org.apache.fineract.mopane.dashboard.data.MopaneDashboardLoanMetricsData.RecentActivity;
 import org.apache.fineract.mopane.dashboard.data.MopaneDashboardLoanMetricsData.TrendPoint;
 import org.apache.fineract.mopane.dashboard.data.MopaneDashboardLoanMetricsData.Trends;
+import org.apache.fineract.organisation.monetary.exception.CurrencyNotFoundException;
 import org.apache.fineract.organisation.office.exception.OfficeNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,7 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
     private static final int TXN_DISBURSEMENT = 1;
     private static final int TXN_REPAYMENT = 2;
     private static final int TXN_WRITEOFF = 6;
+    private static final String PREFERRED_DEFAULT_CURRENCY = "USD";
 
     private final PlatformSecurityContext context;
     private final JdbcTemplate jdbcTemplate;
@@ -80,18 +84,20 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
     }
 
     @Override
-    public MopaneDashboardLoanMetricsData retrieveLoanMetrics(final Long officeIdParam, final String trendPeriodParam,
-            final Integer activityLimitParam) {
+    public MopaneDashboardLoanMetricsData retrieveLoanMetrics(final Long officeIdParam, final String currencyCodeParam,
+            final String trendPeriodParam, final Integer activityLimitParam) {
 
         final AppUser user = this.context.authenticatedUser();
         final OfficeContext office = resolveOffice(officeIdParam, user);
+        final List<String> availableCurrencies = listAvailableCurrencies(office.hierarchyLike);
+        final String currencyCode = resolveCurrencyCode(currencyCodeParam, availableCurrencies);
         final String trendPeriod = normalizeTrendPeriod(trendPeriodParam);
         final int activityLimit = normalizeActivityLimit(activityLimitParam);
         final Date asOf = DateUtils.getDateOfTenant();
         final Date monthStart = startOfMonth(asOf);
         final String tenantId = ThreadLocalContextUtil.getTenant().getTenantIdentifier();
         final String asOfKey = DateUtils.getLocalDateOfTenant().toString();
-        final String cacheKey = MopaneDashboardMetricsCache.buildKey(tenantId, office.id, trendPeriod, activityLimit, asOfKey);
+        final String cacheKey = MopaneDashboardMetricsCache.buildKey(tenantId, office.id, currencyCode, trendPeriod, activityLimit, asOfKey);
 
         final MopaneDashboardLoanMetricsData cached = this.metricsCache.get(cacheKey);
         if (cached != null) { return cached; }
@@ -100,12 +106,13 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         data.setOfficeId(office.id);
         data.setOfficeName(office.name);
         data.setAsOfDate(asOf);
-        data.setCurrencyCode(resolveCurrencyCode(office.hierarchyLike));
+        data.setCurrencyCode(currencyCode);
+        data.setAvailableCurrencies(availableCurrencies);
 
-        loadPortfolio(data.getPortfolio(), office.hierarchyLike, asOf, monthStart);
-        loadPipeline(data.getPipeline(), office.hierarchyLike, asOf, monthStart);
-        data.setAging(loadAging(office.hierarchyLike, asOf));
-        data.setTrends(loadTrends(office.hierarchyLike, trendPeriod, asOf));
+        loadPortfolio(data.getPortfolio(), office.hierarchyLike, currencyCode, asOf, monthStart);
+        loadPipeline(data.getPipeline(), office.hierarchyLike, currencyCode, asOf, monthStart);
+        data.setAging(loadAging(office.hierarchyLike, currencyCode, asOf));
+        data.setTrends(loadTrends(office.hierarchyLike, currencyCode, trendPeriod, asOf));
         data.setRecentActivity(loadRecentActivity(office.hierarchyLike, activityLimit));
         this.metricsCache.put(cacheKey, data);
         return data;
@@ -132,18 +139,46 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         }
     }
 
-    private String resolveCurrencyCode(final String hierarchyLike) {
-        try {
-            return this.jdbcTemplate.queryForObject(
-                    "SELECT l.currency_code FROM m_loan l " + loanOfficeJoins()
-                            + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? GROUP BY l.currency_code ORDER BY COUNT(*) DESC LIMIT 1",
-                    String.class, LOAN_STATUS_ACTIVE, hierarchyLike);
-        } catch (final EmptyResultDataAccessException e) {
-            return null;
+    private List<String> listAvailableCurrencies(final String hierarchyLike) {
+        final String sql = "SELECT DISTINCT l.currency_code FROM m_loan l " + loanOfficeJoins()
+                + " WHERE o.hierarchy LIKE ? AND l.currency_code IS NOT NULL AND l.currency_code <> ''";
+        final List<String> codes = this.jdbcTemplate.queryForList(sql, String.class, hierarchyLike);
+        if (codes == null || codes.isEmpty()) { return new ArrayList<>(); }
+        final List<String> sorted = new ArrayList<>();
+        for (final String code : codes) {
+            if (code == null || code.trim().isEmpty()) { continue; }
+            final String normalized = code.trim().toUpperCase(Locale.ENGLISH);
+            if (!sorted.contains(normalized)) {
+                sorted.add(normalized);
+            }
         }
+        Collections.sort(sorted, new Comparator<String>() {
+
+            @Override
+            public int compare(final String left, final String right) {
+                final boolean leftUsd = PREFERRED_DEFAULT_CURRENCY.equals(left);
+                final boolean rightUsd = PREFERRED_DEFAULT_CURRENCY.equals(right);
+                if (leftUsd && !rightUsd) { return -1; }
+                if (!leftUsd && rightUsd) { return 1; }
+                return left.compareTo(right);
+            }
+        });
+        return sorted;
     }
 
-    private void loadPortfolio(final PortfolioMetrics portfolio, final String hierarchyLike, final Date asOf, final Date monthStart) {
+    private String resolveCurrencyCode(final String currencyCodeParam, final List<String> availableCurrencies) {
+        if (availableCurrencies == null || availableCurrencies.isEmpty()) { return null; }
+        if (currencyCodeParam != null && !currencyCodeParam.trim().isEmpty()) {
+            final String requested = currencyCodeParam.trim().toUpperCase(Locale.ENGLISH);
+            if (!availableCurrencies.contains(requested)) { throw new CurrencyNotFoundException(requested); }
+            return requested;
+        }
+        if (availableCurrencies.contains(PREFERRED_DEFAULT_CURRENCY)) { return PREFERRED_DEFAULT_CURRENCY; }
+        return availableCurrencies.get(0);
+    }
+
+    private void loadPortfolio(final PortfolioMetrics portfolio, final String hierarchyLike, final String currencyCode, final Date asOf,
+            final Date monthStart) {
         portfolio.setActiveClients(countLong(
                 "SELECT COUNT(*) FROM m_client c JOIN m_office o ON o.id = c.office_id WHERE c.status_enum = ? AND o.hierarchy LIKE ?",
                 CLIENT_STATUS_ACTIVE, hierarchyLike));
@@ -152,14 +187,17 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
                         + "WHERE g.status_enum = ? AND g.level_id = ? AND o.hierarchy LIKE ?",
                 GROUP_STATUS_ACTIVE, GROUP_LEVEL, hierarchyLike));
 
+        if (currencyCode == null) { return; }
+
         final Map<String, Object> active = queryForMapOrEmpty(
                 "SELECT COUNT(l.id) AS active_loans, "
                         + "COALESCE(SUM(l.principal_outstanding_derived),0) AS gross_loan_book, "
                         + "COALESCE(SUM(l.interest_outstanding_derived),0) AS interest_outstanding, "
                         + "COALESCE(SUM(CASE WHEN l.is_npa = 1 THEN 1 ELSE 0 END),0) AS npl_count, "
                         + "COALESCE(SUM(CASE WHEN l.is_npa = 1 THEN l.principal_outstanding_derived ELSE 0 END),0) AS npl_outstanding "
-                        + "FROM m_loan l " + loanOfficeJoins() + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ?",
-                LOAN_STATUS_ACTIVE, hierarchyLike);
+                        + "FROM m_loan l " + loanOfficeJoins()
+                        + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                LOAN_STATUS_ACTIVE, hierarchyLike, currencyCode);
         portfolio.setActiveLoans(toLong(active.get("active_loans")));
         final BigDecimal grossLoanBook = toBd(active.get("gross_loan_book"));
         portfolio.setGrossLoanBook(grossLoanBook);
@@ -172,8 +210,9 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
                         + "COALESCE(SUM(la.principal_overdue_derived),0) AS principal_overdue "
                         + "FROM m_loan l " + loanOfficeJoins()
                         + " JOIN m_loan_arrears_aging la ON la.loan_id = l.id "
-                        + "WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND la.principal_overdue_derived > 0",
-                LOAN_STATUS_ACTIVE, hierarchyLike);
+                        + "WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND l.currency_code = ? "
+                        + "AND la.principal_overdue_derived > 0",
+                LOAN_STATUS_ACTIVE, hierarchyLike, currencyCode);
         final BigDecimal principalOverdue = toBd(arrears.get("principal_overdue"));
         portfolio.setLoansInArrears(toLong(arrears.get("loans_in_arrears")));
         portfolio.setPrincipalOverdue(principalOverdue);
@@ -184,33 +223,36 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
                 "SELECT COALESCE(SUM(lt.interest_portion_derived),0) FROM m_loan_transaction lt "
                         + "JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
                         + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? "
-                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ?",
-                TXN_REPAYMENT, monthStart, asOf, hierarchyLike));
+                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                TXN_REPAYMENT, monthStart, asOf, hierarchyLike, currencyCode));
 
         portfolio.setWriteOffsMtd(queryForObjectOrZero(
                 "SELECT COALESCE(SUM(lt.amount),0) FROM m_loan_transaction lt "
                         + "JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
                         + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? "
-                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ?",
-                TXN_WRITEOFF, monthStart, asOf, hierarchyLike));
+                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                TXN_WRITEOFF, monthStart, asOf, hierarchyLike, currencyCode));
 
-        final BigDecimal expectedMonth = scheduleDueAmount(hierarchyLike, monthStart, asOf);
-        final BigDecimal actualMonth = schedulePaidAmount(hierarchyLike, monthStart, asOf);
+        final BigDecimal expectedMonth = scheduleDueAmount(hierarchyLike, currencyCode, monthStart, asOf);
+        final BigDecimal actualMonth = schedulePaidAmount(hierarchyLike, currencyCode, monthStart, asOf);
         portfolio.setCollectionRateMtdPercent(percent(actualMonth, expectedMonth));
     }
 
-    private void loadPipeline(final PipelineMetrics pipeline, final String hierarchyLike, final Date asOf, final Date monthStart) {
+    private void loadPipeline(final PipelineMetrics pipeline, final String hierarchyLike, final String currencyCode, final Date asOf,
+            final Date monthStart) {
+        if (currencyCode == null) { return; }
+
         final Map<String, Object> pendingApproval = queryForMapOrEmpty(
                 "SELECT COUNT(l.id) AS cnt, COALESCE(SUM(l.principal_amount),0) AS amount FROM m_loan l " + loanOfficeJoins()
-                        + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ?",
-                LOAN_STATUS_SUBMITTED, hierarchyLike);
+                        + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                LOAN_STATUS_SUBMITTED, hierarchyLike, currencyCode);
         pipeline.setPendingApprovalCount(toLong(pendingApproval.get("cnt")));
         pipeline.setPendingApprovalAmount(toBd(pendingApproval.get("amount")));
 
         final Map<String, Object> pendingDisbursement = queryForMapOrEmpty(
                 "SELECT COUNT(l.id) AS cnt, COALESCE(SUM(l.principal_amount),0) AS amount FROM m_loan l " + loanOfficeJoins()
-                        + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ?",
-                LOAN_STATUS_APPROVED, hierarchyLike);
+                        + " WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                LOAN_STATUS_APPROVED, hierarchyLike, currencyCode);
         pipeline.setPendingDisbursementCount(toLong(pendingDisbursement.get("cnt")));
         pipeline.setPendingDisbursementAmount(toBd(pendingDisbursement.get("amount")));
 
@@ -218,23 +260,24 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
                 "SELECT COALESCE(SUM(lt.amount),0) FROM m_loan_transaction lt "
                         + "JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
                         + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? "
-                        + "AND lt.transaction_date = ? AND o.hierarchy LIKE ?",
-                TXN_DISBURSEMENT, asOf, hierarchyLike));
+                        + "AND lt.transaction_date = ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                TXN_DISBURSEMENT, asOf, hierarchyLike, currencyCode));
 
         pipeline.setDisbursementsMonthAmount(queryForObjectOrZero(
                 "SELECT COALESCE(SUM(lt.amount),0) FROM m_loan_transaction lt "
                         + "JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
                         + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? "
-                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ?",
-                TXN_DISBURSEMENT, monthStart, asOf, hierarchyLike));
+                        + "AND lt.transaction_date BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.currency_code = ?",
+                TXN_DISBURSEMENT, monthStart, asOf, hierarchyLike, currencyCode));
 
-        pipeline.setCollectionsExpectedToday(scheduleDueAmount(hierarchyLike, asOf, asOf));
-        pipeline.setCollectionsActualToday(schedulePaidAmount(hierarchyLike, asOf, asOf));
-        pipeline.setCollectionsExpectedMonth(scheduleDueAmount(hierarchyLike, monthStart, asOf));
-        pipeline.setCollectionsActualMonth(schedulePaidAmount(hierarchyLike, monthStart, asOf));
+        pipeline.setCollectionsExpectedToday(scheduleDueAmount(hierarchyLike, currencyCode, asOf, asOf));
+        pipeline.setCollectionsActualToday(schedulePaidAmount(hierarchyLike, currencyCode, asOf, asOf));
+        pipeline.setCollectionsExpectedMonth(scheduleDueAmount(hierarchyLike, currencyCode, monthStart, asOf));
+        pipeline.setCollectionsActualMonth(schedulePaidAmount(hierarchyLike, currencyCode, monthStart, asOf));
     }
 
-    private BigDecimal scheduleDueAmount(final String hierarchyLike, final Date fromInclusive, final Date toInclusive) {
+    private BigDecimal scheduleDueAmount(final String hierarchyLike, final String currencyCode, final Date fromInclusive,
+            final Date toInclusive) {
         final String sql = "SELECT COALESCE(SUM("
                 + "(IFNULL(ls.principal_amount,0) - IFNULL(ls.principal_writtenoff_derived,0))"
                 + " + (IFNULL(ls.interest_amount,0) - IFNULL(ls.interest_writtenoff_derived,0) - IFNULL(ls.interest_waived_derived,0))"
@@ -242,21 +285,22 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
                 + " + (IFNULL(ls.penalty_charges_amount,0) - IFNULL(ls.penalty_charges_writtenoff_derived,0) - IFNULL(ls.penalty_charges_waived_derived,0))"
                 + "),0) FROM m_loan_repayment_schedule ls "
                 + "JOIN m_loan l ON l.id = ls.loan_id " + loanOfficeJoins()
-                + " WHERE ls.duedate BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.loan_status_id = ?";
-        return queryForObjectOrZero(sql, fromInclusive, toInclusive, hierarchyLike, LOAN_STATUS_ACTIVE);
+                + " WHERE ls.duedate BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.loan_status_id = ? AND l.currency_code = ?";
+        return queryForObjectOrZero(sql, fromInclusive, toInclusive, hierarchyLike, LOAN_STATUS_ACTIVE, currencyCode);
     }
 
-    private BigDecimal schedulePaidAmount(final String hierarchyLike, final Date fromInclusive, final Date toInclusive) {
+    private BigDecimal schedulePaidAmount(final String hierarchyLike, final String currencyCode, final Date fromInclusive,
+            final Date toInclusive) {
         final String sql = "SELECT COALESCE(SUM("
                 + "IFNULL(ls.principal_completed_derived,0) + IFNULL(ls.interest_completed_derived,0)"
                 + " + IFNULL(ls.fee_charges_completed_derived,0) + IFNULL(ls.penalty_charges_completed_derived,0)"
                 + "),0) FROM m_loan_repayment_schedule ls "
                 + "JOIN m_loan l ON l.id = ls.loan_id " + loanOfficeJoins()
-                + " WHERE ls.duedate BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.loan_status_id = ?";
-        return queryForObjectOrZero(sql, fromInclusive, toInclusive, hierarchyLike, LOAN_STATUS_ACTIVE);
+                + " WHERE ls.duedate BETWEEN ? AND ? AND o.hierarchy LIKE ? AND l.loan_status_id = ? AND l.currency_code = ?";
+        return queryForObjectOrZero(sql, fromInclusive, toInclusive, hierarchyLike, LOAN_STATUS_ACTIVE, currencyCode);
     }
 
-    private List<AgingBucket> loadAging(final String hierarchyLike, final Date asOf) {
+    private List<AgingBucket> loadAging(final String hierarchyLike, final String currencyCode, final Date asOf) {
         final Map<String, AgingBucket> buckets = new LinkedHashMap<>();
         for (final String name : new String[] { MopaneDashboardApiConstants.AGING_CURRENT, MopaneDashboardApiConstants.AGING_1_30,
                 MopaneDashboardApiConstants.AGING_31_60, MopaneDashboardApiConstants.AGING_61_90,
@@ -264,12 +308,14 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
             buckets.put(name, new AgingBucket(name));
         }
 
+        if (currencyCode == null) { return new ArrayList<>(buckets.values()); }
+
         final String sql = "SELECT COALESCE(l.principal_outstanding_derived,0) AS outstanding, "
                 + "CASE WHEN la.overdue_since_date_derived IS NULL THEN 0 "
                 + "ELSE DATEDIFF(?, la.overdue_since_date_derived) END AS days_arrears "
                 + "FROM m_loan l " + loanOfficeJoins() + " LEFT JOIN m_loan_arrears_aging la ON la.loan_id = l.id "
-                + "WHERE l.loan_status_id = ? AND o.hierarchy LIKE ?";
-        final List<Map<String, Object>> rows = this.jdbcTemplate.queryForList(sql, asOf, LOAN_STATUS_ACTIVE, hierarchyLike);
+                + "WHERE l.loan_status_id = ? AND o.hierarchy LIKE ? AND l.currency_code = ?";
+        final List<Map<String, Object>> rows = this.jdbcTemplate.queryForList(sql, asOf, LOAN_STATUS_ACTIVE, hierarchyLike, currencyCode);
         for (final Map<String, Object> row : rows) {
             final String band = agingBucket(toInt(row.get("days_arrears")));
             final AgingBucket bucket = buckets.get(band);
@@ -279,7 +325,7 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         return new ArrayList<>(buckets.values());
     }
 
-    private Trends loadTrends(final String hierarchyLike, final String period, final Date asOf) {
+    private Trends loadTrends(final String hierarchyLike, final String currencyCode, final String period, final Date asOf) {
         final Trends trends = new Trends();
         trends.setPeriod(period);
 
@@ -298,13 +344,19 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
 
         if (MopaneDashboardApiConstants.TREND_PERIOD_DAY.equals(period)) {
             loadClientTrendsByDay(hierarchyLike, asOf, intervals, clientCounts);
-            loadDisbursementTrendsByDay(hierarchyLike, asOf, intervals, disbursementCounts, disbursementAmounts);
+            if (currencyCode != null) {
+                loadDisbursementTrendsByDay(hierarchyLike, currencyCode, asOf, intervals, disbursementCounts, disbursementAmounts);
+            }
         } else if (MopaneDashboardApiConstants.TREND_PERIOD_WEEK.equals(period)) {
             loadClientTrendsByWeek(hierarchyLike, asOf, intervals, clientCounts);
-            loadDisbursementTrendsByWeek(hierarchyLike, asOf, intervals, disbursementCounts, disbursementAmounts);
+            if (currencyCode != null) {
+                loadDisbursementTrendsByWeek(hierarchyLike, currencyCode, asOf, intervals, disbursementCounts, disbursementAmounts);
+            }
         } else {
             loadClientTrendsByMonth(hierarchyLike, asOf, intervals, clientCounts);
-            loadDisbursementTrendsByMonth(hierarchyLike, asOf, intervals, disbursementCounts, disbursementAmounts);
+            if (currencyCode != null) {
+                loadDisbursementTrendsByMonth(hierarchyLike, currencyCode, asOf, intervals, disbursementCounts, disbursementAmounts);
+            }
         }
 
         final List<TrendPoint> newClients = new ArrayList<>();
@@ -333,15 +385,15 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         }
     }
 
-    private void loadDisbursementTrendsByDay(final String hierarchyLike, final Date asOf, final int intervals,
+    private void loadDisbursementTrendsByDay(final String hierarchyLike, final String currencyCode, final Date asOf, final int intervals,
             final Map<String, long[]> counts, final Map<String, BigDecimal> amounts) {
         final String sql = "SELECT DATE(lt.transaction_date) AS bucket, COUNT(lt.id) AS cnt, COALESCE(SUM(lt.amount),0) AS amount "
                 + "FROM m_loan_transaction lt JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
-                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? "
+                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? AND l.currency_code = ? "
                 + "AND lt.transaction_date BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ? "
                 + "GROUP BY DATE(lt.transaction_date)";
-        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, asOf, intervals - 1,
-                asOf)) {
+        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, currencyCode, asOf,
+                intervals - 1, asOf)) {
             final String key = formatDateBucket((Date) row.get("bucket"));
             if (counts.containsKey(key)) {
                 counts.put(key, new long[] { toLong(row.get("cnt")) });
@@ -364,15 +416,15 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         }
     }
 
-    private void loadDisbursementTrendsByWeek(final String hierarchyLike, final Date asOf, final int intervals,
+    private void loadDisbursementTrendsByWeek(final String hierarchyLike, final String currencyCode, final Date asOf, final int intervals,
             final Map<String, long[]> counts, final Map<String, BigDecimal> amounts) {
         final String sql = "SELECT YEARWEEK(lt.transaction_date, 3) AS yw, COUNT(lt.id) AS cnt, COALESCE(SUM(lt.amount),0) AS amount "
                 + "FROM m_loan_transaction lt JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
-                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? "
+                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? AND l.currency_code = ? "
                 + "AND lt.transaction_date BETWEEN DATE_SUB(?, INTERVAL ? WEEK) AND ? "
                 + "GROUP BY YEARWEEK(lt.transaction_date, 3)";
-        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, asOf, intervals - 1,
-                asOf)) {
+        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, currencyCode, asOf,
+                intervals - 1, asOf)) {
             final String key = String.valueOf(row.get("yw"));
             if (counts.containsKey(key)) {
                 counts.put(key, new long[] { toLong(row.get("cnt")) });
@@ -395,16 +447,16 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
         }
     }
 
-    private void loadDisbursementTrendsByMonth(final String hierarchyLike, final Date asOf, final int intervals,
+    private void loadDisbursementTrendsByMonth(final String hierarchyLike, final String currencyCode, final Date asOf, final int intervals,
             final Map<String, long[]> counts, final Map<String, BigDecimal> amounts) {
         final String sql = "SELECT DATE_FORMAT(lt.transaction_date, '%Y-%m') AS bucket, COUNT(lt.id) AS cnt, "
                 + "COALESCE(SUM(lt.amount),0) AS amount FROM m_loan_transaction lt "
                 + "JOIN m_loan l ON l.id = lt.loan_id " + loanOfficeJoins()
-                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? "
+                + " WHERE lt.is_reversed = 0 AND lt.transaction_type_enum = ? AND o.hierarchy LIKE ? AND l.currency_code = ? "
                 + "AND lt.transaction_date BETWEEN DATE_SUB(?, INTERVAL ? MONTH) AND ? "
                 + "GROUP BY DATE_FORMAT(lt.transaction_date, '%Y-%m')";
-        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, asOf, intervals - 1,
-                asOf)) {
+        for (final Map<String, Object> row : this.jdbcTemplate.queryForList(sql, TXN_DISBURSEMENT, hierarchyLike, currencyCode, asOf,
+                intervals - 1, asOf)) {
             final String key = String.valueOf(row.get("bucket"));
             if (counts.containsKey(key)) {
                 counts.put(key, new long[] { toLong(row.get("cnt")) });

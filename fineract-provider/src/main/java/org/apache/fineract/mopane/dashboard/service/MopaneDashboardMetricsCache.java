@@ -66,8 +66,9 @@ public class MopaneDashboardMetricsCache {
         this.cache.invalidateAll(toInvalidate);
     }
 
-    public static String buildKey(final String tenantId, final Long officeId, final String trendPeriod, final int activityLimit,
-            final String asOfDate) {
-        return tenantId + "|" + officeId + "|" + trendPeriod + "|" + activityLimit + "|" + asOfDate;
+    public static String buildKey(final String tenantId, final Long officeId, final String currencyCode, final String trendPeriod,
+            final int activityLimit, final String asOfDate) {
+        final String currencyKey = currencyCode == null || currencyCode.isEmpty() ? "_" : currencyCode;
+        return tenantId + "|" + officeId + "|" + currencyKey + "|" + trendPeriod + "|" + activityLimit + "|" + asOfDate;
     }
 }

@@ -64,11 +64,13 @@ public class MopaneDashboardApiResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public String retrieveLoanMetrics(@Context final UriInfo uriInfo, @QueryParam("officeId") final Long officeId,
-            @QueryParam("trendPeriod") final String trendPeriod, @QueryParam("activityLimit") final Integer activityLimit) {
+            @QueryParam("currencyCode") final String currencyCode, @QueryParam("trendPeriod") final String trendPeriod,
+            @QueryParam("activityLimit") final Integer activityLimit) {
 
         this.context.authenticatedUser().validateHasReadPermission(MopaneDashboardApiConstants.RESOURCE_NAME);
 
-        final MopaneDashboardLoanMetricsData metrics = this.readPlatformService.retrieveLoanMetrics(officeId, trendPeriod, activityLimit);
+        final MopaneDashboardLoanMetricsData metrics = this.readPlatformService.retrieveLoanMetrics(officeId, currencyCode, trendPeriod,
+                activityLimit);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, metrics);
     }

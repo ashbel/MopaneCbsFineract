@@ -29,6 +29,7 @@ public class MopaneDashboardLoanMetricsData {
     private String officeName;
     private Date asOfDate;
     private String currencyCode;
+    private List<String> availableCurrencies = new ArrayList<>();
     private PortfolioMetrics portfolio = new PortfolioMetrics();
     private PipelineMetrics pipeline = new PipelineMetrics();
     private List<AgingBucket> aging = new ArrayList<>();
@@ -65,6 +66,14 @@ public class MopaneDashboardLoanMetricsData {
 
     public void setCurrencyCode(final String currencyCode) {
         this.currencyCode = currencyCode;
+    }
+
+    public List<String> getAvailableCurrencies() {
+        return this.availableCurrencies;
+    }
+
+    public void setAvailableCurrencies(final List<String> availableCurrencies) {
+        this.availableCurrencies = availableCurrencies == null ? new ArrayList<String>() : availableCurrencies;
     }
 
     public PortfolioMetrics getPortfolio() {
