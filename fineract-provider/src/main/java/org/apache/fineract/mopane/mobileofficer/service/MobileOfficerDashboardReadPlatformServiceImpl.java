@@ -77,7 +77,8 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
         final Date monthEnd = endOfMonth(monthStart, asOf, yearMonth);
 
         final List<String> availableCurrencies = listAvailableCurrencies(staff.id);
-        final String currencyCode = resolveCurrencyCode(currencyCodeParam, availableCurrencies);
+        final String targetCurrencyHint = findTargetCurrencyForPeriod(staff.id, yearMonth);
+        final String currencyCode = resolveCurrencyCode(currencyCodeParam, availableCurrencies, targetCurrencyHint);
 
         final MobileOfficerDashboardData data = new MobileOfficerDashboardData();
         data.setStaffId(staff.id);
@@ -100,7 +101,7 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
                 "SELECT COUNT(*) FROM m_client c WHERE c.staff_id = ? AND c.activation_date BETWEEN ? AND ?", staff.id, monthStart,
                 monthEnd));
 
-        loadTargets(data, staff.id, yearMonth, currencyCode);
+        loadTargets(data, staff.id, yearMonth, currencyCode, asOf, monthStart, monthEnd);
         return data;
     }
 
@@ -138,29 +139,73 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
                 TXN_DISBURSEMENT, monthStart, monthEnd, staffId, currencyCode));
     }
 
-    private void loadTargets(final MobileOfficerDashboardData data, final Long staffId, final String yearMonth, final String currencyCode) {
+    private void loadTargets(final MobileOfficerDashboardData data, final Long staffId, final String yearMonth, final String currencyCode,
+            final Date asOf, final Date monthStart, final Date monthEnd) {
         final TargetMetrics targets = new TargetMetrics();
-        if (currencyCode == null) {
-            data.setTargets(targets);
-            return;
+        Map<String, Object> row = null;
+        String matchedCurrency = currencyCode;
+
+        if (currencyCode != null) {
+            row = queryTargetRow(staffId, yearMonth, currencyCode);
         }
+        if (row == null) {
+            // Fall back to any target for this staff + period and realign metrics to that currency.
+            try {
+                row = this.jdbcTemplate.queryForMap(
+                        "SELECT id, currency_code, collections_target_amount, disbursements_target_amount, new_clients_target "
+                                + "FROM m_staff_monthly_target WHERE staff_id = ? AND target_year_month = ? ORDER BY currency_code LIMIT 1",
+                        staffId, yearMonth);
+                matchedCurrency = row.get("currency_code") == null ? null
+                        : row.get("currency_code").toString().trim().toUpperCase(Locale.ENGLISH);
+            } catch (final EmptyResultDataAccessException e) {
+                data.setTargets(targets);
+                return;
+            }
+        }
+
+        if (matchedCurrency != null && (currencyCode == null || !matchedCurrency.equals(currencyCode))) {
+            data.setCurrencyCode(matchedCurrency);
+            if (!data.getAvailableCurrencies().contains(matchedCurrency)) {
+                final List<String> currencies = new ArrayList<>(data.getAvailableCurrencies());
+                currencies.add(matchedCurrency);
+                data.setAvailableCurrencies(currencies);
+            }
+            loadLoanMetrics(data, staffId, matchedCurrency, asOf, monthStart, monthEnd);
+        }
+
+        targets.setTargetId(toLong(row.get("id")));
+        targets.setCollectionsTarget(toBd(row.get("collections_target_amount")));
+        targets.setDisbursementsTarget(toBd(row.get("disbursements_target_amount")));
+        targets.setNewClientsTarget(toLong(row.get("new_clients_target")));
+        targets.setCollectionsAchievementPercent(percent(data.getCollectionsActualMonth(), targets.getCollectionsTarget()));
+        targets.setDisbursementsAchievementPercent(percent(data.getDisbursementsActualMonth(), targets.getDisbursementsTarget()));
+        targets.setNewClientsAchievementPercent(
+                percent(BigDecimal.valueOf(data.getNewClientsActualMonth()), BigDecimal.valueOf(targets.getNewClientsTarget())));
+        data.setTargets(targets);
+    }
+
+    private Map<String, Object> queryTargetRow(final Long staffId, final String yearMonth, final String currencyCode) {
         try {
-            final Map<String, Object> row = this.jdbcTemplate.queryForMap(
-                    "SELECT id, collections_target_amount, disbursements_target_amount, new_clients_target "
+            return this.jdbcTemplate.queryForMap(
+                    "SELECT id, currency_code, collections_target_amount, disbursements_target_amount, new_clients_target "
                             + "FROM m_staff_monthly_target WHERE staff_id = ? AND target_year_month = ? AND currency_code = ?",
                     staffId, yearMonth, currencyCode);
-            targets.setTargetId(toLong(row.get("id")));
-            targets.setCollectionsTarget(toBd(row.get("collections_target_amount")));
-            targets.setDisbursementsTarget(toBd(row.get("disbursements_target_amount")));
-            targets.setNewClientsTarget(toLong(row.get("new_clients_target")));
-            targets.setCollectionsAchievementPercent(percent(data.getCollectionsActualMonth(), targets.getCollectionsTarget()));
-            targets.setDisbursementsAchievementPercent(percent(data.getDisbursementsActualMonth(), targets.getDisbursementsTarget()));
-            targets.setNewClientsAchievementPercent(
-                    percent(BigDecimal.valueOf(data.getNewClientsActualMonth()), BigDecimal.valueOf(targets.getNewClientsTarget())));
         } catch (final EmptyResultDataAccessException e) {
-            // no target configured for this month
+            return null;
         }
-        data.setTargets(targets);
+    }
+
+    private String findTargetCurrencyForPeriod(final Long staffId, final String yearMonth) {
+        try {
+            final String code = this.jdbcTemplate.queryForObject(
+                    "SELECT currency_code FROM m_staff_monthly_target WHERE staff_id = ? AND target_year_month = ? "
+                            + "ORDER BY currency_code LIMIT 1",
+                    String.class, staffId, yearMonth);
+            if (code == null || code.trim().isEmpty()) { return null; }
+            return code.trim().toUpperCase(Locale.ENGLISH);
+        } catch (final EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private StaffContext resolveStaff(final Long staffIdParam, final AppUser user) {
@@ -198,10 +243,11 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
     }
 
     private List<String> listAvailableCurrencies(final Long staffId) {
+        // Active loans only — closed-loan currencies must not steer dashboard/target selection.
         final List<String> codes = this.jdbcTemplate.queryForList(
-                "SELECT DISTINCT l.currency_code FROM m_loan l WHERE l.loan_officer_id = ? AND l.currency_code IS NOT NULL "
-                        + "AND l.currency_code <> ''",
-                String.class, staffId);
+                "SELECT DISTINCT l.currency_code FROM m_loan l WHERE l.loan_officer_id = ? AND l.loan_status_id = ? "
+                        + "AND l.currency_code IS NOT NULL AND l.currency_code <> ''",
+                String.class, staffId, LOAN_STATUS_ACTIVE);
         if (codes == null || codes.isEmpty()) { return new ArrayList<>(); }
         final List<String> sorted = new ArrayList<>();
         for (final String code : codes) {
@@ -225,13 +271,22 @@ public class MobileOfficerDashboardReadPlatformServiceImpl implements MobileOffi
         return sorted;
     }
 
-    private String resolveCurrencyCode(final String currencyCodeParam, final List<String> availableCurrencies) {
-        if (availableCurrencies == null || availableCurrencies.isEmpty()) { return null; }
+    private String resolveCurrencyCode(final String currencyCodeParam, final List<String> availableCurrencies,
+            final String targetCurrencyHint) {
         if (currencyCodeParam != null && !currencyCodeParam.trim().isEmpty()) {
             final String requested = currencyCodeParam.trim().toUpperCase(Locale.ENGLISH);
-            if (!availableCurrencies.contains(requested)) { throw new CurrencyNotFoundException(requested); }
+            if (availableCurrencies != null && !availableCurrencies.isEmpty() && !availableCurrencies.contains(requested)) {
+                throw new CurrencyNotFoundException(requested);
+            }
             return requested;
         }
+        // Prefer the currency that already has a monthly target for this period.
+        if (targetCurrencyHint != null) {
+            if (availableCurrencies == null || availableCurrencies.isEmpty() || availableCurrencies.contains(targetCurrencyHint)) {
+                return targetCurrencyHint;
+            }
+        }
+        if (availableCurrencies == null || availableCurrencies.isEmpty()) { return null; }
         if (availableCurrencies.contains(PREFERRED_DEFAULT_CURRENCY)) { return PREFERRED_DEFAULT_CURRENCY; }
         return availableCurrencies.get(0);
     }
