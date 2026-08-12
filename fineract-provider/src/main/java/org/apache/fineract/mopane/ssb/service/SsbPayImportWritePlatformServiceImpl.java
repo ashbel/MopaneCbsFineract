@@ -389,8 +389,14 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
         if (cell == null) {
             return null;
         }
-        if (DateUtil.isCellDateFormatted(cell)) {
-            return cell.getDateCellValue();
+        // SSB PAY files often store Trans date as text (e.g. 17/Jul/2026). Older POI
+        // DateUtil.isCellDateFormatted() calls getNumericCellValue() and throws on text cells.
+        try {
+            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue();
+            }
+        } catch (final Exception ignored) {
+            // fall through to text parse
         }
         final String text = cellString(row, col);
         if (!StringUtils.hasText(text)) {
