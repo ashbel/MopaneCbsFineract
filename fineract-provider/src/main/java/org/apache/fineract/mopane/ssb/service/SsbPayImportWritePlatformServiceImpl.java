@@ -23,12 +23,9 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -46,9 +43,6 @@ import org.apache.fineract.mopane.ssb.data.SsbConstants;
 import org.apache.fineract.mopane.ssb.data.SsbPayBatchData;
 import org.apache.fineract.mopane.ssb.data.SsbPayRowData;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -71,22 +65,26 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
     private final JdbcTemplate jdbcTemplate;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final SsbPayResultWorkbookWriter resultWorkbookWriter;
-    private final DataFormatter dataFormatter = new DataFormatter();
+    private final SsbWorkbookHelper workbookHelper;
+    private final SsbLoanMatcher loanMatcher;
 
     @Autowired
     public SsbPayImportWritePlatformServiceImpl(final RoutingDataSource dataSource,
             final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
-            final SsbPayResultWorkbookWriter resultWorkbookWriter) {
+            final SsbPayResultWorkbookWriter resultWorkbookWriter, final SsbWorkbookHelper workbookHelper,
+            final SsbLoanMatcher loanMatcher) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.resultWorkbookWriter = resultWorkbookWriter;
+        this.workbookHelper = workbookHelper;
+        this.loanMatcher = loanMatcher;
     }
 
     @Override
     public Response processUpload(final InputStream inputStream, final String filename, final String bureau, final Long paymentTypeId,
             final boolean dryRun, final AppUser user) {
 
-        final String normalizedBureau = normalizeBureau(bureau);
+        final String normalizedBureau = SsbImportSupport.normalizeBureau(bureau);
         final List<SsbPayRowData> parsed;
         try {
             final Workbook workbook = WorkbookFactory.create(inputStream);
@@ -225,45 +223,32 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
             return;
         }
 
-        Long matchedLoanId = null;
-        if (StringUtils.hasText(row.getReference())) {
-            matchedLoanId = findLoanIdByAccountNo(row.getReference().trim());
-        }
-
-        if (matchedLoanId != null) {
+        final SsbLoanMatcher.MatchResult match = this.loanMatcher.match(row.getReference(), row.getIdNumber(), row.getEcNumber());
+        if (match.matchedByReference) {
             if (dryRun) {
                 row.setStatus(SsbConstants.STATUS_POSTED);
-                row.setPostedLoanId(matchedLoanId);
+                row.setPostedLoanId(match.loanId);
                 row.setReason("DRY_RUN");
                 return;
             }
             try {
-                postRepayment(row, matchedLoanId, bureau, paymentTypeId);
+                postRepayment(row, match.loanId, bureau, paymentTypeId);
                 row.setStatus(SsbConstants.STATUS_POSTED);
             } catch (final RuntimeException ex) {
                 row.setStatus(SsbConstants.STATUS_FAILED);
-                row.setReason(trimReason(ex.getMessage()));
+                row.setReason(SsbImportSupport.trimReason(ex.getMessage(), "REPAYMENT_FAILED"));
             }
             return;
         }
-
-        final List<LoanCandidate> candidates = findCandidatesByIdEc(row.getIdNumber(), row.getEcNumber());
-        if (candidates.size() == 1) {
+        if (match.needsReview) {
             row.setStatus(SsbConstants.STATUS_NEEDS_REVIEW);
-            row.setReason(SsbConstants.REASON_LIKELY_MATCH_ID_EC);
-            row.setSuggestedLoanId(candidates.get(0).loanId);
-            row.setSuggestedAccountNo(candidates.get(0).accountNo);
+            row.setReason(match.reason);
+            row.setSuggestedLoanId(match.suggestedLoanId);
+            row.setSuggestedAccountNo(match.suggestedAccountNo);
             return;
         }
-        if (candidates.size() > 1) {
-            row.setStatus(SsbConstants.STATUS_FAILED);
-            row.setReason(SsbConstants.REASON_AMBIGUOUS_ID_EC);
-            return;
-        }
-
         row.setStatus(SsbConstants.STATUS_FAILED);
-        row.setReason(StringUtils.hasText(row.getReference()) ? SsbConstants.REASON_REFERENCE_NOT_FOUND
-                : SsbConstants.REASON_REFERENCE_MISSING);
+        row.setReason(match.reason);
     }
 
     private void postRepayment(final SsbPayRowData row, final Long loanId, final String bureau, final Long paymentTypeId) {
@@ -279,7 +264,7 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
         json.addProperty("dateFormat", SsbConstants.DATE_FORMAT_API);
         json.addProperty("transactionDate", df.format(row.getTransDate()));
         json.addProperty("transactionAmount", row.getAmount());
-        json.addProperty("note", trimTo(row.getNote(), 1000));
+        json.addProperty("note", SsbImportSupport.trimTo(row.getNote(), 1000));
         if (paymentTypeId != null) {
             json.addProperty("paymentTypeId", paymentTypeId);
         }
@@ -311,177 +296,31 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
         if (header == null) {
             throw new PlatformDataIntegrityException("error.msg.ssb.pay.header.missing", "PAY workbook header row is missing.", "file");
         }
-        final Map<String, Integer> cols = mapHeaders(header);
-        requireColumn(cols, "rec id");
-        requireColumn(cols, "reference");
-        requireColumn(cols, "amount");
+        final Map<String, Integer> cols = this.workbookHelper.mapHeaders(header);
+        SsbWorkbookHelper.requireColumn(cols, "rec id", "pay");
+        SsbWorkbookHelper.requireColumn(cols, "reference", "pay");
+        SsbWorkbookHelper.requireColumn(cols, "amount", "pay");
 
         final List<SsbPayRowData> rows = new ArrayList<>();
         final int last = sheet.getLastRowNum();
         for (int i = 1; i <= last; i++) {
             final Row excelRow = sheet.getRow(i);
-            if (excelRow == null || isEmptyRow(excelRow)) {
+            if (excelRow == null || this.workbookHelper.isEmptyRow(excelRow)) {
                 continue;
             }
             final SsbPayRowData row = new SsbPayRowData();
             row.setRowNumber(i + 1);
-            row.setRecId(cellString(excelRow, cols.get("rec id")));
-            row.setDeductionCode(cellString(excelRow, cols.get("deduction code")));
-            row.setReference(cellString(excelRow, cols.get("reference")));
-            row.setIdNumber(cellString(excelRow, firstPresent(cols, "id number", "idnumber")));
-            row.setEcNumber(cellString(excelRow, firstPresent(cols, "ec number", "ecnumber")));
-            row.setTransDate(cellDate(excelRow, firstPresent(cols, "trans date", "transaction date")));
-            row.setAmount(cellDecimal(excelRow, cols.get("amount")));
-            row.setName(cellString(excelRow, cols.get("name")));
+            row.setRecId(this.workbookHelper.cellString(excelRow, cols.get("rec id")));
+            row.setDeductionCode(this.workbookHelper.cellString(excelRow, cols.get("deduction code")));
+            row.setReference(this.workbookHelper.cellString(excelRow, cols.get("reference")));
+            row.setIdNumber(this.workbookHelper.cellString(excelRow, SsbWorkbookHelper.firstPresent(cols, "id number", "idnumber")));
+            row.setEcNumber(this.workbookHelper.cellString(excelRow, SsbWorkbookHelper.firstPresent(cols, "ec number", "ecnumber")));
+            row.setTransDate(this.workbookHelper.cellDate(excelRow, SsbWorkbookHelper.firstPresent(cols, "trans date", "transaction date")));
+            row.setAmount(this.workbookHelper.cellDecimal(excelRow, cols.get("amount")));
+            row.setName(this.workbookHelper.cellString(excelRow, cols.get("name")));
             rows.add(row);
         }
         return rows;
-    }
-
-    private Map<String, Integer> mapHeaders(final Row header) {
-        final Map<String, Integer> map = new HashMap<>();
-        for (int c = 0; c < header.getLastCellNum(); c++) {
-            final String value = cellString(header, c);
-            if (StringUtils.hasText(value)) {
-                map.put(value.trim().toLowerCase(Locale.ENGLISH), c);
-            }
-        }
-        return map;
-    }
-
-    private static void requireColumn(final Map<String, Integer> cols, final String name) {
-        if (!cols.containsKey(name)) {
-            throw new PlatformDataIntegrityException("error.msg.ssb.pay.column.missing", "Missing required PAY column: " + name, "file",
-                    name);
-        }
-    }
-
-    private static Integer firstPresent(final Map<String, Integer> cols, final String... names) {
-        for (final String name : names) {
-            if (cols.containsKey(name)) {
-                return cols.get(name);
-            }
-        }
-        return null;
-    }
-
-    private String cellString(final Row row, final Integer col) {
-        if (col == null || row == null) {
-            return null;
-        }
-        final Cell cell = row.getCell(col);
-        if (cell == null) {
-            return null;
-        }
-        final String value = this.dataFormatter.formatCellValue(cell);
-        if (value == null) {
-            return null;
-        }
-        final String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private Date cellDate(final Row row, final Integer col) {
-        if (col == null || row == null) {
-            return null;
-        }
-        final Cell cell = row.getCell(col);
-        if (cell == null) {
-            return null;
-        }
-        // SSB PAY files often store Trans date as text (e.g. 17/Jul/2026). Older POI
-        // DateUtil.isCellDateFormatted() calls getNumericCellValue() and throws on text cells.
-        try {
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                return cell.getDateCellValue();
-            }
-        } catch (final Exception ignored) {
-            // fall through to text parse
-        }
-        final String text = cellString(row, col);
-        if (!StringUtils.hasText(text)) {
-            return null;
-        }
-        final String[] patterns = new String[] { SsbConstants.DATE_FORMAT_SSB, "dd/MM/yyyy", "yyyy-MM-dd", "dd-MMM-yyyy", "dd MMM yyyy" };
-        for (final String pattern : patterns) {
-            try {
-                final SimpleDateFormat df = new SimpleDateFormat(pattern, Locale.ENGLISH);
-                df.setLenient(false);
-                return df.parse(text);
-            } catch (final ParseException ignored) {
-                // next
-            }
-        }
-        return null;
-    }
-
-    private BigDecimal cellDecimal(final Row row, final Integer col) {
-        if (col == null || row == null) {
-            return null;
-        }
-        final Cell cell = row.getCell(col);
-        if (cell == null) {
-            return null;
-        }
-        try {
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-                return BigDecimal.valueOf(cell.getNumericCellValue());
-            }
-        } catch (final Exception ignored) {
-            // fall through
-        }
-        final String text = cellString(row, col);
-        if (!StringUtils.hasText(text)) {
-            return null;
-        }
-        try {
-            return new BigDecimal(text.replace(",", ""));
-        } catch (final NumberFormatException ex) {
-            return null;
-        }
-    }
-
-    private boolean isEmptyRow(final Row row) {
-        for (int c = 0; c < 8; c++) {
-            if (StringUtils.hasText(cellString(row, c))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private Long findLoanIdByAccountNo(final String accountNo) {
-        try {
-            return this.jdbcTemplate.queryForObject("SELECT id FROM m_loan WHERE account_no = ? LIMIT 1", Long.class, accountNo);
-        } catch (final EmptyResultDataAccessException ex) {
-            return null;
-        }
-    }
-
-    private List<LoanCandidate> findCandidatesByIdEc(final String idNumber, final String ecNumber) {
-        final List<LoanCandidate> candidates = new ArrayList<>();
-        if (!StringUtils.hasText(idNumber) || !tableExists(SsbConstants.DT_CLIENT_DETAILS)) {
-            return candidates;
-        }
-        final StringBuilder sql = new StringBuilder();
-        sql.append("SELECT l.id AS loan_id, l.account_no FROM m_loan l ");
-        sql.append("JOIN ").append(SsbConstants.DT_CLIENT_DETAILS).append(" d ON d.client_id = l.client_id ");
-        sql.append("WHERE d.IdNumber = ? AND l.loan_status_id IN (?, ?) ");
-        final List<Object> args = new ArrayList<>();
-        args.add(idNumber.trim());
-        args.add(SsbConstants.LOAN_STATUS_APPROVED);
-        args.add(SsbConstants.LOAN_STATUS_ACTIVE);
-        if (StringUtils.hasText(ecNumber)) {
-            sql.append("AND d.EcNumber = ? ");
-            args.add(ecNumber.trim());
-        }
-        sql.append("ORDER BY l.id");
-        return this.jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
-            final LoanCandidate c = new LoanCandidate();
-            c.loanId = rs.getLong("loan_id");
-            c.accountNo = rs.getString("account_no");
-            return c;
-        }, args.toArray());
     }
 
     private boolean alreadyPosted(final String bureau, final String recId) {
@@ -541,7 +380,7 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
                 batchId, row.getRowNumber(), row.getRecId(), row.getDeductionCode(), row.getReference(), row.getIdNumber(),
                 row.getEcNumber(), row.getTransDate() == null ? null : new java.sql.Date(row.getTransDate().getTime()), row.getAmount(),
                 row.getName(), row.getStatus(), row.getReason(), row.getSuggestedLoanId(), row.getSuggestedAccountNo(),
-                row.getPostedLoanId(), row.getPostedTransactionId(), trimTo(row.getNote(), 1000));
+                row.getPostedLoanId(), row.getPostedTransactionId(), SsbImportSupport.trimTo(row.getNote(), 1000));
     }
 
     private void updateBatchCounts(final Long batchId, final int posted, final int failed, final int needsReview, final int total) {
@@ -578,14 +417,7 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
                 "UPDATE m_ssb_pay_import_row SET status = ?, reason = ?, suggested_loan_id = ?, suggested_account_no = ?, "
                         + "posted_loan_id = ?, posted_transaction_id = ?, note = ? WHERE id = ?",
                 row.getStatus(), row.getReason(), row.getSuggestedLoanId(), row.getSuggestedAccountNo(), row.getPostedLoanId(),
-                row.getPostedTransactionId(), trimTo(row.getNote(), 1000), row.getId());
-    }
-
-    private boolean tableExists(final String tableName) {
-        final Integer count = this.jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?", Integer.class,
-                tableName);
-        return count != null && count > 0;
+                row.getPostedTransactionId(), SsbImportSupport.trimTo(row.getNote(), 1000), row.getId());
     }
 
     private static String buildNote(final SsbPayRowData row, final String bureau) {
@@ -597,7 +429,7 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
         appendField(sb, "Id number", row.getIdNumber());
         appendField(sb, "Ec number", row.getEcNumber());
         appendField(sb, "Name", row.getName());
-        return trimTo(sb.toString(), 1000);
+        return SsbImportSupport.trimTo(sb.toString(), 1000);
     }
 
     private static void appendField(final StringBuilder sb, final String label, final String value) {
@@ -609,37 +441,6 @@ public class SsbPayImportWritePlatformServiceImpl implements SsbPayImportWritePl
     private static String externalId(final String bureau, final String recId) {
         final String value = bureau + "-" + recId;
         return value.length() <= 100 ? value : value.substring(0, 100);
-    }
-
-    private static String normalizeBureau(final String bureau) {
-        if (!StringUtils.hasText(bureau)) {
-            throw new PlatformDataIntegrityException("error.msg.ssb.pay.bureau.required", "bureau is required (SSB or PENSION).",
-                    "bureau");
-        }
-        final String value = bureau.trim().toUpperCase();
-        if (SsbConstants.BUREAU_SSB.equals(value) || SsbConstants.BUREAU_PENSION.equals(value)) {
-            return value;
-        }
-        throw new PlatformDataIntegrityException("error.msg.ssb.pay.bureau.invalid", "bureau must be SSB or PENSION.", "bureau", bureau);
-    }
-
-    private static String trimReason(final String message) {
-        if (message == null) {
-            return "REPAYMENT_FAILED";
-        }
-        return trimTo(message, 255);
-    }
-
-    private static String trimTo(final String value, final int max) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() <= max ? value : value.substring(0, max);
-    }
-
-    private static final class LoanCandidate {
-        Long loanId;
-        String accountNo;
     }
 
     private static final class BatchMapper implements RowMapper<SsbPayBatchData> {

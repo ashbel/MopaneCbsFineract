@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class SsbMandateService {
@@ -74,6 +75,15 @@ public class SsbMandateService {
                     row.getLoanId(), bureau, row.getAccountNo(), row.getType(), row.getAmountCents(), row.getEndDate(), now,
                     active ? 1 : 0);
         }
+    }
+
+    public void applyResFailure(final Long loanId, final String bureau, final String type) {
+        if (loanId == null || !StringUtils.hasText(bureau)) {
+            return;
+        }
+        final boolean deleteType = SsbConstants.TYPE_DELETE.equalsIgnoreCase(SsbImportSupport.normalizeType(type));
+        final int active = deleteType ? 1 : 0;
+        this.jdbcTemplate.update("UPDATE m_ssb_mandate SET active = ? WHERE loan_id = ? AND bureau = ?", active, loanId, bureau);
     }
 
     public static final class MandateSnapshot {

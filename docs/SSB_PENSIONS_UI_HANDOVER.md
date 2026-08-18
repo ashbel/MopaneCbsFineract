@@ -1,6 +1,6 @@
 # SSB / Pensions UI Handover (`mopane-cbs-ui`)
 
-Frontend handover for Salary Services Bureau (SSB) and Pensions deduction **export** and PAY **import / review**.
+Frontend handover for Salary Services Bureau (SSB) and Pensions deduction **export**, PAY **import / review**, and RES **response import / review**.
 
 **Backend repo:** `MopaneCbsFineract`  
 **UI repo:** `mopane-cbs-ui` (Community App / AngularJS) or React UI  
@@ -15,7 +15,9 @@ Add a Reports-style screen so MFIs can:
 
 1. Filter loans by product (and optional office / status) and download the bureau submission Excel  
 2. Upload the bureau PAY return Excel and download a result workbook (`Posted` / `Failed` / `NeedsReview`)  
-3. Open an import batch and approve or reject **Needs Review** rows (IdNumber/EcNumber suggested matches)
+3. Open a PAY import batch and approve or reject **Needs Review** rows (IdNumber/EcNumber suggested matches)  
+4. Upload the bureau RES (authorisation) Excel and download a result workbook (`Disbursed` / `Authorised` / `Noted` / `Failed` / `NeedsReview`)  
+5. Open a RES import batch and approve or reject **Needs Review** rows
 
 ---
 
@@ -26,8 +28,10 @@ Add a Reports-style screen so MFIs can:
 | Auth | Basic (same as rest of Community App) |
 | Tenant | `Fineract-Platform-TenantId` header **or** `tenantIdentifier` query param |
 | Export permission | `READ_SSB_DEDUCTION` |
-| Upload / list batches | `CREATE_SSB_PAY_IMPORT` |
-| Approve / reject review | `UPDATE_SSB_PAY_IMPORT` |
+| PAY upload / list batches | `CREATE_SSB_PAY_IMPORT` |
+| PAY approve / reject review | `UPDATE_SSB_PAY_IMPORT` |
+| RES upload / list batches | `CREATE_SSB_RES_IMPORT` |
+| RES approve / reject review | `UPDATE_SSB_RES_IMPORT` |
 
 ---
 
@@ -204,6 +208,139 @@ Reject sets status `REJECTED` with reason `REJECTED_BY_USER`.
 
 ---
 
+## 4. Upload RES (bureau response) file
+
+| Item | Value |
+|------|--------|
+| Method | `POST` |
+| Path | `/fineract-provider/api/v1/ssb/res/upload` |
+| Content-Type | `multipart/form-data` |
+| Response | Result `.xlsx` attachment |
+| Response header | `X-SSB-Res-Import-Batch-Id: {batchId}` |
+
+### Form fields
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `file` | Yes | RES `.xlsx` (SSB columns: Rec id, Reference, Status, Message, Type, …; Pensions: REF NO, PROCESSED, REASON REJECTION) |
+| `bureau` | Yes | `SSB` or `PENSION` |
+| `paymentTypeId` | No | Used for cash disbursement when the loan has no linked savings |
+| `dryRun` | No | `true` = classify only, do not disburse or write notes |
+| `autoDisburse` | No | Overrides global config `ssb-res-auto-disburse` (default enabled) |
+
+### Example
+
+```bash
+curl -sk -u 'USER:PASSWORD' \
+  -H 'Fineract-Platform-TenantId: intercrest' \
+  -F 'file=@RES26083B173.xlsx' \
+  -F 'bureau=SSB' \
+  -D - \
+  -o RES_RESULT.xlsx \
+  'https://fineract.mopane.co.zw/fineract-provider/api/v1/ssb/res/upload'
+```
+
+### Result workbook sheets
+
+| Sheet | Meaning |
+|-------|---------|
+| `Disbursed` | SUCCESS + Approved loan auto-disbursed (or dry-run would-disburse) |
+| `Authorised` | SUCCESS recorded without disbursing (already active, CHANGE/DELETE, or auto-disburse off) |
+| `Noted` | FAILED: rejection note written on the loan |
+| `Failed` | Could not match / invalid status / disbursement error |
+| `NeedsReview` | Reference failed, but IdNumber (+ EcNumber if present) found exactly one candidate loan |
+
+### Matching rules (do not re-implement in UI)
+
+Same as PAY:
+
+1. Auto-act **only** when Reference matches loan `accountNo`  
+2. Otherwise fail, and if Id/EC suggests one loan → **Needs Review**  
+3. Never auto-disburse or note from Id/EC alone — that is the review screen’s job  
+
+Do **not** use RES `Amount` as the disbursement amount (it is the monthly deduction). The backend disburses `approved_principal`.
+
+### UI sketch
+
+- Route suggestion: `#/reports/ssb/res-import`  
+- Controls: Bureau, Payment type, Dry run, Auto disburse (default on), file picker  
+- Action: **Upload** → browser downloads result Excel  
+- Capture `X-SSB-Res-Import-Batch-Id` and link to batch detail / review
+
+---
+
+## 5. Review RES batches
+
+### List batches
+
+```http
+GET /fineract-provider/api/v1/ssb/res/batches?offset=0&limit=50
+```
+
+JSON array of:
+
+| Field | Type |
+|-------|------|
+| `id` | number |
+| `bureau` | string |
+| `filename` | string |
+| `uploadedBy` | number |
+| `uploadedOn` | date/datetime |
+| `dryRun` | boolean |
+| `autoDisburse` | boolean |
+| `paymentTypeId` | number \| null |
+| `disbursedCount` | number |
+| `authorisedCount` | number |
+| `notedCount` | number |
+| `failedCount` | number |
+| `needsReviewCount` | number |
+| `totalCount` | number |
+
+### Batch detail
+
+```http
+GET /fineract-provider/api/v1/ssb/res/batches/{batchId}
+```
+
+Same batch object plus `rows[]` with:
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `id` | number | Row id for approve/reject |
+| `rowNumber` | number | Excel row |
+| `recId`, `deductionCode`, `reference`, `idNumber`, `ecNumber`, `type`, `name` | string | RES columns |
+| `bureauStatus` | string | `SUCCESS` \| `FAILED` (normalised from Y/N/PROCESSED too) |
+| `startDate` / `endDate` | date | |
+| `amount` | number | Monthly deduction (display only) |
+| `message` | string | Bureau rejection text |
+| `status` | string | `DISBURSED` \| `AUTHORISED` \| `NOTED` \| `FAILED` \| `NEEDS_REVIEW` \| `REJECTED` |
+| `reason` | string | e.g. `LIKELY_MATCH_ID_EC`, `BUREAU_REJECTED`, `ALREADY_ACTIVE` |
+| `suggestedLoanId` / `suggestedAccountNo` | | Present for review |
+| `loanId` / `disbursementTransactionId` / `noteId` | | Present when acted |
+| `note` | string | Loan note / disbursement audit text |
+
+### Approve / reject
+
+```http
+POST /fineract-provider/api/v1/ssb/res/batches/{batchId}/rows/{rowId}?command=approve
+POST /fineract-provider/api/v1/ssb/res/batches/{batchId}/rows/{rowId}?command=reject
+```
+
+Optional: `paymentTypeId` on approve.
+
+Approve applies the stored bureau status to `suggestedLoanId` (disburse or write rejection note).  
+Reject sets status `REJECTED` with reason `REJECTED_BY_USER`.
+
+### UI sketch
+
+- Route: `#/reports/ssb/res-batches` and `#/reports/ssb/res-batches/:batchId`  
+- List: filename, bureau, counts (disbursed / authorised / noted / failed / needs review), uploaded on  
+- Detail: filterable table; highlight `NEEDS_REVIEW`  
+- Row actions: Approve (confirm suggested account) / Reject  
+- Link loan to `#/viewloanaccount/{loanId}`
+
+---
+
 ## Suggested menu placement
 
 **Reports → SSB / Pensions**
@@ -211,6 +348,8 @@ Reject sets status `REJECTED` with reason `REJECTED_BY_USER`.
 - Export deduction file  
 - Import PAY file  
 - PAY import batches  
+- Import RES file  
+- RES import batches  
 
 ---
 
@@ -219,6 +358,7 @@ Reject sets status `REJECTED` with reason `REJECTED_BY_USER`.
 - Editing IdNumber/EcNumber (use existing datatable UI on client)  
 - Changing mandate history manually  
 - Auto-posting from Id/EC without approve  
+- Auto-disbursing from Id/EC without approve  
 
 ## Prerequisites (tenant)
 

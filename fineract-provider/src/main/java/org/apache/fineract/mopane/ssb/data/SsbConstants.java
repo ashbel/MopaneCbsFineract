@@ -22,6 +22,8 @@ public final class SsbConstants {
 
     public static final String RESOURCE_EXPORT = "SSB_DEDUCTION";
     public static final String RESOURCE_PAY_IMPORT = "SSB_PAY_IMPORT";
+    public static final String RESOURCE_RES_IMPORT = "SSB_RES_IMPORT";
+    public static final String CONFIG_AUTO_DISBURSE = "ssb-res-auto-disburse";
 
     public static final String BUREAU_SSB = "SSB";
     public static final String BUREAU_PENSION = "PENSION";
@@ -42,21 +44,36 @@ public final class SsbConstants {
     public static final String STATUS_FAILED = "FAILED";
     public static final String STATUS_NEEDS_REVIEW = "NEEDS_REVIEW";
     public static final String STATUS_REJECTED = "REJECTED";
+    public static final String STATUS_DISBURSED = "DISBURSED";
+    public static final String STATUS_AUTHORISED = "AUTHORISED";
+    public static final String STATUS_NOTED = "NOTED";
+
+    public static final String BUREAU_STATUS_SUCCESS = "SUCCESS";
+    public static final String BUREAU_STATUS_FAILED = "FAILED";
 
     public static final String REASON_REFERENCE_MISSING = "REFERENCE_MISSING";
     public static final String REASON_REFERENCE_NOT_FOUND = "REFERENCE_NOT_FOUND";
     public static final String REASON_LIKELY_MATCH_ID_EC = "LIKELY_MATCH_ID_EC";
     public static final String REASON_AMBIGUOUS_ID_EC = "AMBIGUOUS_ID_EC";
     public static final String REASON_ALREADY_POSTED = "ALREADY_POSTED";
+    public static final String REASON_ALREADY_PROCESSED = "ALREADY_PROCESSED";
     public static final String REASON_INVALID_AMOUNT = "INVALID_AMOUNT";
     public static final String REASON_INVALID_DATE = "INVALID_DATE";
+    public static final String REASON_INVALID_STATUS = "INVALID_STATUS";
     public static final String REASON_LOAN_NOT_REPAYABLE = "LOAN_NOT_REPAYABLE";
+    public static final String REASON_LOAN_NOT_APPROVED = "LOAN_NOT_APPROVED";
+    public static final String REASON_ALREADY_ACTIVE = "ALREADY_ACTIVE";
+    public static final String REASON_AUTO_DISBURSE_DISABLED = "AUTO_DISBURSE_DISABLED";
+    public static final String REASON_TYPE_NOT_NEW = "TYPE_NOT_NEW";
+    public static final String REASON_BUREAU_REJECTED = "BUREAU_REJECTED";
+    public static final String REASON_DISBURSE_FAILED = "DISBURSE_FAILED";
 
     public static final int LOAN_STATUS_APPROVED = 200;
     public static final int LOAN_STATUS_ACTIVE = 300;
 
     public static final String XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String HEADER_BATCH_ID = "X-SSB-Import-Batch-Id";
+    public static final String HEADER_RES_BATCH_ID = "X-SSB-Res-Import-Batch-Id";
 
     public static final String DATE_FORMAT_SSB = "dd/MMM/yyyy";
     public static final String DATE_FORMAT_API = "dd MMMM yyyy";
