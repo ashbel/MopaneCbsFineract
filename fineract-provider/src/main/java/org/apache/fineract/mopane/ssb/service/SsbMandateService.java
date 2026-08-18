@@ -20,7 +20,6 @@ package org.apache.fineract.mopane.ssb.service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.mopane.ssb.data.SsbConstants;
@@ -43,17 +42,19 @@ public class SsbMandateService {
 
     public MandateSnapshot findActive(final Long loanId, final String bureau) {
         try {
-            final Map<String, Object> row = this.jdbcTemplate.queryForMap(
+            return this.jdbcTemplate.queryForObject(
                     "SELECT last_type, last_amount_cents, last_end_date, active FROM m_ssb_mandate WHERE loan_id = ? AND bureau = ?",
+                    (rs, rowNum) -> {
+                        final MandateSnapshot snap = new MandateSnapshot();
+                        snap.lastType = rs.getString("last_type");
+                        final long cents = rs.getLong("last_amount_cents");
+                        snap.lastAmountCents = rs.wasNull() ? null : cents;
+                        snap.lastEndDate = rs.getDate("last_end_date");
+                        // tinyint(1) is Boolean under Connector/J (tinyInt1isBit=true); getBoolean handles both.
+                        snap.active = rs.getBoolean("active");
+                        return snap;
+                    },
                     loanId, bureau);
-            final MandateSnapshot snap = new MandateSnapshot();
-            snap.lastType = (String) row.get("last_type");
-            final Number cents = (Number) row.get("last_amount_cents");
-            snap.lastAmountCents = cents == null ? null : cents.longValue();
-            snap.lastEndDate = (Date) row.get("last_end_date");
-            final Number active = (Number) row.get("active");
-            snap.active = active != null && active.intValue() == 1;
-            return snap;
         } catch (final EmptyResultDataAccessException ex) {
             return null;
         }
