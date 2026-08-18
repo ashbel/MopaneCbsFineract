@@ -62,6 +62,8 @@ services:
     networks:
       - fineract-legacy-net
     mem_limit: 2g
+    volumes:
+      - ./.mifosx:/root/.mifosx
 
   # Community-app (AngularJS) static files from mopane-cbs-ui dist/community-app
   ui:

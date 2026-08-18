@@ -6,7 +6,9 @@
 build
 .DS_Store
 deploy/docker/.env
+deploy/docker/observability/.env
 deploy/docker/tomcat/fineract-provider.war
+deploy/docker/.mifosx/
 # Built community-app assets — deploy from mopane-cbs-ui (see deploy/docker/README.md)
 deploy/docker/ui/dist/**
 !deploy/docker/ui/dist/.gitkeep

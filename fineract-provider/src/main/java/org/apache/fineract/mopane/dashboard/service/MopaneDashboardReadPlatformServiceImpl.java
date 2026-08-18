@@ -310,7 +310,8 @@ public class MopaneDashboardReadPlatformServiceImpl implements MopaneDashboardRe
 
         if (currencyCode == null) { return new ArrayList<>(buckets.values()); }
 
-        final String sql = "SELECT COALESCE(l.principal_outstanding_derived,0) AS outstanding, "
+        // Principal overdue by band — same basis as portfolio.valueAtRisk (not principal outstanding).
+        final String sql = "SELECT COALESCE(la.principal_overdue_derived,0) AS outstanding, "
                 + "CASE WHEN la.overdue_since_date_derived IS NULL THEN 0 "
                 + "ELSE DATEDIFF(?, la.overdue_since_date_derived) END AS days_arrears "
                 + "FROM m_loan l " + loanOfficeJoins() + " LEFT JOIN m_loan_arrears_aging la ON la.loan_id = l.id "

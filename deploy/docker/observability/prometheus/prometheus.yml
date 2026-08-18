@@ -1,0 +1,61 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Keep only fineract + obs containers to cut cardinality
+      - source_labels: [name]
+        regex: "fineract-legacy-.*|fineract-obs-.*"
+        action: keep
+
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: blackbox-https
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - https://million.mopane.co.zw/
+          - https://pivot.mopane.co.zw/
+        labels:
+          probe_type: tenant_https
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  - job_name: blackbox-api
+    metrics_path: /probe
+    params:
+      module: [http_tomcat_api]
+    static_configs:
+      - targets:
+          - https://million.mopane.co.zw/fineract-provider/api/v1/offices
+          - https://pivot.mopane.co.zw/fineract-provider/api/v1/offices
+        labels:
+          probe_type: public_api
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+      - source_labels: [__param_target]
+        regex: "https://([^.]+)\\.mopane\\.co\\.zw/.*"
+        target_label: tenant
+        replacement: "${1}"

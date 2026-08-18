@@ -1,0 +1,135 @@
+# Fineract prod observability — Prometheus / Loki / Grafana (no Alertmanager).
+# Grafana published via host nginx at https://grafana-prod.mopane.co.zw
+name: fineract-obs
+
+networks:
+  obs-net:
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: fineract-obs-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - obs-net
+    mem_limit: 512m
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: fineract-obs-loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    networks:
+      - obs-net
+    mem_limit: 512m
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: fineract-obs-promtail
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - obs-net
+    depends_on:
+      - loki
+    mem_limit: 128m
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: fineract-obs-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?set GF_SECURITY_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: https://grafana-prod.mopane.co.zw
+      GF_SERVER_DOMAIN: grafana-prod.mopane.co.zw
+      GF_SERVER_ENFORCE_DOMAIN: "true"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3001:3000"
+    networks:
+      - obs-net
+    depends_on:
+      - prometheus
+      - loki
+    mem_limit: 256m
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: fineract-obs-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    ports:
+      - "127.0.0.1:8088:8080"
+    networks:
+      - obs-net
+    mem_limit: 192m
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: fineract-obs-node-exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+    volumes:
+      - /:/host:ro,rslave
+      - /var/lib/node_exporter/textfile:/textfile:ro
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - obs-net
+    pid: host
+    mem_limit: 64m
+
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: fineract-obs-blackbox
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/blackbox/blackbox.yml
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+    ports:
+      - "127.0.0.1:9115:9115"
+    networks:
+      - obs-net
+    mem_limit: 64m

@@ -136,6 +136,10 @@ Top-level object:
 
 Each item: `{ bucket, loanCount, outstanding }`.
 
+- `outstanding` here is **principal overdue** in that aging band (same basis as `portfolio.valueAtRisk`), not principal outstanding.
+- Non-`CURRENT` bucket amounts sum to `portfolio.valueAtRisk`.
+- `CURRENT` is typically `0` for the money chart (no overdue principal).
+
 Use for the **Arrears Chart** (bar/stacked). Prefer `outstanding` for money chart; `loanCount` for count chart.
 
 ### `trends`

@@ -209,4 +209,5 @@ Income / Statement of Financial Position lines that are not loan-driven stay at 
 |---------|-------------------|--------|
 | `pivots.mopane.co.zw` | `pivots` | `mifostenant-pivot` |
 | `million.mopane.co.zw` | `million` | `mifostenant-milliondollar` |
+| `intercrest.mopane.co.zw` | `intercrest` | `mifostenant-intercrest` |
 | `fineract.mopane.co.zw` | `default` (unless `?tenantIdentifier=`) | `mifostenant-default` |

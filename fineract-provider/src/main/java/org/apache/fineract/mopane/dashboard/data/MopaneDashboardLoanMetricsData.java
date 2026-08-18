@@ -344,6 +344,7 @@ public class MopaneDashboardLoanMetricsData {
 
         private final String bucket;
         private long loanCount;
+        /** Principal overdue in this aging band (aligns with {@code portfolio.valueAtRisk}). */
         private BigDecimal outstanding = BigDecimal.ZERO;
 
         public AgingBucket(final String bucket) {
