@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -44,7 +45,8 @@ import org.joda.time.LocalDate;
 
 @Entity
 @Table(name = "m_office", uniqueConstraints = { @UniqueConstraint(columnNames = { "name" }, name = "name_org"),
-        @UniqueConstraint(columnNames = { "external_id" }, name = "externalid_org") })
+        @UniqueConstraint(columnNames = { "external_id" }, name = "externalid_org"),
+        @UniqueConstraint(columnNames = { "short_code" }, name = "shortcode_org") })
 public class Office extends AbstractPersistableCustom<Long> {
 
     @OneToMany(fetch = FetchType.LAZY)
@@ -68,8 +70,11 @@ public class Office extends AbstractPersistableCustom<Long> {
     @Column(name = "external_id", length = 100)
     private String externalId;
 
-    public static Office headOffice(final String name, final LocalDate openingDate, final String externalId) {
-        return new Office(null, name, openingDate, externalId);
+    @Column(name = "short_code", nullable = false, length = 3)
+    private String shortCode;
+
+    public static Office headOffice(final String name, final LocalDate openingDate, final String externalId, final String shortCode) {
+        return new Office(null, name, openingDate, externalId, shortCode);
     }
 
     public static Office fromJson(final Office parentOffice, final JsonCommand command) {
@@ -77,7 +82,8 @@ public class Office extends AbstractPersistableCustom<Long> {
         final String name = command.stringValueOfParameterNamed("name");
         final LocalDate openingDate = command.localDateValueOfParameterNamed("openingDate");
         final String externalId = command.stringValueOfParameterNamed("externalId");
-        return new Office(parentOffice, name, openingDate, externalId);
+        final String shortCode = command.stringValueOfParameterNamed("shortCode");
+        return new Office(parentOffice, name, openingDate, externalId, shortCode);
     }
 
     protected Office() {
@@ -85,9 +91,10 @@ public class Office extends AbstractPersistableCustom<Long> {
         this.parent = null;
         this.name = null;
         this.externalId = null;
+        this.shortCode = null;
     }
 
-    private Office(final Office parent, final String name, final LocalDate openingDate, final String externalId) {
+    private Office(final Office parent, final String name, final LocalDate openingDate, final String externalId, final String shortCode) {
         this.parent = parent;
         this.openingDate = openingDate.toDateTimeAtStartOfDay().toDate();
         if (parent != null) {
@@ -104,6 +111,7 @@ public class Office extends AbstractPersistableCustom<Long> {
         } else {
             this.externalId = null;
         }
+        this.shortCode = normalizeShortCode(shortCode);
     }
 
     private void addChild(final Office office) {
@@ -151,7 +159,21 @@ public class Office extends AbstractPersistableCustom<Long> {
             this.externalId = StringUtils.defaultIfEmpty(newValue, null);
         }
 
+        final String shortCodeParamName = "shortCode";
+        if (command.isChangeInStringParameterNamed(shortCodeParamName, this.shortCode)) {
+            final String newValue = normalizeShortCode(command.stringValueOfParameterNamed(shortCodeParamName));
+            actualChanges.put(shortCodeParamName, newValue);
+            this.shortCode = newValue;
+        }
+
         return actualChanges;
+    }
+
+    private static String normalizeShortCode(final String shortCode) {
+        if (StringUtils.isNotBlank(shortCode)) {
+            return shortCode.trim().toUpperCase(Locale.ENGLISH);
+        }
+        return null;
     }
 
     public boolean isOpeningDateBefore(final LocalDate baseDate) {
@@ -199,6 +221,10 @@ public class Office extends AbstractPersistableCustom<Long> {
 
     public String getName() {
         return this.name;
+    }
+
+    public String getShortCode() {
+        return this.shortCode;
     }
 
     public String getHierarchy() {

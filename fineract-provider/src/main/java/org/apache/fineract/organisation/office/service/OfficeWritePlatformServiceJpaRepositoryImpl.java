@@ -235,6 +235,10 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
             final String externalId = command.stringValueOfParameterNamed("externalId");
             throw new PlatformDataIntegrityException("error.msg.office.duplicate.externalId", "Office with externalId `" + externalId
                     + "` already exists", "externalId", externalId);
+        } else if (realCause.getMessage().contains("shortcode_org")) {
+            final String shortCode = command.stringValueOfParameterNamed("shortCode");
+            throw new PlatformDataIntegrityException("error.msg.office.duplicate.shortCode", "Office with shortCode `" + shortCode
+                    + "` already exists", "shortCode", shortCode);
         } else if (realCause.getMessage().contains("name_org")) {
             final String name = command.stringValueOfParameterNamed("name");
             throw new PlatformDataIntegrityException("error.msg.office.duplicate.name", "Office with name `" + name + "` already exists",

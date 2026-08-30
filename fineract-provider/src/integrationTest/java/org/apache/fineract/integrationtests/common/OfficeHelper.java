@@ -56,6 +56,11 @@ public class OfficeHelper {
 		}.getType());
 	}
 
+	public String retrieveOfficeShortCode(int id) {
+		return (String) Utils.performServerGet(requestSpec, responseSpec,
+				OFFICE_URL + "/" + id + "?" + Utils.TENANT_IDENTIFIER, "shortCode");
+	}
+
 	public Integer createOffice(final String openingDate) {
 		String json = getAsJSON(openingDate);
 		return Utils.performServerPost(this.requestSpec, this.responseSpec,
@@ -81,6 +86,7 @@ public class OfficeHelper {
 		final HashMap<String, String> map = new HashMap<>();
 		map.put("parentId", "1");
 		map.put("name", Utils.randomNameGenerator("Office_", 4));
+		map.put("shortCode", Utils.randomStringGenerator("", 3));
 		map.put("dateFormat", "dd MMMM yyyy");
 		map.put("locale", "en");
 		map.put("openingDate", openingDate);

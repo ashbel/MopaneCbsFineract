@@ -28,23 +28,25 @@ public class OfficeDomain {
 		private String name;
 		private String nameDecorated;
 		private String externalId;
+		private String shortCode;
 		private String[] openingDate;
 		private String hierarchy;
 
 		private Builder(final int id, final String name,
-				final String nameDecorated, final String externalId,
+				final String nameDecorated, final String externalId, final String shortCode,
 				final String[] openingDate, final String hierarchy) {
 			this.id = id;
 			this.name = name;
 			this.nameDecorated = nameDecorated;
 			this.externalId = externalId;
+			this.shortCode = shortCode;
 			this.openingDate = openingDate;
 			this.hierarchy = hierarchy;
 		}
 
 		public OfficeDomain build() {
 			return new OfficeDomain(this.id, this.name, this.nameDecorated,
-					this.externalId, this.openingDate, this.hierarchy);
+					this.externalId, this.shortCode, this.openingDate, this.hierarchy);
 		}
 	}
 
@@ -52,6 +54,7 @@ public class OfficeDomain {
 	private String name;
 	private String nameDecorated;
 	private String externalId;
+	private String shortCode;
 	private String[] openingDate;
 	private String hierarchy;
 
@@ -60,13 +63,14 @@ public class OfficeDomain {
 	}
 
 	private OfficeDomain(final int id, final String name,
-			final String nameDecorated, final String externalId,
+			final String nameDecorated, final String externalId, final String shortCode,
 			final String[] openingDate, final String hierarchy) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.nameDecorated = nameDecorated;
 		this.externalId = externalId;
+		this.shortCode = shortCode;
 		this.openingDate = openingDate;
 		this.hierarchy = hierarchy;
 	}
@@ -80,9 +84,9 @@ public class OfficeDomain {
 	}
 
 	public static Builder create(final int id, final String name,
-			final String nameDecorated, final String externalId,
+			final String nameDecorated, final String externalId, final String shortCode,
 			final String[] openingDate, final String hierarchy) {
-		return new Builder(id, name, nameDecorated, externalId, openingDate,
+		return new Builder(id, name, nameDecorated, externalId, shortCode, openingDate,
 				hierarchy);
 	}
 
@@ -100,6 +104,10 @@ public class OfficeDomain {
 
 	public String getExternalId() {
 		return this.externalId;
+	}
+
+	public String getShortCode() {
+		return this.shortCode;
 	}
 
 	public String[] getOpeningDate() {
@@ -122,6 +130,8 @@ public class OfficeDomain {
 			hash += this.nameDecorated.hashCode();
 		if (this.externalId != null)
 			hash += this.externalId.hashCode();
+		if (this.shortCode != null)
+			hash += this.shortCode.hashCode();
 		if (this.openingDate != null)
 			hash += this.openingDate.hashCode();
 		if (this.hierarchy != null)
@@ -144,6 +154,7 @@ public class OfficeDomain {
 		if (this.id == od.getId() && this.name.equals(od.getName())
 				&& this.nameDecorated.equals(od.getName())
 				&& this.externalId.equals(od.getExternalId())
+				&& this.shortCode.equals(od.getShortCode())
 				&& this.openingDate.equals(od.getOpeningDate())
 				&& this.hierarchy.equals(od.getHierarchy()))
 			return true;
