@@ -1110,10 +1110,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         if (!changes.isEmpty()) {
 
-            // If loan approved amount less than loan demanded amount, then need
-            // to recompute the schedule
+            // Recompute when amount/date changed, or when capitalised fees must
+            // be included in the approved schedule before disbursement.
             if (changes.containsKey(LoanApiConstants.approvedLoanAmountParameterName) || changes.containsKey("recalculateLoanSchedule")
-                    || changes.containsKey("expectedDisbursementDate")) {
+                    || changes.containsKey("expectedDisbursementDate")
+                    || loan.hasUnappliedPrincipalCapitalisingFeesAtDisbursement(expectedDisbursementDate)) {
                 LocalDate recalculateFrom = null;
                 ScheduleGeneratorDTO scheduleGeneratorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, recalculateFrom);
                 loan.regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);

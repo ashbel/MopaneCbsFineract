@@ -1358,6 +1358,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         }
 
         boolean reprocessRequired = true;
+        if (!loan.isDisbursed() && loanCharge != null && loanCharge.isPrincipalCapitalizingFee()) {
+            final AppUser currentUser = getAppUserIfPresent();
+            final ScheduleGeneratorDTO generatorDTO = this.loanUtilService.buildScheduleGeneratorDTO(loan, null);
+            loan.regenerateRepaymentSchedule(generatorDTO, currentUser);
+            reprocessRequired = false;
+            saveLoanWithDataIntegrityViolationChecks(loan);
+        }
         if (loan.repaymentScheduleDetail().isInterestRecalculationEnabled()) {
             if (isAppliedOnBackDate && loan.isFeeCompoundingEnabledForInterestRecalculation()) {
 

@@ -238,6 +238,11 @@ public class LoanChargeData {
     
     //Ashbel to capture upfront charges
     public LoanChargeData(final Long id, final BigDecimal amount, EnumOptionData chargeTimeType,final Long loanId) {
+        this(id, amount, chargeTimeType, loanId, false, false, false);
+    }
+
+    public LoanChargeData(final Long id, final BigDecimal amount, EnumOptionData chargeTimeType, final Long loanId,
+            final boolean capitalized, final boolean paid, final boolean waived) {
         this.id = id;
         this.chargeId = null;
         this.name = null;
@@ -254,8 +259,8 @@ public class LoanChargeData {
         this.amountPercentageAppliedTo = null;
         this.penalty = false;
         this.chargePaymentMode = null;
-        this.paid = false;
-        this.waived = false;
+        this.paid = paid;
+        this.waived = waived;
         this.amountOrPercentage = null;
         this.chargeOptions = null;
         this.chargePayable = false;
@@ -265,7 +270,7 @@ public class LoanChargeData {
         this.installmentChargeData = null;
         this.amountAccrued = null;
         this.amountUnrecognized = null;
-        this.capitalized = false;
+        this.capitalized = capitalized;
     }
 
     public LoanChargeData(final Long id, final Long chargeId, final LocalDate dueAsOfDate, EnumOptionData chargeTimeType,
@@ -471,5 +476,21 @@ public class LoanChargeData {
 
     public boolean isCapitalized() {
         return this.capitalized;
+    }
+
+    public boolean isPaid() {
+        return this.paid;
+    }
+
+    public boolean isWaived() {
+        return this.waived;
+    }
+
+    public boolean isPrincipalCapitalizingFee() {
+        return this.capitalized || isTimeOfDisbursementCapitalised();
+    }
+
+    public boolean isUnpaidPrincipalCapitalizingFee() {
+        return isPrincipalCapitalizingFee() && !this.paid && !this.waived;
     }
 }

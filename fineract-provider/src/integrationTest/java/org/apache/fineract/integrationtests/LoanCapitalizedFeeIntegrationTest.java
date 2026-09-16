@@ -124,6 +124,17 @@ public class LoanCapitalizedFeeIntegrationTest {
         loanStatusHashMap = this.loanTransactionHelper.approveLoan(this.EXPECTED_DISBURSAL_DATE, loanID);
         LoanStatusChecker.verifyLoanIsApproved(loanStatusHashMap);
 
+        final ArrayList<HashMap> scheduleBeforeDisbursement = this.loanTransactionHelper.getLoanRepaymentSchedule(this.requestSpec,
+                this.responseSpec, loanID);
+        assertEquals("Approved schedule must already include capitalised fees in principal", Float.valueOf(this.LP_PRINCIPAL + 150.0f),
+                scheduleBeforeDisbursement.get(0).get("principalLoanBalanceOutstanding"));
+        final Object feeDueAtDisbursement = scheduleBeforeDisbursement.get(0).get("feeChargesDue");
+        final float feeDue = feeDueAtDisbursement == null ? 0f : ((Number) feeDueAtDisbursement).floatValue();
+        assertEquals("Capitalised fees must not appear as cash due at disbursement", 0f, feeDue, 0.001f);
+        // Flat equal-principal: (10000 + 150) / 5 = 2030
+        assertEquals("Instalments must amortise cash principal plus capitalised fees", Float.valueOf(2030.0f),
+                scheduleBeforeDisbursement.get(1).get("principalDue"));
+
         loanStatusHashMap = this.loanTransactionHelper.disburseLoan(this.EXPECTED_DISBURSAL_DATE, loanID);
         LoanStatusChecker.verifyLoanIsActive(loanStatusHashMap);
 

@@ -893,7 +893,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
             wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
             updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-            updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
         }
 
         removeOrModifyTransactionAssociatedWithLoanChargeIfDueAtDisbursement(loanCharge);
@@ -955,7 +954,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             final Map<String, Object> loanChargeChanges = loanCharge.update(command, amount);
             actualChanges.putAll(loanChargeChanges);
             updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-            updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
         }
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
@@ -1144,8 +1142,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
         scheduleGeneratorDTO.setRecalculateFrom(transactionDate);
 
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
-
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
 
@@ -1286,7 +1282,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             fetchLoanChargesById(id).setActive(false);
         }
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
     }
 
     public void updateLoanCollateral(final Set<LoanCollateral> loanCollateral) {
@@ -1736,7 +1731,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
         }
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
     }
 
     public boolean isInterestRecalculationEnabledForProduct() {
@@ -2134,8 +2128,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
 
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
-
         // validate if disbursement date is a holiday or a non-working day
         validateDisbursementDateIsOnNonWorkingDay(workingDays, allowTransactionsOnNonWorkingDay);
         validateDisbursementDateIsOnHoliday(allowTransactionsOnHoliday, holidays);
@@ -2772,6 +2764,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 recalculateLoanCharge(loanCharge, scheduleGeneratorDTO.getPenaltyWaitPeriod());
             }
         }
+        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
     }
 
     public LoanScheduleModel regenerateScheduleModel(final ScheduleGeneratorDTO scheduleGeneratorDTO) {
@@ -2988,7 +2981,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
                 if (isDisbursedAmountChanged) {
                     updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-                    updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
                 }
             }else if(isPeriodicAccrualAccountingEnabledOnLoanProduct()){
                 for (final LoanRepaymentScheduleInstallment period : getRepaymentScheduleInstallments()) {
