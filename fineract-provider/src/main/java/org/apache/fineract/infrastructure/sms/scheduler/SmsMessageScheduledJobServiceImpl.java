@@ -28,7 +28,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.fineract.infrastructure.campaigns.helper.SmsConfigUtils;
 import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignConstants;
@@ -109,7 +109,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
         Integer page = 0;
         int totalRecords = 0;
         do {
-            PageRequest pageRequest = new PageRequest(0, pageLimit);
+            PageRequest pageRequest = PageRequest.of(0, pageLimit);
             org.springframework.data.domain.Page<SmsMessage> pendingMessages = this.smsMessageRepository.findByStatusType(
                     SmsMessageStatusType.PENDING.getValue(), pageRequest);
             List<SmsMessage> toSaveMessages = new ArrayList<>() ;
@@ -135,7 +135,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                         }
                     }
                     if(toSaveMessages.size()>0){
-                    	this.smsMessageRepository.save(toSaveMessages);
+                    	this.smsMessageRepository.saveAll(toSaveMessages);
                         this.smsMessageRepository.flush();
                         this.genericExecutorService.execute(new SmsTask(ThreadLocalContextUtil.getTenant(), apiQueueResourceDatas));
                     }                    
@@ -184,7 +184,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
         if (responseOne != null) {
 //            String smsResponse = responseOne.getBody();
             if (!responseOne.getStatusCode().equals(HttpStatus.ACCEPTED)) {
-            	logger.debug(responseOne.getStatusCode().name());
+            	logger.debug(responseOne.getStatusCode().toString());
                 throw new ConnectionFailureException(SmsCampaignConstants.SMS);
             }
         }
@@ -214,7 +214,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                         }
                     }
                     if(toSaveMessages.size()>0){
-                        this.smsMessageRepository.save(toSaveMessages);
+                        this.smsMessageRepository.saveAll(toSaveMessages);
                         this.smsMessageRepository.flush();
                         this.triggeredExecutorService.execute(new SmsTask(ThreadLocalContextUtil.getTenant(), apiQueueResourceDatas));
                     }
@@ -243,7 +243,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
                 apiQueueResourceDatas.add(apiQueueResourceData);
                 smsMessage.setStatusType(SmsMessageStatusType.WAITING_FOR_DELIVERY_REPORT.getValue());
             }
-            this.smsMessageRepository.save(smsMessages);
+            this.smsMessageRepository.saveAll(smsMessages);
             request.append(SmsMessageApiQueueResourceData.toJsonString(apiQueueResourceDatas));
             logger.info("Sending triggered SMS to specific provider with request - " + request.toString());
             this.triggeredExecutorService.execute(new SmsTask(ThreadLocalContextUtil.getTenant(),
@@ -285,7 +285,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
 
                         if (!smsMessageDeliveryReportData.getHasError()
                                 && (deliveryStatus != 100)) {
-                            SmsMessage smsMessage = this.smsMessageRepository.findOne(smsMessageDeliveryReportData.getId());
+                            SmsMessage smsMessage = this.smsMessageRepository.findById(smsMessageDeliveryReportData.getId()).orElse(null);
                             Integer statusType = smsMessage.getStatusType();
                             boolean statusChanged = false;
 

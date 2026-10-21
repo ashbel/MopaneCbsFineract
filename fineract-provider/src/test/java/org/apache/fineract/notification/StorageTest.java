@@ -32,10 +32,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -92,7 +93,9 @@ public class StorageTest {
         );
 
 
-        AppUser appUser = this.appUserRepository.findOne(1L);
+        // The service looks the actor up itself; stub the call rather than its result.
+        when(this.appUserRepository.findById(userId)).thenReturn(Optional.empty());
+        AppUser appUser = null;
 
         NotificationMapper notificationMapper = new NotificationMapper(
                 notification,
@@ -103,8 +106,6 @@ public class StorageTest {
 
 
         when(this.notificationGeneratorWritePlatformService.create(refEq(notification))).thenReturn(1L);
-
-        when(this.appUserRepository.findOne(userId)).thenReturn(appUser);
 
         when(this.notificationGeneratorReadRepositoryWrapper.findById(1L)).thenReturn(notification);
 

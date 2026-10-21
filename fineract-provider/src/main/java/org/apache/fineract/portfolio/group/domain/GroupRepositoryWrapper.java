@@ -40,7 +40,7 @@ public class GroupRepositoryWrapper {
     }
 
     public Group findOneWithNotFoundDetection(final Long id) {
-        final Group entity = this.repository.findOne(id);
+        final Group entity = this.repository.findById(id).orElse(null);
         if (entity == null) { throw new GroupNotFoundException(id); }
         return entity;
     }

@@ -20,13 +20,13 @@ package org.apache.fineract.infrastructure.gcm.domain;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -46,6 +46,10 @@ public class DeviceRegistration extends AbstractPersistableCustom<Long> {
 	@Column(name = "updatedon_date", nullable = false)
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updatedOnDate;
+
+	/* EclipseLink instantiates entities reflectively and, unlike the OpenJPA
+	   enhancer this fork used to run, needs a declared no-arg constructor. */
+	protected DeviceRegistration() {}
 
 	private DeviceRegistration(final Client client, final String registrationId) {
 		this.client = client;

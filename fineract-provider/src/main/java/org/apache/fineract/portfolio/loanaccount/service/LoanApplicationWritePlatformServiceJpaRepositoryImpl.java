@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 import java.math.BigDecimal;
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -219,7 +219,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final AppUser currentUser = getAppUserIfPresent();
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
-            final LoanProduct loanProduct = this.loanProductRepository.findOne(productId);
+            final LoanProduct loanProduct = this.loanProductRepository.findById(productId).orElse(null);
             if (loanProduct == null) { throw new LoanProductNotFoundException(productId); }
 
             final Long clientId = this.fromJsonHelper.extractLongNamed("clientId", command.parsedJson());
@@ -344,7 +344,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             Calendar calendar = null;
 
             if (calendarId != null && calendarId != 0) {
-                calendar = this.calendarRepository.findOne(calendarId);
+                calendar = this.calendarRepository.findById(calendarId).orElse(null);
                 if (calendar == null) { throw new CalendarNotFoundException(calendarId); }
 
                 final CalendarInstance calendarInstance = new CalendarInstance(calendar, newLoanApplication.getId(),
@@ -542,7 +542,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             LoanProduct newLoanProduct = null;
             if (command.isChangeInLongParameterNamed(productIdParamName, existingLoanApplication.loanProduct().getId())) {
                 final Long productId = command.longValueOfParameterNamed(productIdParamName);
-                newLoanProduct = this.loanProductRepository.findOne(productId);
+                newLoanProduct = this.loanProductRepository.findById(productId).orElse(null);
                 if (newLoanProduct == null) { throw new LoanProductNotFoundException(productId); }
             }
 
@@ -811,7 +811,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final Long calendarId = command.longValueOfParameterNamed("calendarId");
             Calendar calendar = null;
             if (calendarId != null && calendarId != 0) {
-                calendar = this.calendarRepository.findOne(calendarId);
+                calendar = this.calendarRepository.findById(calendarId).orElse(null);
                 if (calendar == null) { throw new CalendarNotFoundException(calendarId); }
             }
 

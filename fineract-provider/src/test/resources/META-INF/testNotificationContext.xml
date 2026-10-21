@@ -23,30 +23,29 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:jms="http://www.springframework.org/schema/jms"
        xsi:schemaLocation="
-http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-2.5.xsd">
+http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/jms https://www.springframework.org/schema/jms/spring-jms.xsd">
 
-    <bean id="destinationManager" class="com.mockrunner.jms.DestinationManager"/>
-
-    <bean id="mockQueue" factory-bean="destinationManager" factory-method="createQueue">
-        <constructor-arg index="0" value="demoMockRunnerQueue" />
+    <!-- mockrunner 1.0.6 implements javax.jms and has no Jakarta release, so its
+         MockQueueConnectionFactory can no longer be handed to a JmsTemplate. The
+         embedded ActiveMQ broker is already a dependency and speaks Jakarta JMS. -->
+    <bean id="jmsQueueConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <constructor-arg value="vm://notification-test?broker.persistent=false&amp;broker.useJmx=false" />
+        <property name="trustAllPackages" value="true" />
     </bean>
 
-    <bean id="configurationManager" class="com.mockrunner.jms.ConfigurationManager"/>
-
-    <bean id="jmsQueueConnectionFactory" class="com.mockrunner.mock.jms.MockQueueConnectionFactory">
-        <constructor-arg index="0" ref="destinationManager" />
-        <constructor-arg index="1" ref="configurationManager" />
+    <bean id="mockQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="demoMockRunnerQueue" />
     </bean>
 
     <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
         <property name="connectionFactory" ref="jmsQueueConnectionFactory" />
     </bean>
 
-    <jms:listener-container connection-factory="jmsQueueConnectionFactory" >
+    <jms:listener-container connection-factory="jmsQueueConnectionFactory">
         <jms:listener destination="demoMockRunnerQueue" ref="testListener" method="onMessage" />
     </jms:listener-container>
 
-    <bean id="testListener"  class="org.apache.fineract.notification.Listener" />
+    <bean id="testListener" class="org.apache.fineract.notification.Listener" />
 
 </beans>

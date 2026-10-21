@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Client Savings Summary" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <parameter name="selectOffice" class="java.lang.String" />
+    <parameter name="selectProduct" class="java.lang.String" />
+    <field name="Acc No" class="java.lang.String" />
+    <field name="client/Group Name" class="java.lang.String" />
+    <field name="Balance B/F" class="java.lang.String" />
+    <field name="Deposit" class="java.lang.String" />
+    <field name="Withdrawal" class="java.lang.String" />
+    <field name="Balance" class="java.lang.String" />
+    <field name="Product" class="java.lang.String" />
+    <query language="SQL">SELECT sa.account_no AS 'Acc No', IF(sa.client_id is NULL,(
+SELECT mg.display_name
+FROM m_group mg
+WHERE mg.id=sa.group_id),(
+SELECT mc.display_name
+FROM m_client mc
+WHERE mc.id=sa.client_id)) AS 'client/Group Name',IFNULL((
+SELECT sat1.running_balance_derived
+FROM m_savings_account_transaction sat1
+WHERE sat1.savings_account_id=sa.id AND sat1.transaction_date &lt; $P{fromDate}
+ORDER BY sat1.transaction_date DESC,sat1.created_date DESC,sat1.id DESC
+LIMIT 1),0) AS 'Balance B/F', SUM(IF(ev.enum_type = 0,sat.amount,0)) AS Deposit, SUM(IF(ev.enum_type = 1,sat.amount,0)) AS Withdrawal,(
+SELECT sat1.running_balance_derived
+FROM m_savings_account_transaction sat1
+WHERE sat1.savings_account_id=sa.id AND sat1.transaction_date &lt;= $P{toDate}
+ORDER BY sat1.transaction_date DESC,sat1.created_date DESC,sat1.id DESC
+LIMIT 1) AS 'Balance',
+msp.name AS 'Product'
+FROM m_office mo
+ JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%') AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+ inner join (select sav.id said,sav.client_id cid,sav.group_id gid,of.id oid from m_savings_account sav
+left join m_client mc on mc.id=sav.client_id
+left join m_group gr on gr.id=sav.group_id
+inner join m_office of on of.id=if(mc.id is null,gr.office_id,mc.office_id)) ofid on ofid.oid=ounder.id
+INNER JOIN m_savings_account sa on sa.id=ofid.said
+INNER JOIN m_savings_account_transaction sat ON sat.savings_account_id = sa.id
+INNER JOIN r_enum_value ev ON ev.enum_name = 'savings_transaction_type_enum' AND ev.enum_id = sat.transaction_type_enum
+INNER JOIN m_savings_product msp on msp.id=sa.product_id
+WHERE #sa.client_id=27 AND 
+mo.id=$P{selectOffice}
+AND (msp.id=$P{selectProduct} or $P{selectProduct}=-1)
+AND sat.is_reversed=0 AND sat.transaction_date BETWEEN $P{fromDate} AND $P{toDate}
+GROUP BY sa.account_no
+ORDER BY sa.product_id,sa.account_no</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Client Savings Summary</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="107" height="20"><text>Acc No</text></element><element kind="staticText" x="131" y="0" width="107" height="20"><text>client/Group Name</text></element><element kind="staticText" x="242" y="0" width="107" height="20"><text>Balance B/F</text></element><element kind="staticText" x="353" y="0" width="107" height="20"><text>Deposit</text></element><element kind="staticText" x="464" y="0" width="107" height="20"><text>Withdrawal</text></element><element kind="staticText" x="575" y="0" width="107" height="20"><text>Balance</text></element><element kind="staticText" x="686" y="0" width="107" height="20"><text>Product</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="107" height="18"><expression>$F{Acc No}</expression></element><element kind="textField" blankWhenNull="true" x="131" y="0" width="107" height="18"><expression>$F{client/Group Name}</expression></element><element kind="textField" blankWhenNull="true" x="242" y="0" width="107" height="18"><expression>$F{Balance B/F}</expression></element><element kind="textField" blankWhenNull="true" x="353" y="0" width="107" height="18"><expression>$F{Deposit}</expression></element><element kind="textField" blankWhenNull="true" x="464" y="0" width="107" height="18"><expression>$F{Withdrawal}</expression></element><element kind="textField" blankWhenNull="true" x="575" y="0" width="107" height="18"><expression>$F{Balance}</expression></element><element kind="textField" blankWhenNull="true" x="686" y="0" width="107" height="18"><expression>$F{Product}</expression></element></band>
+    </detail>
+</jasperReport>

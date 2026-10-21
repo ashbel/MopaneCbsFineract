@@ -60,7 +60,7 @@ public class LoanScheduleHistoryReadPlatformServiceImpl implements LoanScheduleH
     @Override
     public Integer fetchCurrentVersionNumber(Long loanId) {
         final String sql = "select MAX(lrs.version) from m_loan_repayment_schedule_history lrs where lrs.loan_id = ?";
-        return this.jdbcTemplate.queryForInt(sql, loanId);
+        return this.jdbcTemplate.queryForObject(sql, Integer.class, loanId);
     }
 
     @Override

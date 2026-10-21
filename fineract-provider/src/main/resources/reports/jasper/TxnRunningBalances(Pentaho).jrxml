@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="TxnRunningBalances(Pentaho)" pageWidth="1160" pageHeight="595" orientation="Landscape" columnWidth="1120" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="startDate" class="java.lang.String" />
+    <parameter name="endDate" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <field name="Transaction Date" class="java.lang.String" />
+    <field name="Transaction Type" class="java.lang.String" />
+    <field name="Office" class="java.lang.String" />
+    <field name="Loan Officer" class="java.lang.String" />
+    <field name="Loan Account No" class="java.lang.String" />
+    <field name="Loan Product" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Client Account No" class="java.lang.String" />
+    <field name="Client" class="java.lang.String" />
+    <field name="Amount" class="java.lang.String" />
+    <field name="Principal" class="java.lang.String" />
+    <field name="Interest" class="java.lang.String" />
+    <field name="Outstanding Principal" class="java.lang.String" />
+    <field name="Interest Income" class="java.lang.String" />
+    <field name="Principal Write Off" class="java.lang.String" />
+    <field name="txn_id" class="java.lang.String" />
+    <query language="SQL">select date($P{startDate}) as 'Transaction Date', 'Opening Balance' as `Transaction Type`, ifnull(null,'-') as Office,
+	ifnull(Null,'-') as 'Loan Officer', ifnull(null,'-') as `Loan Account No`, ifnull(null,'-') as `Loan Product`, ifnull(null,'-') as `Currency`, 
+	ifnull(null,'-') as `Client Account No`, ifnull(null,'-') as Client, 
+	ifnull(null,0) as Amount, ifnull(null,0) as Principal, ifnull(null,0) as Interest,
+@totalOutstandingPrincipal := 		  
+ifnull(round(sum(
+	if (txn.transaction_type_enum = 1 /* disbursement */,
+		ifnull(txn.amount,0.00), 
+		ifnull(txn.principal_portion_derived,0.00) * -1)) 
+			,2),0.00)  as 'Outstanding Principal',
+
+@totalInterestIncome := 
+ifnull(round(sum(
+	if (txn.transaction_type_enum in (2,5,8) /* repayment, repayment at disbursal, recovery repayment */,
+		ifnull(txn.interest_portion_derived,0.00), 
+		0))
+			,2),0.00) as 'Interest Income',
+
+@totalWriteOff :=
+ifnull(round(sum(
+	if (txn.transaction_type_enum = 6 /* write-off */,
+		ifnull(txn.principal_portion_derived,0.00), 
+		0)) 
+			,2),0.00) as 'Principal Write Off'
+from m_office o
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+                          and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+join m_loan l on l.client_id = c.id
+join m_product_loan lp on lp.id = l.product_id
+join m_loan_transaction txn on txn.loan_id = l.id
+left join m_currency cur on cur.code = l.currency_code
+where txn.is_reversed = false  
+and txn.transaction_type_enum not in (10,11)
+and o.id = $P{Branch}
+and txn.transaction_date &lt; date($P{startDate})
+
+union all
+
+select x.`Transaction Date`, x.`Transaction Type`, ifnull(x.Office,'-')as"Office", ifnull(x.`Loan Officer`,'-')as"Loan Officer", ifnull(x.`Loan Account No`,'-')as "Loan Account No", ifnull(x.`Loan Product`,'-')as"Loan Product" , ifnull(x.`Currency`,'-')as"Currency", 
+	ifnull(x.`Client Account No`,'-')as "Client Account No", x.Client, ifnull(x.Amount,0)as "Amount", ifnull(x.Principal,0)as "Principal", ifnull(x.Interest,0)as"Interest",
+cast(round( 
+	if (x.transaction_type_enum = 1 /* disbursement */,
+		@totalOutstandingPrincipal := @totalOutstandingPrincipal + x.`Amount`, 
+		@totalOutstandingPrincipal := @totalOutstandingPrincipal - x.`Principal`) 
+			,2) as decimal(19,2)) as 'Outstanding Principal',
+cast(round(
+	if (x.transaction_type_enum in (2,5,8) /* repayment, repayment at disbursal, recovery repayment */,
+		@totalInterestIncome := @totalInterestIncome + x.`Interest`, 
+		@totalInterestIncome) 
+			,2) as decimal(19,2)) as 'Interest Income',
+cast(round(
+	if (x.transaction_type_enum = 6 /* write-off */,
+		@totalWriteOff := @totalWriteOff + x.`Principal`, 
+		@totalWriteOff) 
+			,2) as decimal(19,2)) as 'Principal Write Off'
+from
+(select txn.transaction_type_enum, txn.id as txn_id, txn.transaction_date as 'Transaction Date', 
+cast(
+	ifnull(re.enum_message_property, concat('Unknown Transaction Type Value: ' , txn.transaction_type_enum)) 
+	as char) as 'Transaction Type',
+ounder.`name` as Office, lo.display_name as 'Loan Officer',
+l.account_no  as 'Loan Account No', lp.`name` as 'Loan Product', 
+ifnull(cur.display_symbol, l.currency_code) as Currency,
+c.account_no as 'Client Account No', c.display_name as 'Client',
+ifnull(txn.amount,0.00) as Amount,
+ifnull(txn.principal_portion_derived,0.00) as Principal,
+ifnull(txn.interest_portion_derived,0.00) as Interest
+from m_office o
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+                          and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+join m_loan l on l.client_id = c.id
+left join m_staff lo on lo.id = l.loan_officer_id
+join m_product_loan lp on lp.id = l.product_id
+join m_loan_transaction txn on txn.loan_id = l.id
+left join m_currency cur on cur.code = l.currency_code
+left join r_enum_value re on re.enum_name = 'transaction_type_enum'
+						and re.enum_id = txn.transaction_type_enum
+where txn.is_reversed = false  
+and txn.transaction_type_enum not in (10,11)
+and o.id = $P{Branch}
+and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+and txn.transaction_date &gt;= date($P{startDate})
+and txn.transaction_date &lt;= date($P{endDate})
+order by txn.transaction_date, txn.id) x</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>TxnRunningBalances(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Transaction Date</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Transaction Type</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Office</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Loan Officer</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Loan Account No</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Loan Product</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Client Account No</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Client</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Amount</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Principal</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Interest</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>Outstanding Principal</text></element><element kind="staticText" x="930" y="0" width="66" height="20"><text>Interest Income</text></element><element kind="staticText" x="1000" y="0" width="66" height="20"><text>Principal Write Off</text></element><element kind="staticText" x="1070" y="0" width="66" height="20"><text>txn_id</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Transaction Date}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Transaction Type}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Office}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Loan Officer}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Loan Account No}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Loan Product}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Client Account No}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Client}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Amount}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Principal}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Interest}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{Outstanding Principal}</expression></element><element kind="textField" blankWhenNull="true" x="930" y="0" width="66" height="18"><expression>$F{Interest Income}</expression></element><element kind="textField" blankWhenNull="true" x="1000" y="0" width="66" height="18"><expression>$F{Principal Write Off}</expression></element><element kind="textField" blankWhenNull="true" x="1070" y="0" width="66" height="18"><expression>$F{txn_id}</expression></element></band>
+    </detail>
+</jasperReport>

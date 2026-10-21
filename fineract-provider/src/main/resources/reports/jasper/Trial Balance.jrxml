@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Trial Balance" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <parameter name="branch" class="java.lang.String" />
+    <field name="glcode" class="java.lang.String" />
+    <field name="name" class="java.lang.String" />
+    <field name="debit" class="java.lang.String" />
+    <field name="credit" class="java.lang.String" />
+    <field name="debitamount" class="java.lang.String" />
+    <field name="type" class="java.lang.String" />
+    <field name="creditamount" class="java.lang.String" />
+    <field name="fullouterjoinresult" class="java.lang.String" />
+    <query language="SQL">select *
+from
+(select debits.glcode as 'glcode', debits.name as 'name',IF(debits.type = 1 or debits.type = 5, ifnull(debits.debitamount,0)-ifnull(credits.creditamount,0),null) as 'debit', IF(debits.type = 4 or debits.type = 3 or debits.type = 2, ifnull(credits.creditamount,0)-ifnull(debits.debitamount,0),null) as 'credit'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount',acc_gl_account.classification_enum as 'type'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) debits
+LEFT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name as 'name',sum(amount) as 'creditamount',acc_gl_account.classification_enum as 'type'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) credits
+on debits.glcode=credits.glcode
+union
+select credits.glcode as 'glcode', credits.name as 'name',IF(credits.type = 1 or credits.type = 5, ifnull(debits.debitamount,0)-ifnull(credits.creditamount,0),null) as 'debit', IF(credits.type = 4 or credits.type = 3 or credits.type = 2, ifnull(credits.creditamount,0)-ifnull(debits.debitamount,0),null) as 'credit'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount',acc_gl_account.classification_enum as 'type'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) debits
+RIGHT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name as 'name',sum(amount) as 'creditamount',acc_gl_account.classification_enum as 'type'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) credits
+on debits.glcode=credits.glcode) as fullouterjoinresult
+order by glcode</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Trial Balance</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="93" height="20"><text>glcode</text></element><element kind="staticText" x="117" y="0" width="93" height="20"><text>name</text></element><element kind="staticText" x="214" y="0" width="93" height="20"><text>debit</text></element><element kind="staticText" x="311" y="0" width="93" height="20"><text>credit</text></element><element kind="staticText" x="408" y="0" width="93" height="20"><text>debitamount</text></element><element kind="staticText" x="505" y="0" width="93" height="20"><text>type</text></element><element kind="staticText" x="602" y="0" width="93" height="20"><text>creditamount</text></element><element kind="staticText" x="699" y="0" width="93" height="20"><text>fullouterjoinresult</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="93" height="18"><expression>$F{glcode}</expression></element><element kind="textField" blankWhenNull="true" x="117" y="0" width="93" height="18"><expression>$F{name}</expression></element><element kind="textField" blankWhenNull="true" x="214" y="0" width="93" height="18"><expression>$F{debit}</expression></element><element kind="textField" blankWhenNull="true" x="311" y="0" width="93" height="18"><expression>$F{credit}</expression></element><element kind="textField" blankWhenNull="true" x="408" y="0" width="93" height="18"><expression>$F{debitamount}</expression></element><element kind="textField" blankWhenNull="true" x="505" y="0" width="93" height="18"><expression>$F{type}</expression></element><element kind="textField" blankWhenNull="true" x="602" y="0" width="93" height="18"><expression>$F{creditamount}</expression></element><element kind="textField" blankWhenNull="true" x="699" y="0" width="93" height="18"><expression>$F{fullouterjoinresult}</expression></element></band>
+    </detail>
+</jasperReport>

@@ -149,7 +149,7 @@ public class StaffMonthlyTargetWritePlatformServiceImpl implements StaffMonthlyT
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, apiRequestBodyAsJson,
                 StaffMonthlyTargetApiConstants.UPDATE_REQUEST_DATA_PARAMETERS);
 
-        final StaffMonthlyTarget target = this.repository.findOne(id);
+        final StaffMonthlyTarget target = this.repository.findById(id).orElse(null);
         if (target == null) { throw new StaffMonthlyTargetNotFoundException(id); }
 
         final Staff staff = this.staffRepository.findOneWithNotFoundDetection(target.getStaffId());
@@ -213,7 +213,7 @@ public class StaffMonthlyTargetWritePlatformServiceImpl implements StaffMonthlyT
         final AppUser user = this.context.authenticatedUser();
         user.validateHasPermissionTo("DELETE_STAFFMONTHLYTARGET");
 
-        final StaffMonthlyTarget target = this.repository.findOne(id);
+        final StaffMonthlyTarget target = this.repository.findById(id).orElse(null);
         if (target == null) { throw new StaffMonthlyTargetNotFoundException(id); }
 
         final Staff staff = this.staffRepository.findOneWithNotFoundDetection(target.getStaffId());

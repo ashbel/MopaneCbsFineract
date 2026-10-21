@@ -366,9 +366,9 @@ public class LoanWorkbookPopulator extends AbstractWorkbookPopulator {
 
 		CellStyle borderStyle = worksheet.getWorkbook().createCellStyle();
 		CellStyle doubleBorderStyle = worksheet.getWorkbook().createCellStyle();
-		borderStyle.setBorderBottom(CellStyle.BORDER_THIN);
-		doubleBorderStyle.setBorderBottom(CellStyle.BORDER_THIN);
-		doubleBorderStyle.setBorderRight(CellStyle.BORDER_THICK);
+		borderStyle.setBorderBottom(BorderStyle.THIN);
+		doubleBorderStyle.setBorderBottom(BorderStyle.THIN);
+		doubleBorderStyle.setBorderRight(BorderStyle.THICK);
 		for (int colNo = 0; colNo < 35; colNo++) {
 			Cell cell = rowHeader.getCell(colNo);
 			if (cell == null)

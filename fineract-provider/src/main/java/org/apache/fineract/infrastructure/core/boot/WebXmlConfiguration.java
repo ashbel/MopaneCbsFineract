@@ -18,20 +18,20 @@
  */
 package org.apache.fineract.infrastructure.core.boot;
 
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
+import jakarta.servlet.Filter;
+import jakarta.servlet.Servlet;
 
 import org.apache.fineract.infrastructure.core.filters.ResponseCorsFilter;
 import org.apache.fineract.infrastructure.security.filter.TenantAwareBasicAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.embedded.FilterRegistrationBean;
-import org.springframework.boot.context.embedded.ServletRegistrationBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.web.filter.DelegatingFilterProxy;
-
-import com.sun.jersey.spi.spring.container.servlet.SpringServlet;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 
 /**
  * This Configuration replaces what formerly was in web.xml.
@@ -47,31 +47,21 @@ public class WebXmlConfiguration {
     private TenantAwareBasicAuthenticationFilter basicAuthenticationProcessingFilter;
 
     @Bean
-    public Filter springSecurityFilterChain() {
-        return new DelegatingFilterProxy();
+    public ServletRegistrationBean<Servlet> jersey() {
+        final ResourceConfig config = new ResourceConfig();
+        config.packages("org.apache.fineract", "org.mifosplatform");
+        config.register(MultiPartFeature.class);
+        config.register(ResponseCorsFilter.class);
+        final ServletContainer jerseyServlet = new ServletContainer(config);
+        final ServletRegistrationBean<Servlet> registration = new ServletRegistrationBean<>(jerseyServlet, "/api/v1/*");
+        registration.setName("jersey-servlet");
+        registration.setLoadOnStartup(1);
+        return registration;
     }
 
     @Bean
-    public ServletRegistrationBean jersey() {
-        Servlet jerseyServlet = new SpringServlet();
-        ServletRegistrationBean jerseyServletRegistration = new ServletRegistrationBean();
-        jerseyServletRegistration.setServlet(jerseyServlet);
-        jerseyServletRegistration.addUrlMappings("/api/v1/*");
-        jerseyServletRegistration.setName("jersey-servlet");
-        jerseyServletRegistration.setLoadOnStartup(1);
-        jerseyServletRegistration.addInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
-        jerseyServletRegistration.addInitParameter("com.sun.jersey.spi.container.ContainerResponseFilters",
-                ResponseCorsFilter.class.getName());
-        jerseyServletRegistration.addInitParameter("com.sun.jersey.config.feature.DisableWADL", "true");
-        // debugging for development:
-        // jerseyServletRegistration.addInitParameter("com.sun.jersey.spi.container.ContainerRequestFilters",
-        // LoggingFilter.class.getName());
-        return jerseyServletRegistration;
-    }
-
-    @Bean
-    public FilterRegistrationBean filterRegistrationBean() {
-        FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
+    public FilterRegistrationBean<Filter> filterRegistrationBean() {
+        final FilterRegistrationBean<Filter> filterRegistrationBean = new FilterRegistrationBean<>();
         filterRegistrationBean.setFilter(basicAuthenticationProcessingFilter);
         filterRegistrationBean.setEnabled(false);
         return filterRegistrationBean;

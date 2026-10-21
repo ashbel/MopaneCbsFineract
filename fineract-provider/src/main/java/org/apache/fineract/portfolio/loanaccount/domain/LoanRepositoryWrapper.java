@@ -55,7 +55,7 @@ public class LoanRepositoryWrapper {
 
     @Transactional(readOnly=true)
     public Loan findOneWithNotFoundDetection(final Long id, boolean loadLazyCollections) {
-        final Loan loan = this.repository.findOne(id);
+        final Loan loan = this.repository.findById(id).orElse(null);
         if (loan == null) { throw new LoanNotFoundException(id); }
         if(loadLazyCollections) {
             loan.initializeLazyCollections();
@@ -70,7 +70,7 @@ public class LoanRepositoryWrapper {
      */
     @Transactional(readOnly=true)
     public Loan findOneWithNotFoundDetectionForAccruedInterest(final Long id) {
-        final Loan loan = this.repository.findOne(id);
+        final Loan loan = this.repository.findById(id).orElse(null);
         if (loan == null) { throw new LoanNotFoundException(id); }
         loan.initializeRepaymentScheduleAndCharges();
         return loan;
@@ -97,14 +97,14 @@ public class LoanRepositoryWrapper {
     }
     
     public List<Loan> save(List<Loan> loans) {
-        return this.repository.save(loans) ;
+        return this.repository.saveAll(loans) ;
     }
     public void flush() {
         this.repository.flush(); 
     }
     
     public void delete(final Long loanId) {
-        this.repository.delete(loanId);
+        this.repository.deleteById(loanId);
     }
     //Only root entities is enough
     public List<Loan> getGroupLoansDisbursedAfter(@Param("disbursementDate") Date disbursementDate, @Param("groupId") Long groupId,

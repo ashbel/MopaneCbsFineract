@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Client Loans Listing(Pentaho)" pageWidth="2490" pageHeight="595" orientation="Landscape" columnWidth="2450" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <parameter name="fundId" class="java.lang.String" />
+    <parameter name="loanProductId" class="java.lang.String" />
+    <parameter name="loanPurposeId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Client Account No." class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="Client Status" class="java.lang.String" />
+    <field name="Loan Officer" class="java.lang.String" />
+    <field name="Loan Account No." class="java.lang.String" />
+    <field name="External Id" class="java.lang.String" />
+    <field name="Loan" class="java.lang.String" />
+    <field name="Status" class="java.lang.String" />
+    <field name="Fund" class="java.lang.String" />
+    <field name="Loan Purpose" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Arrears Tolerance Amount" class="java.lang.String" />
+    <field name="Expected No. Repayments" class="java.lang.String" />
+    <field name="Annual_Nominal_Interest_Rate" class="java.lang.String" />
+    <field name="Nominal Interest Rate Per Period" class="java.lang.String" />
+    <field name="Interest Rate Frequency" class="java.lang.String" />
+    <field name="Interest Method" class="java.lang.String" />
+    <field name="Interest Calculated in Period" class="java.lang.String" />
+    <field name="Term Frequency" class="java.lang.String" />
+    <field name="Term Frequency Period" class="java.lang.String" />
+    <field name="Repayment Frequency" class="java.lang.String" />
+    <field name="Repayment Frequency Period" class="java.lang.String" />
+    <field name="Amortization" class="java.lang.String" />
+    <field name="Total Charges Due At Disbursement" class="java.lang.String" />
+    <field name="Submitted" class="java.lang.String" />
+    <field name="Expected Disbursal" class="java.lang.String" />
+    <field name="Expected First Repayment" class="java.lang.String" />
+    <field name="Interest Calculated From" class="java.lang.String" />
+    <field name="Disbursed" class="java.lang.String" />
+    <field name="Matured On" class="java.lang.String" />
+    <field name="Closed" class="java.lang.String" />
+    <field name="Rejected" class="java.lang.String" />
+    <field name="Rescheduled" class="java.lang.String" />
+    <field name="Withdrawn" class="java.lang.String" />
+    <query language="SQL">select 
+concat(repeat("..",   
+   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.name) 
+	as "Office/Branch",ounder.name, ounder.id, c.account_no as "Client Account No.", 
+c.display_name as "Name",
+r.enum_message_property as "Client Status",
+ifnull(lo.display_name,"-") as "Loan Officer", ifnull(l.account_no,"-") as "Loan Account No.",ifnull(l.external_id,'-') as
+ "External Id", p.name as Loan, st.enum_message_property as "Status",  
+ifnull(f.name,'-') as Fund, ifnull(purp.code_value,'-') as "Loan Purpose",
+ifnull(cur.display_symbol, l.currency_code) as Currency,  
+l.principal_amount, ifnull(l.arrearstolerance_amount,0) as "Arrears Tolerance Amount",
+ifnull(l.number_of_repayments,0) as "Expected No. Repayments", 
+ifnull(l.annual_nominal_interest_rate,0) as "Annual_Nominal_Interest_Rate", 
+ifnull(l.nominal_interest_rate_per_period,0) as "Nominal Interest Rate Per Period",
+ifnull(ipf.enum_message_property,'-') as "Interest Rate Frequency",
+ifnull(im.enum_message_property,'-') as "Interest Method",
+ifnull(icp.enum_message_property,'-') as "Interest Calculated in Period",
+ifnull(l.term_frequency,0) as "Term Frequency",
+ifnull(tf.enum_message_property,'-') as "Term Frequency Period",
+ifnull(l.repay_every,'-') as "Repayment Frequency",
+ifnull(rf.enum_message_property,'-') as "Repayment Frequency Period",
+ifnull(am.enum_message_property,'-') as "Amortization",
+ifnull(l.total_charges_due_at_disbursement_derived,0) as "Total Charges Due At Disbursement",
+ifnull(date(l.submittedon_date),'-') as Submitted, date(l.approvedon_date) Approved, 
+l.expected_disbursedon_date As "Expected Disbursal",
+date(l.expected_firstrepaymenton_date) as "Expected First Repayment", 
+date(l.interest_calculated_from_date) as "Interest Calculated From" ,
+date(l.disbursedon_date) as Disbursed, 
+date(l.expected_maturedon_date) "Expected Maturity",
+date(l.maturedon_date) as "Matured On", date(l.closedon_date) as Closed,
+date(l.rejectedon_date) as Rejected, date(l.rescheduledon_date) as Rescheduled, 
+date(l.withdrawnon_date) as Withdrawn, date(l.writtenoffon_date) "Written Off"
+from m_office o 
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+left join r_enum_value r on r.enum_name = 'status_enum' 
+ and r.enum_id = c.status_enum
+left join m_loan l on l.client_id = c.id
+left join m_staff lo on lo.id = l.loan_officer_id
+left join m_product_loan p on p.id = l.product_id
+left join m_fund f on f.id = l.fund_id
+left join r_enum_value st on st.enum_name = "loan_status_id" and st.enum_id = l.loan_status_id
+left join r_enum_value ipf on ipf.enum_name = "interest_period_frequency_enum" 
+ and ipf.enum_id = l.interest_period_frequency_enum
+left join r_enum_value im on im.enum_name = "interest_method_enum" 
+ and im.enum_id = l.interest_method_enum
+left join r_enum_value tf on tf.enum_name = "term_period_frequency_enum" 
+ and tf.enum_id = l.term_period_frequency_enum
+left join r_enum_value icp on icp.enum_name = "interest_calculated_in_period_enum" 
+ and icp.enum_id = l.interest_calculated_in_period_enum
+left join r_enum_value rf on rf.enum_name = "repayment_period_frequency_enum" 
+ and rf.enum_id = l.repayment_period_frequency_enum
+left join r_enum_value am on am.enum_id = l.amortization_method_enum and am.enum_name = "amortization_method_enum"  
+left join m_code_value purp on purp.id = l.loanpurpose_cv_id
+left join m_currency cur on cur.code = l.currency_code
+where o.id = $P{Branch}
+and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
+and (l.product_id = $P{loanProductId} or "-1" = $P{loanProductId})
+and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})
+
+
+order by ounder.hierarchy, 2 , l.id, lo.id</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Client Loans Listing(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Office/Branch</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Client Account No.</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Client Status</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Loan Officer</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Loan Account No.</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>External Id</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Loan</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Status</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Fund</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Loan Purpose</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>Arrears Tolerance Amount</text></element><element kind="staticText" x="930" y="0" width="66" height="20"><text>Expected No. Repayments</text></element><element kind="staticText" x="1000" y="0" width="66" height="20"><text>Annual_Nominal_Interest_Rate</text></element><element kind="staticText" x="1070" y="0" width="66" height="20"><text>Nominal Interest Rate Per Period</text></element><element kind="staticText" x="1140" y="0" width="66" height="20"><text>Interest Rate Frequency</text></element><element kind="staticText" x="1210" y="0" width="66" height="20"><text>Interest Method</text></element><element kind="staticText" x="1280" y="0" width="66" height="20"><text>Interest Calculated in Period</text></element><element kind="staticText" x="1350" y="0" width="66" height="20"><text>Term Frequency</text></element><element kind="staticText" x="1420" y="0" width="66" height="20"><text>Term Frequency Period</text></element><element kind="staticText" x="1490" y="0" width="66" height="20"><text>Repayment Frequency</text></element><element kind="staticText" x="1560" y="0" width="66" height="20"><text>Repayment Frequency Period</text></element><element kind="staticText" x="1630" y="0" width="66" height="20"><text>Amortization</text></element><element kind="staticText" x="1700" y="0" width="66" height="20"><text>Total Charges Due At Disbursement</text></element><element kind="staticText" x="1770" y="0" width="66" height="20"><text>Submitted</text></element><element kind="staticText" x="1840" y="0" width="66" height="20"><text>Expected Disbursal</text></element><element kind="staticText" x="1910" y="0" width="66" height="20"><text>Expected First Repayment</text></element><element kind="staticText" x="1980" y="0" width="66" height="20"><text>Interest Calculated From</text></element><element kind="staticText" x="2050" y="0" width="66" height="20"><text>Disbursed</text></element><element kind="staticText" x="2120" y="0" width="66" height="20"><text>Matured On</text></element><element kind="staticText" x="2190" y="0" width="66" height="20"><text>Closed</text></element><element kind="staticText" x="2260" y="0" width="66" height="20"><text>Rejected</text></element><element kind="staticText" x="2330" y="0" width="66" height="20"><text>Rescheduled</text></element><element kind="staticText" x="2400" y="0" width="66" height="20"><text>Withdrawn</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Client Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Client Status}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Loan Officer}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Loan Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{External Id}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Loan}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Status}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Fund}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Loan Purpose}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{Arrears Tolerance Amount}</expression></element><element kind="textField" blankWhenNull="true" x="930" y="0" width="66" height="18"><expression>$F{Expected No. Repayments}</expression></element><element kind="textField" blankWhenNull="true" x="1000" y="0" width="66" height="18"><expression>$F{Annual_Nominal_Interest_Rate}</expression></element><element kind="textField" blankWhenNull="true" x="1070" y="0" width="66" height="18"><expression>$F{Nominal Interest Rate Per Period}</expression></element><element kind="textField" blankWhenNull="true" x="1140" y="0" width="66" height="18"><expression>$F{Interest Rate Frequency}</expression></element><element kind="textField" blankWhenNull="true" x="1210" y="0" width="66" height="18"><expression>$F{Interest Method}</expression></element><element kind="textField" blankWhenNull="true" x="1280" y="0" width="66" height="18"><expression>$F{Interest Calculated in Period}</expression></element><element kind="textField" blankWhenNull="true" x="1350" y="0" width="66" height="18"><expression>$F{Term Frequency}</expression></element><element kind="textField" blankWhenNull="true" x="1420" y="0" width="66" height="18"><expression>$F{Term Frequency Period}</expression></element><element kind="textField" blankWhenNull="true" x="1490" y="0" width="66" height="18"><expression>$F{Repayment Frequency}</expression></element><element kind="textField" blankWhenNull="true" x="1560" y="0" width="66" height="18"><expression>$F{Repayment Frequency Period}</expression></element><element kind="textField" blankWhenNull="true" x="1630" y="0" width="66" height="18"><expression>$F{Amortization}</expression></element><element kind="textField" blankWhenNull="true" x="1700" y="0" width="66" height="18"><expression>$F{Total Charges Due At Disbursement}</expression></element><element kind="textField" blankWhenNull="true" x="1770" y="0" width="66" height="18"><expression>$F{Submitted}</expression></element><element kind="textField" blankWhenNull="true" x="1840" y="0" width="66" height="18"><expression>$F{Expected Disbursal}</expression></element><element kind="textField" blankWhenNull="true" x="1910" y="0" width="66" height="18"><expression>$F{Expected First Repayment}</expression></element><element kind="textField" blankWhenNull="true" x="1980" y="0" width="66" height="18"><expression>$F{Interest Calculated From}</expression></element><element kind="textField" blankWhenNull="true" x="2050" y="0" width="66" height="18"><expression>$F{Disbursed}</expression></element><element kind="textField" blankWhenNull="true" x="2120" y="0" width="66" height="18"><expression>$F{Matured On}</expression></element><element kind="textField" blankWhenNull="true" x="2190" y="0" width="66" height="18"><expression>$F{Closed}</expression></element><element kind="textField" blankWhenNull="true" x="2260" y="0" width="66" height="18"><expression>$F{Rejected}</expression></element><element kind="textField" blankWhenNull="true" x="2330" y="0" width="66" height="18"><expression>$F{Rescheduled}</expression></element><element kind="textField" blankWhenNull="true" x="2400" y="0" width="66" height="18"><expression>$F{Withdrawn}</expression></element></band>
+    </detail>
+</jasperReport>

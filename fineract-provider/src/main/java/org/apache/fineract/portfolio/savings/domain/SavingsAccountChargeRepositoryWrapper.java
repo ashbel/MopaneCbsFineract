@@ -42,7 +42,7 @@ public class SavingsAccountChargeRepositoryWrapper {
     }
 
     public SavingsAccountCharge findOneWithNotFoundDetection(final Long id) {
-        final SavingsAccountCharge savingsAccountCharge = this.repository.findOne(id);
+        final SavingsAccountCharge savingsAccountCharge = this.repository.findById(id).orElse(null);
         if (savingsAccountCharge == null) { throw new SavingsAccountChargeNotFoundException(id); }
         return savingsAccountCharge;
     }
@@ -62,7 +62,7 @@ public class SavingsAccountChargeRepositoryWrapper {
     }
 
     public void save(final Iterable<SavingsAccountCharge> savingsAccountCharges) {
-        this.repository.save(savingsAccountCharges);
+        this.repository.saveAll(savingsAccountCharges);
     }
 
     public void saveAndFlush(final SavingsAccountCharge savingsAccountCharge) {

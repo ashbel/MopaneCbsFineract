@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.client.domain;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class ClientRepositoryWrapper {
 
     @Transactional(readOnly=true)
     public Client findOneWithNotFoundDetection(final Long clientId, final boolean loadLazyCollections) {
-        final Client client = this.repository.findOne(clientId);
+        final Client client = this.repository.findById(clientId).orElse(null);
         if (client == null) { throw new ClientNotFoundException(clientId); }
         if(loadLazyCollections) {
             client.loadLazyCollections();
@@ -61,7 +62,9 @@ public class ClientRepositoryWrapper {
     }
     
     public List<Client> findAll(final Collection<Long> clientIds) {
-        return this.repository.findAll(clientIds) ;   
+        final List<Client> clients = new ArrayList<>();
+        this.repository.findAllById(clientIds).forEach(clients::add);
+        return clients;
     }
     public void save(final Client client) {
         this.repository.save(client);

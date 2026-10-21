@@ -20,7 +20,7 @@ package org.apache.fineract.organisation.office.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -217,7 +217,7 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
 
         this.context.authenticatedUser();
 
-        this.officeTransactionRepository.delete(transactionId);
+        this.officeTransactionRepository.deleteById(transactionId);
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //

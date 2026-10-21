@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Funds Disbursed Between Dates Summary by Office(Pentaho)" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="startDate" class="java.lang.String" />
+    <parameter name="endDate" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <parameter name="fundId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="Fund" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="disbursed_amount" class="java.lang.String" />
+    <query language="SQL">select 
+concat(repeat("..",   
+   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.`name`) as "Office/Branch",ounder.name as "Name",
+ 
+
+ifnull(f.`name`, '-') as Fund,  ifnull(cur.display_symbol, l.currency_code) as Currency, round(sum(l.principal_amount), 4) as disbursed_amount
+from m_office o
+
+
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c 
+
+on c.office_id = ounder.id
+join m_loan l on l.client_id = c.id
+join m_currency cur on cur.`code` = l.currency_code
+left join m_fund f on f.id = l.fund_id
+
+
+where disbursedon_date between $P{startDate} and $P{endDate}
+ AND o.id = $P{Branch} 
+and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
+group by ounder.`name`,  ifnull(f.`name`, '-') , ifnull(cur.display_symbol, 
+
+l.currency_code)
+order by ounder.`name`,  ifnull(f.`name`, '-') , ifnull(cur.display_symbol, l.currency_code)</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Funds Disbursed Between Dates Summary by Office(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="152" height="20"><text>Office/Branch</text></element><element kind="staticText" x="176" y="0" width="152" height="20"><text>Name</text></element><element kind="staticText" x="332" y="0" width="152" height="20"><text>Fund</text></element><element kind="staticText" x="488" y="0" width="152" height="20"><text>Currency</text></element><element kind="staticText" x="644" y="0" width="152" height="20"><text>disbursed_amount</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="152" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="176" y="0" width="152" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="332" y="0" width="152" height="18"><expression>$F{Fund}</expression></element><element kind="textField" blankWhenNull="true" x="488" y="0" width="152" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="644" y="0" width="152" height="18"><expression>$F{disbursed_amount}</expression></element></band>
+    </detail>
+</jasperReport>

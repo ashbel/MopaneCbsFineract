@@ -118,7 +118,7 @@ public class SchedulerJobRunnerReadServiceImpl implements SchedulerJobRunnerRead
         boolean isJobPresent = false;
         final String sql = "select count(*) from job job where job.id=" + jobId;
         @SuppressWarnings("deprecation")
-        final int count = this.jdbcTemplate.queryForInt(sql);
+        final int count = this.jdbcTemplate.queryForObject(sql, Integer.class);
         if (count == 1) {
             isJobPresent = true;
         }

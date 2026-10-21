@@ -29,6 +29,7 @@ import java.util.Map;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.mopane.ssb.data.SsbConstants;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -99,7 +100,7 @@ public class SsbWorkbookHelper {
             return null;
         }
         try {
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
                 return cell.getDateCellValue();
             }
         } catch (final Exception ignored) {
@@ -131,7 +132,7 @@ public class SsbWorkbookHelper {
             return null;
         }
         try {
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+            if (cell.getCellType() == CellType.NUMERIC) {
                 return BigDecimal.valueOf(cell.getNumericCellValue());
             }
         } catch (final Exception ignored) {

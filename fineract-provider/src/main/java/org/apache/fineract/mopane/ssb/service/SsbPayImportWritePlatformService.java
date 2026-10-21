@@ -21,7 +21,7 @@ package org.apache.fineract.mopane.ssb.service;
 import java.io.InputStream;
 import java.util.Collection;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.fineract.mopane.ssb.data.SsbPayBatchData;
 import org.apache.fineract.mopane.ssb.data.SsbPayRowData;

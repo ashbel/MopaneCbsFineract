@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Loans Pending Approval(Pentaho)" pageWidth="880" pageHeight="595" orientation="Landscape" columnWidth="840" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <parameter name="loanProductId" class="java.lang.String" />
+    <parameter name="loanPurposeId" class="java.lang.String" />
+    <parameter name="fundId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Client Account No." class="java.lang.String" />
+    <field name="Client Name" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Product" class="java.lang.String" />
+    <field name="Loan Account No." class="java.lang.String" />
+    <field name="Loan Amount" class="java.lang.String" />
+    <field name="Term Frequency" class="java.lang.String" />
+    <field name="Term Frequency Period" class="java.lang.String" />
+    <field name="Annual Nominal Interest Rate" class="java.lang.String" />
+    <field name="Loan Purpose" class="java.lang.String" />
+    <field name="Loan Officer" class="java.lang.String" />
+    <query language="SQL">SELECT 
+concat(repeat("..",   
+   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.`name`) as "Office/Branch",ounder.name, ounder.id,
+c.account_no as "Client Account No.", c.display_name as "Client Name", 
+ifnull(cur.display_symbol, l.currency_code) as Currency,  pl.`name` as "Product", 
+l.account_no as "Loan Account No.", 
+l.principal_amount as "Loan Amount", 
+l.term_frequency as "Term Frequency",
+
+
+tf.enum_message_property as "Term Frequency Period",
+l.annual_nominal_interest_rate as "Annual Nominal Interest Rate", 
+datediff(curdate(), l.submittedon_date) "Days Pending Approval", 
+ifnull(purp.code_value,'-') as "Loan Purpose",
+ifnull(lo.display_name,'-') as "Loan Officer"
+from m_office o 
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+join m_loan l on l.client_id = c.id
+join m_product_loan pl on pl.id = l.product_id
+left join m_staff lo on lo.id = l.loan_officer_id
+left join m_currency cur on cur.code = l.currency_code
+left join m_code_value purp on purp.id = l.loanpurpose_cv_id
+left join r_enum_value tf on tf.enum_name = "term_period_frequency_enum" and tf.enum_id = l.term_period_frequency_enum
+
+
+where o.id = $P{Branch}
+and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+and (l.product_id = $P{loanProductId} or "-10" = $P{loanProductId})
+and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})
+and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
+and  l.loan_status_id = 100 /*Submitted and awaiting approval */
+order by ounder.hierarchy, l.submittedon_date,  l.account_no</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Loans Pending Approval(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Office/Branch</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Client Account No.</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Client Name</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Product</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Loan Account No.</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Loan Amount</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Term Frequency</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Term Frequency Period</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Annual Nominal Interest Rate</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Loan Purpose</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Loan Officer</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Client Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Client Name}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Product}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Loan Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Loan Amount}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Term Frequency}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Term Frequency Period}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Annual Nominal Interest Rate}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Loan Purpose}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Loan Officer}</expression></element></band>
+    </detail>
+</jasperReport>

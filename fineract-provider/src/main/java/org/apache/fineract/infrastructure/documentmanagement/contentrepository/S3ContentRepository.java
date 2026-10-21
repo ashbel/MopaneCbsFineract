@@ -45,7 +45,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.lowagie.text.pdf.codec.Base64;
+import java.util.Base64;
 
 public class S3ContentRepository implements ContentRepository {
 
@@ -97,7 +97,7 @@ public class S3ContentRepository implements ContentRepository {
     public String saveImage(final Base64EncodedImage base64EncodedImage, final Long resourceId, final String imageName) {
         final String uploadImageLocation = generateClientImageParentDirectory(resourceId);
         final String fileLocation = uploadImageLocation + File.separator + imageName + base64EncodedImage.getFileExtension();
-        final InputStream toUploadInputStream = new ByteArrayInputStream(Base64.decode(base64EncodedImage.getBase64EncodedString()));
+        final InputStream toUploadInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(base64EncodedImage.getBase64EncodedString()));
 
         uploadDocument(imageName, toUploadInputStream, fileLocation);
         return fileLocation;

@@ -80,9 +80,9 @@ $ ./runmifosx.sh
 ### 3.1 Prerequisite Software
 
   Before running mifos platform you must have the following software installed:
-  - Oracle Java - JDK 8 (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-  - MySQL server - 5.5 or 5.6  (http://dev.mysql.com/downloads/mysql/5.5.html#downloads/)
-  - Apache Tomcat - 7.0.68 (http://tomcat.apache.org/download-70.cgi)
+  - Java 21 (Eclipse Temurin 21)
+  - MySQL server 8
+  - Apache Tomcat 10.1
 
 ### 3.2 MySQL server Setup
 
@@ -190,8 +190,8 @@ INSERT INTO `schema_version` (`version_rank`, `installed_rank`, `version`, `desc
 #### 3.3.1 Environment Variables Check
 
   Check that the following environment variables exist:
-  - JAVA_HOME ... should point to directory where a 1.8 JDK is on machine
-  - CATALINA_HOME ... should point to a directory where a Tomcat 7 instance is installed
+  - JAVA_HOME ... should point to a Java 21 JDK
+  - CATALINA_HOME ... should point to a Tomcat 10.1 instance
 
   Check that the following is on your path:
   - %JAVA_HOME%\bin;

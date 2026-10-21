@@ -235,7 +235,7 @@ public class CalendarWritePlatformServiceJpaRepositoryImpl implements CalendarWr
         }
 
         
-        final Calendar calendarForUpdate = this.calendarRepository.findOne(calendarId);
+        final Calendar calendarForUpdate = this.calendarRepository.findById(calendarId).orElse(null);
         if (calendarForUpdate == null) { throw new CalendarNotFoundException(calendarId); }
         
         final Date oldStartDate = calendarForUpdate.getStartDate();
@@ -324,7 +324,7 @@ public class CalendarWritePlatformServiceJpaRepositoryImpl implements CalendarWr
 
     @Override
     public CommandProcessingResult deleteCalendar(final Long calendarId) {
-        final Calendar calendarForDelete = this.calendarRepository.findOne(calendarId);
+        final Calendar calendarForDelete = this.calendarRepository.findById(calendarId).orElse(null);
         if (calendarForDelete == null) { throw new CalendarNotFoundException(calendarId); }
 
         this.calendarRepository.delete(calendarForDelete);
@@ -337,7 +337,7 @@ public class CalendarWritePlatformServiceJpaRepositoryImpl implements CalendarWr
     @Override
     public CommandProcessingResult createCalendarInstance(final Long calendarId, final Long entityId, final Integer entityTypeId) {
 
-        final Calendar calendarForUpdate = this.calendarRepository.findOne(calendarId);
+        final Calendar calendarForUpdate = this.calendarRepository.findById(calendarId).orElse(null);
         if (calendarForUpdate == null) { throw new CalendarNotFoundException(calendarId); }
 
         final CalendarInstance newCalendarInstance = new CalendarInstance(calendarForUpdate, entityId, entityTypeId);
@@ -351,7 +351,7 @@ public class CalendarWritePlatformServiceJpaRepositoryImpl implements CalendarWr
 
     @Override
     public CommandProcessingResult updateCalendarInstance(final Long calendarId, final Long entityId, final Integer entityTypeId) {
-        final Calendar calendarForUpdate = this.calendarRepository.findOne(calendarId);
+        final Calendar calendarForUpdate = this.calendarRepository.findById(calendarId).orElse(null);
         if (calendarForUpdate == null) { throw new CalendarNotFoundException(calendarId); }
 
         final CalendarInstance calendarInstanceForUpdate = this.calendarInstanceRepository.findByCalendarIdAndEntityIdAndEntityTypeId(

@@ -25,7 +25,7 @@ import org.apache.fineract.spm.domain.Survey;
 import org.apache.fineract.spm.domain.SurveyValidator;
 import org.apache.fineract.spm.exception.SurveyNotFoundException;
 import org.apache.fineract.spm.repository.SurveyRepository;
-import org.apache.openjpa.persistence.EntityExistsException;
+import jakarta.persistence.EntityExistsException;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 @Service
 public class SpmService {
@@ -70,7 +70,7 @@ public class SpmService {
 
     public Survey findById(final Long id) {
         this.securityContext.authenticatedUser();
-        Survey survey = this.surveyRepository.findOne(id);
+        Survey survey = this.surveyRepository.findById(id).orElse(null);
         if (survey == null) {
             throw new SurveyNotFoundException(id);
         }

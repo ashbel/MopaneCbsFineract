@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -123,7 +123,7 @@ public class HookWritePlatformServiceJpaRepositoryImpl
             if (command.hasParameter(templateIdParamName)) {
                 final Long ugdTemplateId = command
                         .longValueOfParameterNamed(templateIdParamName);
-                ugdTemplate = this.ugdTemplateRepository.findOne(ugdTemplateId);
+                ugdTemplate = this.ugdTemplateRepository.findById(ugdTemplateId).orElse(null);
                 if (ugdTemplate == null) {
                     throw new TemplateNotFoundException(ugdTemplateId);
                 }
@@ -169,7 +169,7 @@ public class HookWritePlatformServiceJpaRepositoryImpl
                     final Long ugdTemplateId = command
                             .longValueOfParameterNamed(templateIdParamName);
                     final Template ugdTemplate = this.ugdTemplateRepository
-                            .findOne(ugdTemplateId);
+                            .findById(ugdTemplateId).orElse(null);
                     if (ugdTemplate == null) {
                         changes.remove(templateIdParamName);
                         throw new TemplateNotFoundException(ugdTemplateId);
@@ -236,7 +236,7 @@ public class HookWritePlatformServiceJpaRepositoryImpl
     }
 
     private Hook retrieveHookBy(final Long hookId) {
-        final Hook hook = this.hookRepository.findOne(hookId);
+        final Hook hook = this.hookRepository.findById(hookId).orElse(null);
         if (hook == null) {
             throw new HookNotFoundException(hookId);
         }

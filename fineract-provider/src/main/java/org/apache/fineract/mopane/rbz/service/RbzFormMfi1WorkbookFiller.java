@@ -34,6 +34,7 @@ import org.apache.fineract.mopane.rbz.data.RbzFormMfi1ReportData.PortfolioManage
 import org.apache.fineract.mopane.rbz.data.RbzFormMfi1ReportData.PurposeRow;
 import org.apache.fineract.mopane.rbz.data.RbzFormMfi1ReportData.TopBorrowerRow;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -462,9 +463,9 @@ public class RbzFormMfi1WorkbookFiller {
     private void addNumber(final Sheet sheet, final int rowIdx, final int colIdx, final long delta) {
         final Cell cell = getOrCreateCell(sheet, rowIdx, colIdx);
         double current = 0;
-        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+        if (cell.getCellType() == CellType.NUMERIC) {
             current = cell.getNumericCellValue();
-        } else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+        } else if (cell.getCellType() == CellType.STRING) {
             try {
                 current = Double.parseDouble(cell.getStringCellValue());
             } catch (final Exception ignored) {
@@ -483,10 +484,10 @@ public class RbzFormMfi1WorkbookFiller {
         if (cell == null) {
             return null;
         }
-        if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+        if (cell.getCellType() == CellType.STRING) {
             return cell.getStringCellValue();
         }
-        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+        if (cell.getCellType() == CellType.NUMERIC) {
             return String.valueOf(cell.getNumericCellValue());
         }
         return null;

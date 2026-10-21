@@ -100,7 +100,7 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
             LoanRescheduleRequest loanRescheduleRequest) {
         List<LoanRepaymentScheduleHistory> loanRepaymentScheduleHistoryList = createLoanScheduleArchive(repaymentScheduleInstallments,
                 loan, loanRescheduleRequest);
-        this.loanRepaymentScheduleHistoryRepository.save(loanRepaymentScheduleHistoryList);
+        this.loanRepaymentScheduleHistoryRepository.saveAll(loanRepaymentScheduleHistoryList);
 
     }
 

@@ -35,7 +35,7 @@ public class TellerRepositoryWrapper {
 
     @Transactional(readOnly=true)
     public Teller findOneWithNotFoundDetection(final Long id) {
-        final Teller teller = this.repository.findOne(id);
+        final Teller teller = this.repository.findById(id).orElse(null);
         if (teller == null) { throw new TellerNotFoundException(id); }
         teller.initializeLazyCollections();
         return teller;

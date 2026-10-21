@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Client Listing(Pentaho)" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="selectOffice" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Client Account No." class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="Status" class="java.lang.String" />
+    <field name="Activation" class="java.lang.String" />
+    <field name="External Id" class="java.lang.String" />
+    <query language="SQL">select 
+concat(repeat("..",   
+   ((LENGTH(mounder.`hierarchy`) - LENGTH(REPLACE(mounder.`hierarchy`, '.', '')) - 1))), mounder.`name`) as "Office/Branch",
+	mounder.name, mounder.id,
+ mc.account_no as "Client Account No.",  
+mc.display_name as "Name",  
+rev.enum_message_property as "Status",
+mc.activation_date as "Activation", ifnull(mc.external_id,"-") as "External Id"
+from m_office mo
+join m_office mounder on mounder.hierarchy like concat(mo.hierarchy, '%')
+and mounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client mc on mc.office_id = mounder.id
+left join r_enum_value rev on rev.enum_name = 'status_enum' and rev.enum_id = mc.status_enum
+where mo.id=$P{selectOffice}
+order by mounder.hierarchy, mc.account_no</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Client Listing(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="126" height="20"><text>Office/Branch</text></element><element kind="staticText" x="150" y="0" width="126" height="20"><text>Client Account No.</text></element><element kind="staticText" x="280" y="0" width="126" height="20"><text>Name</text></element><element kind="staticText" x="410" y="0" width="126" height="20"><text>Status</text></element><element kind="staticText" x="540" y="0" width="126" height="20"><text>Activation</text></element><element kind="staticText" x="670" y="0" width="126" height="20"><text>External Id</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="126" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="150" y="0" width="126" height="18"><expression>$F{Client Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="280" y="0" width="126" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="410" y="0" width="126" height="18"><expression>$F{Status}</expression></element><element kind="textField" blankWhenNull="true" x="540" y="0" width="126" height="18"><expression>$F{Activation}</expression></element><element kind="textField" blankWhenNull="true" x="670" y="0" width="126" height="18"><expression>$F{External Id}</expression></element></band>
+    </detail>
+</jasperReport>

@@ -120,7 +120,7 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
             expiresInHours = StaffMobileDeviceApiConstants.DEFAULT_CODE_EXPIRY_HOURS;
         }
 
-        final AppUser targetUser = this.appUserRepository.findOne(userId);
+        final AppUser targetUser = this.appUserRepository.findById(userId).orElse(null);
         validateTargetUser(targetUser, userId);
 
         final List<StaffMobileActivationCode> activeCodes = this.activationCodeRepository.findByAppUserIdAndStatus(userId,
@@ -128,7 +128,7 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
         for (final StaffMobileActivationCode existing : activeCodes) {
             existing.revoke();
         }
-        this.activationCodeRepository.save(activeCodes);
+        this.activationCodeRepository.saveAll(activeCodes);
 
         final String code = generateUniqueCode();
         final Date expiresOnUtc = DateUtils.getLocalDateTimeOfTenant().plusHours(expiresInHours).toDate();
@@ -149,7 +149,7 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
         final AppUser currentUser = this.context.authenticatedUser();
         currentUser.validateHasPermissionTo("UPDATE_STAFFMOBILEDEVICE");
 
-        final StaffMobileDevice device = this.deviceRepository.findOne(deviceId);
+        final StaffMobileDevice device = this.deviceRepository.findById(deviceId).orElse(null);
         if (device == null) {
             throw new StaffMobileDeviceNotFoundException(deviceId);
         }
@@ -198,7 +198,7 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
             throw new InvalidStaffMobileActivationCodeException();
         }
 
-        final AppUser targetUser = this.appUserRepository.findOne(activationCode.getAppUserId());
+        final AppUser targetUser = this.appUserRepository.findById(activationCode.getAppUserId()).orElse(null);
         validateTargetUser(targetUser, activationCode.getAppUserId());
 
         final Long staffId = targetUser.getStaff() == null ? null : targetUser.getStaff().getId();
@@ -319,7 +319,7 @@ public class StaffMobileDeviceWritePlatformServiceImpl implements StaffMobileDev
             pings.add(StaffLocationPing.create(device.getId(), currentUser.getId(), latitude, longitude, accuracyMeters, recordedOnUtc));
         }
 
-        this.locationPingRepository.save(pings);
+        this.locationPingRepository.saveAll(pings);
         device.touchLastSeen();
         this.deviceRepository.save(device);
 

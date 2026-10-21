@@ -12,7 +12,7 @@ Do **not** modify `mopanecbs-demo` (`/opt/mopane-cbs`) or `mopane-apps` (host My
 | Service | Container | Host bind | Notes |
 |---------|-----------|-----------|--------|
 | MySQL 5.5 | `fineract-legacy-mysql` | `127.0.0.1:3307` → 3306 | Classic Fineract / Flyway-friendly |
-| Tomcat 8.5 + Java 8 | `fineract-legacy-app` | `127.0.0.1:8085` → 8080 | Serves `fineract-provider.war` |
+| Tomcat 10.1 + Java 21 | `fineract-legacy-app` | `127.0.0.1:8085` → 8080 | Serves `fineract-provider.war` |
 | UI nginx | `fineract-legacy-ui` | `127.0.0.1:3000` → 80 | Static community-app from `ui/dist` |
 
 Host nginx (`fineract.mopane.co.zw`):
@@ -34,7 +34,7 @@ UI build/deploy steps: sibling repo `mopane-cbs-ui` → `DEPLOY.md`.
 
 ## Prerequisites (local)
 
-- JDK 8 + this repo’s Gradle wrapper
+- JDK 21 + this repo’s Gradle 8.10.2 wrapper
 - Docker + Docker Compose plugin
 - SSH key for `root@mysql.mopane.co.zw`
 
@@ -154,3 +154,13 @@ deploy/docker/
   ui/nginx.conf
   ui/dist/                        # deploy built community-app here (gitignored)
 ```
+
+## Java 21 cutover
+
+Run this on a clone of the tenant database, not on production.
+
+1. Copy Flyway 2 history before the new process migrates: `schema_version` is copied to `flyway_schema_history` on startup, then repaired once so checksums match Flyway 10. `migrate` must not re-apply `V1`.
+2. Deploy the Tomcat 10.1 / Java 21 image. Connector/J is 8.4. Keep the JVM timezone aligned with the MySQL server timezone. A one-day shift in disbursement or repayment dates is a failed cutover. Java 21 still offers TLS 1.2 and 1.3; the MySQL server must accept one of those.
+3. Existing password hashes stay SHA-256 of `password{userId}`. Do not rehash `m_appuser`.
+4. Reconcile a loan book against a Java 8 run of the same clone: disburse one loan with a capitalised fee, post one repayment, and compare `m_loan_repayment_schedule` and `acc_gl_journal_entry` (account, amount, entry date, type). Totals, dates, and account numbers must match.
+5. Compare Daily Teller Cash, one loan transaction receipt, and one GL report (trial balance, income statement, or balance sheet) to the previous Pentaho output for the same parameters. The check is totals, dates, and account numbers.

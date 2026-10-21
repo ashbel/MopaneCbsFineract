@@ -36,7 +36,7 @@ public class DeviceRegistrationRepositoryWrapper {
 	public DeviceRegistration findOneWithNotFoundDetection(
 			final Long deviceRegistrationId) {
 		final DeviceRegistration deviceRegistration = this.repository
-				.findOne(deviceRegistrationId);
+				.findById(deviceRegistrationId).orElse(null);
 		if (deviceRegistration == null) {
 			throw new DeviceRegistrationNotFoundException(deviceRegistrationId);
 		}

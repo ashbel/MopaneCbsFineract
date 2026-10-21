@@ -1,4 +1,4 @@
-FROM tomcat:8.5-jdk8
+FROM tomcat:10.1-jre21
 
 ENV CATALINA_HOME=/usr/local/tomcat
 WORKDIR $CATALINA_HOME
@@ -6,9 +6,8 @@ WORKDIR $CATALINA_HOME
 # Remove default apps
 RUN rm -rf webapps/*
 
-# JDBC drivers expected by classic Mifos/Fineract Tomcat config
-ADD https://repo1.maven.org/maven2/org/drizzle/jdbc/drizzle-jdbc/1.4/drizzle-jdbc-1.4.jar lib/drizzle-jdbc-1.4.jar
-ADD https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar lib/mysql-connector-j-8.0.33.jar
+# Connector/J 8.4. Tenant URLs are jdbc:mysql:// with no timezone override.
+ADD https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar lib/mysql-connector-j-8.4.0.jar
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends gettext-base curl socat \

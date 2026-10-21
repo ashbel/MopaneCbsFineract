@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="GeneralLedgerReport" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <parameter name="account" class="java.lang.String" />
+    <parameter name="branch" class="java.lang.String" />
+    <field name="cumulative_sum" class="java.lang.String" />
+    <field name="report_header" class="java.lang.String" />
+    <field name="reportid" class="java.lang.String" />
+    <field name="account_name" class="java.lang.String" />
+    <field name="debit_amount" class="java.lang.String" />
+    <field name="credit_amount" class="java.lang.String" />
+    <field name="aftertxn" class="java.lang.String" />
+    <field name="description" class="java.lang.String" />
+    <field name="transactionid" class="java.lang.String" />
+    <query language="SQL">select
+details.edate entry_date,
+details.acid1,
+details.report_header,
+details.reportid,
+details.account_name,
+branch.branchname,
+sum(details.debit_amount) debit_amount,
+sum(details.credit_amount) credit_amount,
+details.aftertxn,
+details.description,
+ifnull(opb.openingbalance,0) openingbalance,
+details.transactionid,
+details.actype,
+details.manual_entry,
+if (details.manual_entry=1,details.id,'0system') transtype,
+if (actype in (1,5),
+   (sum(details.debit_amount) - sum(details.credit_amount)),
+   (sum(details.credit_amount) - sum(details.debit_amount))) as cumulative_sum 
+from
+(
+
+select
+a.account_id acid1
+,concat(gl.gl_code,"-",gl.name) as report_header
+,gl.classification_enum actype
+,gl.gl_code as reportid
+,j1.entry_date edate
+,concat(gl1.gl_code,"-",gl1.name) as account_name
+,if (j1.type_enum=1, j1.amount, 0) as debit_amount
+,if (j1.type_enum=2, j1.amount , 0) as credit_amount
+,j1.id
+,j1.office_id
+,j1.transaction_id
+, j1.type_enum
+,j1.office_running_balance as aftertxn
+,j1.description as description
+,j1.transaction_id as transactionid
+,a.manual_entry
+
+from   acc_gl_journal_entry j1
+
+inner join (select distinct je.transaction_id tid,je.account_id,je.manual_entry 
+from m_office o
+left join m_office ounder on ounder.hierarchy like concat(o.hierarchy,'%')
+and ounder.hierarchy like concat($P{userhierarchy},'%')
+inner join  acc_gl_journal_entry je on je.office_id = ounder.id
+where je.account_id =$P{account}
+and o.id  = $P{branch}
+and je.entry_date between $P{fromDate} and $P{toDate})a on a.tid = j1.transaction_id and j1.account_id &lt;&gt; $P{account}
+left join acc_gl_account gl on gl.id = a.account_id
+left join acc_gl_account gl1 on gl1.id = j1.account_id
+order by j1.entry_date, j1.id) details
+left join
+(    
+select je.account_id acid2,
+if(aga1.classification_enum in (1,5),
+(sum(if(je.type_enum=2,ifnull(je.amount,0),0))- sum(if(je.type_enum=1,ifnull(je.amount,0),0))),
+(sum(if(je.type_enum=1,ifnull(je.amount,0),0))- sum(if(je.type_enum=2,ifnull(je.amount,0),0)))) openingbalance
+from m_office o
+left join m_office ounder on ounder.hierarchy like concat(o.hierarchy,'%')
+and ounder.hierarchy like concat($P{userhierarchy},'%')
+left join acc_gl_journal_entry je on je.office_id = ounder.id
+left join acc_gl_account aga1 on aga1.id=je.account_id
+where je.entry_date &lt;= DATE_SUB($P{fromDate},INTERVAL 1 day)
+and je.office_running_balance is not null
+and (o.id=$P{branch})
+and je.account_id = $P{account}
+group by je.account_id )opb
+on opb.acid2=details.acid1
+left join
+(
+select name branchname
+from m_office mo
+where
+mo.id=1
+)branch
+on details.office_id=$P{branch}
+group by
+details.edate,
+details.acid1,
+details.report_header,
+details.reportid,
+details.account_name,
+branch.branchname
+,transtype</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>GeneralLedgerReport</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="82" height="20"><text>cumulative_sum</text></element><element kind="staticText" x="106" y="0" width="82" height="20"><text>report_header</text></element><element kind="staticText" x="192" y="0" width="82" height="20"><text>reportid</text></element><element kind="staticText" x="278" y="0" width="82" height="20"><text>account_name</text></element><element kind="staticText" x="364" y="0" width="82" height="20"><text>debit_amount</text></element><element kind="staticText" x="450" y="0" width="82" height="20"><text>credit_amount</text></element><element kind="staticText" x="536" y="0" width="82" height="20"><text>aftertxn</text></element><element kind="staticText" x="622" y="0" width="82" height="20"><text>description</text></element><element kind="staticText" x="708" y="0" width="82" height="20"><text>transactionid</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="82" height="18"><expression>$F{cumulative_sum}</expression></element><element kind="textField" blankWhenNull="true" x="106" y="0" width="82" height="18"><expression>$F{report_header}</expression></element><element kind="textField" blankWhenNull="true" x="192" y="0" width="82" height="18"><expression>$F{reportid}</expression></element><element kind="textField" blankWhenNull="true" x="278" y="0" width="82" height="18"><expression>$F{account_name}</expression></element><element kind="textField" blankWhenNull="true" x="364" y="0" width="82" height="18"><expression>$F{debit_amount}</expression></element><element kind="textField" blankWhenNull="true" x="450" y="0" width="82" height="18"><expression>$F{credit_amount}</expression></element><element kind="textField" blankWhenNull="true" x="536" y="0" width="82" height="18"><expression>$F{aftertxn}</expression></element><element kind="textField" blankWhenNull="true" x="622" y="0" width="82" height="18"><expression>$F{description}</expression></element><element kind="textField" blankWhenNull="true" x="708" y="0" width="82" height="18"><expression>$F{transactionid}</expression></element></band>
+    </detail>
+</jasperReport>
