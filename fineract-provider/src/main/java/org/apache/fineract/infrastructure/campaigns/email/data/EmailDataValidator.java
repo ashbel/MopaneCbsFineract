@@ -18,8 +18,8 @@
  */
 package org.apache.fineract.infrastructure.campaigns.email.data;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang.StringUtils;

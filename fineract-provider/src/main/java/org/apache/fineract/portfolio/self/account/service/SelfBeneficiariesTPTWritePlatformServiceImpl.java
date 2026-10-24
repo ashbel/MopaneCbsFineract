@@ -145,7 +145,7 @@ public class SelfBeneficiariesTPTWritePlatformServiceImpl implements
 		AppUser user = this.context.authenticatedUser();
 		Long beneficiaryId = command.entityId();
 		SelfBeneficiariesTPT beneficiary = this.repository
-				.findOne(beneficiaryId);
+				.findById(beneficiaryId).orElse(null);
 		if (beneficiary != null
 				&& beneficiary.getAppUserId().equals(user.getId())) {
 			String name = (String) params.get(NAME_PARAM_NAME);
@@ -175,7 +175,7 @@ public class SelfBeneficiariesTPTWritePlatformServiceImpl implements
 		AppUser user = this.context.authenticatedUser();
 		Long beneficiaryId = command.entityId();
 		SelfBeneficiariesTPT beneficiary = this.repository
-				.findOne(beneficiaryId);
+				.findById(beneficiaryId).orElse(null);
 		if (beneficiary != null
 				&& beneficiary.getAppUserId().equals(user.getId())) {
 

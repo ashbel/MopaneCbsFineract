@@ -231,6 +231,10 @@ public class LoanEnumerations {
         final String codePrefix = "interestRateFrequency.";
         EnumOptionData optionData = null;
         switch (type) {
+            case WEEKS:
+                optionData = new EnumOptionData(PeriodFrequencyType.WEEKS.getValue().longValue(), codePrefix
+                        + PeriodFrequencyType.WEEKS.getCode(), "Per week");
+            break;
             case MONTHS:
                 optionData = new EnumOptionData(PeriodFrequencyType.MONTHS.getValue().longValue(), codePrefix
                         + PeriodFrequencyType.MONTHS.getCode(), "Per month");

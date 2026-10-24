@@ -114,7 +114,7 @@ public class TopicDomainServiceImpl implements TopicDomainService {
         if (changes.containsKey("name")) {
         	List<Topic> entityTopics = topicRepository.findByMemberType(previousRolename);
         	for (Topic topic : entityTopics) {
-        		Office office = officeRepository.findOne(topic.getEntityId());
+        		Office office = officeRepository.findById(topic.getEntityId()).orElse(null);
         		String title = updatedRole.getName() + " of " + office.getName();
         		topic.setTitle(title);
             	topic.setMemberType(updatedRole.getName().toUpperCase());
@@ -237,7 +237,7 @@ public class TopicDomainServiceImpl implements TopicDomainService {
         if (!ObjectUtils.isEmpty(rolesArray)) {
             for (final String roleId : rolesArray) {
                 final Long id = Long.valueOf(roleId);
-                final Role role = this.roleRepository.findOne(id);
+                final Role role = this.roleRepository.findById(id).orElse(null);
                 if (role == null) { throw new RoleNotFoundException(id); }
                 allRoles.add(role);
             }

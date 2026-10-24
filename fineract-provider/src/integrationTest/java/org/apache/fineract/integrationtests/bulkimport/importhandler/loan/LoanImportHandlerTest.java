@@ -38,8 +38,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

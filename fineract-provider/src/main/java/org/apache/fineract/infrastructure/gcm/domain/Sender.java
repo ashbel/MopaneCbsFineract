@@ -789,7 +789,7 @@ public class Sender {
 			return "";
 		}
 		BufferedReader reader = new BufferedReader(
-				new InputStreamReader(stream));
+				new InputStreamReader(stream, "UTF-8"));
 		StringBuilder content = new StringBuilder();
 		String newLine;
 		do {

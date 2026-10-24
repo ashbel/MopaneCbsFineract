@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.infrastructure.gcm.service;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
@@ -28,7 +28,7 @@ import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistrationRepositor
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.openjpa.persistence.EntityExistsException;
+import jakarta.persistence.EntityExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;

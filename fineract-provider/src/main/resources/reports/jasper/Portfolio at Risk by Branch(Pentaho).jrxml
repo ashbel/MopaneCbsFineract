@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Portfolio at Risk by Branch(Pentaho)" pageWidth="1020" pageHeight="595" orientation="Landscape" columnWidth="980" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="parType" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <parameter name="fundId" class="java.lang.String" />
+    <parameter name="loanProductId" class="java.lang.String" />
+    <parameter name="loanPurposeId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="name" class="java.lang.String" />
+    <field name="Principal Overdue" class="java.lang.String" />
+    <field name="Interest Outstanding" class="java.lang.String" />
+    <field name="Interest Overdue" class="java.lang.String" />
+    <field name="Fees Outstanding" class="java.lang.String" />
+    <field name="Fees Overdue" class="java.lang.String" />
+    <field name="Penalties Outstanding" class="java.lang.String" />
+    <field name="Portfolio at Risk %" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Principal Outstanding" class="java.lang.String" />
+    <field name="Penalties Overdue" class="java.lang.String" />
+    <query language="SQL">select concat(repeat("..",   
+   ((LENGTH(mo.`hierarchy`) - LENGTH(REPLACE(mo.`hierarchy`, '.', '')) - 1))), mo.`name`) as "Office/Branch",x.branchn as name,
+x.Currency, x.`Principal Outstanding`, ifnull(x.`Principal Overdue`,0)as "Principal Overdue", ifnull(x.`Interest Outstanding`,0) as "Interest Outstanding", ifnull(x.`Interest Overdue`,0)as "Interest Overdue", 
+ifnull(x.`Fees Outstanding`,0)as "Fees Outstanding",ifnull(x.`Fees Overdue`,0)as "Fees Overdue", ifnull(x.`Penalties Outstanding`,0)as "Penalties Outstanding", ifnull(x.`Penalties Overdue`,0) as"Penalties Overdue",(case
+	when $P{parType} = 1 then
+    cast(round((x.`Principal Overdue` * 100) / x.`Principal Outstanding`, 2) as char)
+	when $P{parType} = 2 then
+    cast(round(((x.`Principal Overdue` + x.`Interest Overdue`) * 100) / (x.`Principal Outstanding` + x.`Interest Outstanding`), 2) as char)
+	when $P{parType} = 3 then
+    cast(round(((x.`Principal Overdue` + x.`Interest Overdue` + x.`Fees Overdue`) * 100) / (x.`Principal Outstanding` + x.`Interest Outstanding` + x.`Fees Outstanding`), 2) as char)
+	when $P{parType} = 4 then
+    cast(round(((x.`Principal Overdue` + x.`Interest Overdue` + x.`Fees Overdue` + x.`Penalties Overdue`) * 100) / (x.`Principal Outstanding` + x.`Interest Outstanding` + x.`Fees Outstanding` + x.`Penalties Overdue`), 2) as char)
+	else "invalid PAR Type"
+	end) as "Portfolio at Risk %"
+from m_office mo
+join 
+(select  ounder.id as "branch",ounder.name as "branchn", ifnull(cur.display_symbol, l.currency_code) as Currency,  
+
+sum(l.principal_outstanding_derived) as "Principal Outstanding",
+sum(laa.principal_overdue_derived) as "Principal Overdue",
+
+sum(l.interest_outstanding_derived) as "Interest Outstanding",
+sum(laa.interest_overdue_derived) as "Interest Overdue",
+
+sum(l.fee_charges_outstanding_derived)  as "Fees Outstanding",
+sum(laa.fee_charges_overdue_derived) as "Fees Overdue",
+
+sum(penalty_charges_outstanding_derived) as "Penalties Outstanding",
+sum(laa.penalty_charges_overdue_derived) as "Penalties Overdue"
+
+from m_office o 
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+join  m_loan l on l.client_id = c.id
+left join m_staff lo on lo.id = l.loan_officer_id
+left join m_currency cur on cur.code = l.currency_code
+left join m_fund f on f.id = l.fund_id
+left join m_code_value purp on purp.id = l.loanpurpose_cv_id
+left join m_product_loan p on p.id = l.product_id
+left join m_loan_arrears_aging laa on laa.loan_id = l.id
+where o.id = $P{Branch}  
+and (ifnull(l.loan_officer_id, -10) = -1 or "-1" = -1)
+and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
+and (l.product_id = $P{loanProductId} or "-1" = $P{loanProductId})
+and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})
+
+
+and l.loan_status_id = 300
+group by ounder.id, l.currency_code) x on x.branch = mo.id
+order by mo.hierarchy, x.Currency</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Portfolio at Risk by Branch(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Office/Branch</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>name</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Principal Overdue</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Interest Outstanding</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Interest Overdue</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Fees Outstanding</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Fees Overdue</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Penalties Outstanding</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Portfolio at Risk %</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>Principal Outstanding</text></element><element kind="staticText" x="930" y="0" width="66" height="20"><text>Penalties Overdue</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{name}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Principal Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Interest Outstanding}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Interest Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Fees Outstanding}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Fees Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Penalties Outstanding}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Portfolio at Risk %}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{Principal Outstanding}</expression></element><element kind="textField" blankWhenNull="true" x="930" y="0" width="66" height="18"><expression>$F{Penalties Overdue}</expression></element></band>
+    </detail>
+</jasperReport>

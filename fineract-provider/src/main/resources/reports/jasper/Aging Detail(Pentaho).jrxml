@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Aging Detail(Pentaho)" pageWidth="1160" pageHeight="595" orientation="Landscape" columnWidth="1120" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Client Account No." class="java.lang.String" />
+    <field name="Client Name" class="java.lang.String" />
+    <field name="Account Number" class="java.lang.String" />
+    <field name="Loan Amount" class="java.lang.String" />
+    <field name="Original Principal" class="java.lang.String" />
+    <field name="Original Interest" class="java.lang.String" />
+    <field name="Principal Paid" class="java.lang.String" />
+    <field name="Interest Paid" class="java.lang.String" />
+    <field name="Principal Overdue" class="java.lang.String" />
+    <field name="Interest Overdue" class="java.lang.String" />
+    <field name="Days in Arrears" class="java.lang.String" />
+    <field name="Weeks In Arrears Band" class="java.lang.String" />
+    <field name="Days in Arrears Band" class="java.lang.String" />
+    <query language="SQL">SELECT 
+concat(repeat("..",   
+   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.`name`) as "Office/Branch",ounder.name as "Name", ounder.id,
+ifnull(cur.display_symbol, ml.currency_code) as Currency,  
+mc.account_no as "Client Account No.",
+ 	mc.display_name AS "Client Name",
+ 	ml.account_no AS "Account Number",
+ 	ifnull(ml.principal_amount,0) AS "Loan Amount",
+ ifnull(ml.principal_disbursed_derived,0) AS "Original Principal",
+ ifnull(ml.interest_charged_derived,0) AS "Original Interest",
+ ifnull(ml.principal_repaid_derived,0) AS "Principal Paid",
+ ifnull(ml.interest_repaid_derived,0) AS "Interest Paid",
+ ifnull(laa.principal_overdue_derived,0) AS "Principal Overdue",
+ ifnull(laa.interest_overdue_derived,0) AS "Interest Overdue",
+DATEDIFF(CURDATE(), laa.overdue_since_date_derived) as "Days in Arrears",
+
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;7, '&lt;1', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;8, ' 1', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;15,  '2', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;22, ' 3', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;29, ' 4', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;36, ' 5', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;43, ' 6', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;50, ' 7', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;57, ' 8', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;64, ' 9', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;71, '10', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;78, '11', 
+ 	IF(DATEDIFF(CURDATE(), laa.overdue_since_date_derived)&lt;85, '12', '12+')))))))))))) )AS "Weeks In Arrears Band",
+
+		IF(DATEDIFF(CURDATE(),  laa.overdue_since_date_derived)&lt;31, '0 - 30', 
+		IF(DATEDIFF(CURDATE(),  laa.overdue_since_date_derived)&lt;61, '30 - 60', 
+		IF(DATEDIFF(CURDATE(),  laa.overdue_since_date_derived)&lt;91, '60 - 90', 
+		IF(DATEDIFF(CURDATE(),  laa.overdue_since_date_derived)&lt;181, '90 - 180', 
+		IF(DATEDIFF(CURDATE(),  laa.overdue_since_date_derived)&lt;361, '180 - 360', 
+				 '&gt; 360'))))) AS "Days in Arrears Band"
+
+	FROM m_office mo 
+    JOIN m_office ounder ON ounder.hierarchy like concat(mo.hierarchy, '%')
+	        AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+    INNER JOIN m_client mc ON mc.office_id=ounder.id
+	    INNER JOIN m_loan ml ON ml.client_id = mc.id
+	    INNER JOIN r_enum_value rev ON rev.enum_id=ml.loan_status_id AND rev.enum_name = 'loan_status_id'
+    INNER JOIN m_loan_arrears_aging laa ON laa.loan_id=ml.id
+    left join m_currency cur on cur.code = ml.currency_code
+	WHERE ml.loan_status_id=300
+    AND mo.id=$P{Branch}
+ORDER BY ounder.hierarchy, ifnull(cur.display_symbol, ml.currency_code), ml.account_no</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Aging Detail(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Office/Branch</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Client Account No.</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Client Name</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Account Number</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Loan Amount</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Original Principal</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Original Interest</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Principal Paid</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Interest Paid</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Principal Overdue</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>Interest Overdue</text></element><element kind="staticText" x="930" y="0" width="66" height="20"><text>Days in Arrears</text></element><element kind="staticText" x="1000" y="0" width="66" height="20"><text>Weeks In Arrears Band</text></element><element kind="staticText" x="1070" y="0" width="66" height="20"><text>Days in Arrears Band</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Client Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Client Name}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Account Number}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Loan Amount}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Original Principal}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Original Interest}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Principal Paid}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Interest Paid}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Principal Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{Interest Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="930" y="0" width="66" height="18"><expression>$F{Days in Arrears}</expression></element><element kind="textField" blankWhenNull="true" x="1000" y="0" width="66" height="18"><expression>$F{Weeks In Arrears Band}</expression></element><element kind="textField" blankWhenNull="true" x="1070" y="0" width="66" height="18"><expression>$F{Days in Arrears Band}</expression></element></band>
+    </detail>
+</jasperReport>

@@ -84,10 +84,12 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         }
         loanApplicationTerms.updateLoanEndDate(loanEndDate);
 
-        // determine the total charges due at time of disbursement
+        // Unpaid capitalised fees are principal for scheduling (approved loans
+        // and calculate-schedule). Paid fees are already in stored principal.
+        loanApplicationTerms.includeUnpaidPrincipalCapitalisingFees(loanCharges);
+
+        // determine the total charges due at time of disbursement (cash fees only)
         final BigDecimal chargesDueAtTimeOfDisbursement = deriveTotalChargesDueAtTimeOfDisbursement(loanCharges);
-        
-        loanApplicationTerms.setCapitalisedCharge(BigDecimal.ZERO);
 
         // setup variables for tracking important facts required for loan
         // schedule generation.
@@ -1271,11 +1273,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         Money principalToBeScheduled;
         if (loanApplicationTerms.isMultiDisburseLoan() && loanApplicationTerms.getApprovedPrincipal().isGreaterThanZero()) {
             principalToBeScheduled = loanApplicationTerms.getApprovedPrincipal();
-        } 
-//        else if(loanApplicationTerms.getCapitalisedCharge()) {
-//        	principalToBeScheduled = loanApplicationTerms.getApprovedPrincipal().plus(loanApplicationTerms.getCapitalisedCharge());
-//        }
-        else {
+        } else {
             principalToBeScheduled = loanApplicationTerms.getPrincipal();
         }
         return principalToBeScheduled;
@@ -2077,6 +2075,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
 
         // Fixed schedule End Date for generating schedule
         final LocalDate scheduleTillDate = null;
+        loanApplicationTerms.includeUnpaidPrincipalCapitalisingFees(loan.charges());
         return rescheduleNextInstallments(mc, loanApplicationTerms, loan, holidayDetailDTO, loanRepaymentScheduleTransactionProcessor,
                 rescheduleFrom, scheduleTillDate);
 

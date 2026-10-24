@@ -42,6 +42,7 @@ import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTermVariationsDataWrapper;
+import org.apache.fineract.portfolio.loanaccount.domain.LoanCharge;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanInterestRecalculationDetails;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
@@ -83,7 +84,7 @@ public final class LoanApplicationTerms {
     private final boolean allowPartialPeriodInterestCalcualtion;
 
     private Money principal;
-    private BigDecimal capitalisedCharge;
+    private BigDecimal capitalisedCharge = BigDecimal.ZERO;
     private final LocalDate expectedDisbursementDate;
     private final LocalDate repaymentsStartingFromDate;
     private final LocalDate calculatedRepaymentsStartingFromDate;
@@ -673,11 +674,6 @@ public final class LoanApplicationTerms {
         Money interestBroughtForwardDueToGrace = cumulatingInterestPaymentDueToGrace.copy();
         InterestMethod interestMethod = this.interestMethod;
         Money calculatedOutstandingBalance = outstandingBalance;
-        
-        if(this.capitalisedCharge.compareTo(BigDecimal.ZERO)>0) {
-        	BigDecimal singleCharge = this.capitalisedCharge; //.divide(new BigDecimal(this.numberOfRepayments));
-        	calculatedOutstandingBalance = calculatedOutstandingBalance.plus(singleCharge);
-        }
 
         if (this.isEqualAmortization() && this.totalInterestDue != null) {
             interestMethod = InterestMethod.FLAT;
@@ -1387,7 +1383,46 @@ public final class LoanApplicationTerms {
     }
     
     public void setCapitalisedCharge(BigDecimal chargesCapitalisedAtTimeOfDisbursement) {
-        this.capitalisedCharge = chargesCapitalisedAtTimeOfDisbursement;
+        this.capitalisedCharge = chargesCapitalisedAtTimeOfDisbursement == null ? BigDecimal.ZERO
+                : chargesCapitalisedAtTimeOfDisbursement;
+    }
+
+    /**
+     * Fold unpaid principal-capitalising fees into the principal used for EMI /
+     * interest. Idempotent so generate() can run more than once on the same terms
+     * (equal-amortization declining then flat). After disbursement those fees are
+     * paid and already in stored principal, so this is a no-op.
+     */
+    public void includeUnpaidPrincipalCapitalisingFees(final Set<LoanCharge> loanCharges) {
+        BigDecimal unpaid = BigDecimal.ZERO;
+        if (loanCharges != null) {
+            for (final LoanCharge charge : loanCharges) {
+                if (charge == null || !charge.isActive() || charge.isWaived() || !charge.isPrincipalCapitalizingFee()
+                        || charge.isPaid()) {
+                    continue;
+                }
+                BigDecimal outstanding = charge.amountOutstanding();
+                if (outstanding == null) {
+                    outstanding = charge.amount();
+                }
+                if (outstanding != null && outstanding.compareTo(BigDecimal.ZERO) > 0) {
+                    unpaid = unpaid.add(outstanding);
+                }
+            }
+        }
+        if (this.capitalisedCharge == null) {
+            this.capitalisedCharge = BigDecimal.ZERO;
+        }
+        final BigDecimal delta = unpaid.subtract(this.capitalisedCharge);
+        if (delta.compareTo(BigDecimal.ZERO) != 0 && this.principal != null) {
+            this.principal = this.principal.plus(delta);
+            if (this.approvedPrincipal != null) {
+                this.approvedPrincipal = this.approvedPrincipal.plus(delta);
+            }
+            this.capitalisedCharge = unpaid;
+        } else {
+            this.capitalisedCharge = unpaid;
+        }
     }
 
     public LocalDate getInterestChargedFromLocalDate() {

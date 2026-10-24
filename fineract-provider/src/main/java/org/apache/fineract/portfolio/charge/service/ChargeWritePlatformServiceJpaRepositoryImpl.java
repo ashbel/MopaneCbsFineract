@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.charge.service;
 import java.util.Collection;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -136,7 +136,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
         try {
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
 
-            final Charge chargeForUpdate = this.chargeRepository.findOne(chargeId);
+            final Charge chargeForUpdate = this.chargeRepository.findById(chargeId).orElse(null);
             if (chargeForUpdate == null) { throw new ChargeNotFoundException(chargeId); }
 
             final Map<String, Object> changes = chargeForUpdate.update(command);
@@ -203,7 +203,7 @@ public class ChargeWritePlatformServiceJpaRepositoryImpl implements ChargeWriteP
     @CacheEvict(value = "charges", key = "T(org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil).getTenant().getTenantIdentifier().concat('ch')")
     public CommandProcessingResult deleteCharge(final Long chargeId) {
 
-        final Charge chargeForDelete = this.chargeRepository.findOne(chargeId);
+        final Charge chargeForDelete = this.chargeRepository.findById(chargeId).orElse(null);
         if (chargeForDelete == null || chargeForDelete.isDeleted()) { throw new ChargeNotFoundException(chargeId); }
 
         final Collection<LoanProduct> loanProducts = this.loanProductRepository.retrieveLoanProductsByChargeId(chargeId);

@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.loanaccount.data;
 import java.math.BigDecimal;
 import java.util.*;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
 import org.apache.fineract.infrastructure.bulkimport.constants.TemplatePopulateImportConstants;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;

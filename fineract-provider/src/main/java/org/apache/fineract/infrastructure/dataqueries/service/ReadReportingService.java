@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.StreamingOutput;
 
 import org.apache.fineract.infrastructure.dataqueries.data.GenericResultsetData;
 import org.apache.fineract.infrastructure.dataqueries.data.ReportData;

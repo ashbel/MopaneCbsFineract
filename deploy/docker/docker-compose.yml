@@ -1,4 +1,4 @@
-# Legacy Mopane / Apache Fineract (Java 8 + MySQL + Tomcat) — Docker only.
+# Mopane CBS Fineract (Java 21 + MySQL + Tomcat 10.1) — Docker only.
 # Host Nginx terminates TLS for fineract.mopane.co.zw and proxies here.
 
 name: fineract-legacy
@@ -62,6 +62,8 @@ services:
     networks:
       - fineract-legacy-net
     mem_limit: 2g
+    volumes:
+      - ./.mifosx:/root/.mifosx
 
   # Community-app (AngularJS) static files from mopane-cbs-ui dist/community-app
   ui:

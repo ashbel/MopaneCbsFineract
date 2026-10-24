@@ -30,16 +30,16 @@ import org.springframework.data.repository.query.Param;
 public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificationExecutor<Loan> {
 
     public static final String FIND_GROUP_LOANS_DISBURSED_AFTER = "select l from Loan l where ( l.actualDisbursementDate IS NOT NULL and l.actualDisbursementDate > :disbursementDate) and "
-            + "l.group.id = :groupId and l.loanType = :loanType order by l.actualDisbursementDate";
+            + "l.loanGroup.id = :groupId and l.loanType = :loanType order by l.actualDisbursementDate";
 
     public static final String FIND_CLIENT_OR_JLG_LOANS_DISBURSED_AFTER = "select l from Loan l where (l.actualDisbursementDate IS NOT NULL and l.actualDisbursementDate > :disbursementDate) and "
             + "l.client.id = :clientId order by l.actualDisbursementDate";
 
-    public static final String FIND_MAX_GROUP_LOAN_COUNTER_QUERY = "Select MAX(l.loanCounter) from Loan l where l.group.id = :groupId "
+    public static final String FIND_MAX_GROUP_LOAN_COUNTER_QUERY = "Select MAX(l.loanCounter) from Loan l where l.loanGroup.id = :groupId "
             + "and l.loanType = :loanType";
 
     public static final String FIND_MAX_GROUP_LOAN_PRODUCT_COUNTER_QUERY = "Select MAX(l.loanProductCounter) from Loan l where "
-            + "l.group.id = :groupId and l.loanType = :loanType and l.loanProduct.id = :productId";
+            + "l.loanGroup.id = :groupId and l.loanType = :loanType and l.loanProduct.id = :productId";
 
     public static final String FIND_MAX_CLIENT_OR_JLG_LOAN_COUNTER_QUERY = "Select MAX(l.loanCounter) from Loan l where "
             + "l.client.id = :clientId";
@@ -48,13 +48,13 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
             + "l.client.id = :clientId and l.loanProduct.id = :productId";
 
     public static final String FIND_GROUP_LOANS_TO_UPDATE = "select l from Loan l where l.loanCounter > :loanCounter and "
-            + "l.group.id = :groupId and l.loanType = :groupLoanType order by l.loanCounter";
+            + "l.loanGroup.id = :groupId and l.loanType = :groupLoanType order by l.loanCounter";
 
     public static final String FIND_CLIENT_OR_JLG_LOANS_TO_UPDATE = "select l from Loan l where l.loanCounter > :loanCounter and "
             + "l.client.id = :clientId order by l.loanCounter";
 
     public static final String FIND_GROUP_LOANS_TO_UPDATE_LOANPRODUCT_COUNTER = "select l from Loan l where l.loanProductCounter > :loanProductCounter"
-            + " and l.group.id = :groupId and l.loanType = :groupLoanType and l.loanCounter is NULL order by l.loanProductCounter";
+            + " and l.loanGroup.id = :groupId and l.loanType = :groupLoanType and l.loanCounter is NULL order by l.loanProductCounter";
 
     public static final String FIND_CLIENT_LOANS_TO_UPDATE_LOANPRODUCT_COUNTER = "select l from Loan l where l.loanProductCounter > :loanProductCounter"
             + " and l.client.id = :clientId and l.loanCounter is NULL order by l.loanProductCounter";
@@ -63,7 +63,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
             + "loan.client.id = :clientId and loan.loanStatus = :loanStatus group by loan.loanProduct.id";
 
     public static final String FIND_ACTIVE_LOANS_PRODUCT_IDS_BY_GROUP = "Select loan.loanProduct.id from Loan loan where "
-            + "loan.group.id = :groupId and loan.loanStatus = :loanStatus and loan.client.id is NULL group by loan.loanProduct.id";
+            + "loan.loanGroup.id = :groupId and loan.loanStatus = :loanStatus and loan.client.id is NULL group by loan.loanProduct.id";
 
     public static final String DOES_CLIENT_HAVE_NON_CLOSED_LOANS = "select case when (count (loan) > 0) then 'true' else 'false' end from Loan loan where loan.client.id = :clientId and loan.loanStatus in (100,200,300,303,304,700)";
 
@@ -108,17 +108,17 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     List<Loan> getClientLoansToUpdateLoanProductCounter(@Param("loanProductCounter") Integer loanProductCounter,
             @Param("clientId") Long clientId);
 
-    @Query("select loan from Loan loan where loan.client.id = :clientId and loan.group.id = :groupId")
+    @Query("select loan from Loan loan where loan.client.id = :clientId and loan.loanGroup.id = :groupId")
     List<Loan> findByClientIdAndGroupId(@Param("clientId") Long clientId, @Param("groupId") Long groupId);
 
-    @Query("select loan from Loan loan where loan.client.id = :clientId and loan.group.id = :groupId and loan.loanStatus IN :loanStatuses")
+    @Query("select loan from Loan loan where loan.client.id = :clientId and loan.loanGroup.id = :groupId and loan.loanStatus IN :loanStatuses")
     List<Loan> findByClientIdAndGroupIdAndLoanStatus(@Param("clientId") Long clientId, @Param("groupId") Long groupId,
             @Param("loanStatuses") Collection<Integer> loanStatuses);
 
     @Query("select loan from Loan loan where loan.client.id = :clientId")
     List<Loan> findLoanByClientId(@Param("clientId") Long clientId);
 
-    @Query("select loan from Loan loan where loan.group.id = :groupId and loan.client.id is null")
+    @Query("select loan from Loan loan where loan.loanGroup.id = :groupId and loan.client.id is null")
     List<Loan> findByGroupId(@Param("groupId") Long groupId);
 
     @Query("select loan from Loan loan where loan.id IN :ids and loan.loanStatus IN :loanStatuses and loan.loanType IN :loanTypes")
@@ -132,7 +132,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     List<Loan> findByClientOfficeIdsAndLoanStatus(@Param("officeIds") Collection<Long> officeIds,
             @Param("loanStatuses") Collection<Integer> loanStatuses);
 
-    @Query("select loan from Loan loan where loan.group.office.id IN :officeIds and loan.loanStatus IN :loanStatuses")
+    @Query("select loan from Loan loan where loan.loanGroup.office.id IN :officeIds and loan.loanStatus IN :loanStatuses")
     List<Loan> findByGroupOfficeIdsAndLoanStatus(@Param("officeIds") Collection<Long> officeIds,
             @Param("loanStatuses") Collection<Integer> loanStatuses);
 

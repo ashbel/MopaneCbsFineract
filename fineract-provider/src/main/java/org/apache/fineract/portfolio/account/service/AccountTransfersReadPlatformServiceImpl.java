@@ -500,7 +500,7 @@ public class AccountTransfersReadPlatformServiceImpl implements
 		}
 
 		@SuppressWarnings("deprecation")
-		final int count = this.jdbcTemplate.queryForInt(sql.toString());
+		final int count = this.jdbcTemplate.queryForObject(sql.toString(), Integer.class);
 		return count > 0;
 	}
 

@@ -47,26 +47,26 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -143,7 +143,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "group_id", nullable = true)
-    protected Group group;
+    protected Group savingsGroup;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
@@ -379,7 +379,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             final BigDecimal minRequiredBalance, final BigDecimal nominalAnnualInterestRateOverdraft,
             final BigDecimal minOverdraftForInterestCalculation, boolean withHoldTax) {
         this.client = client;
-        this.group = group;
+        this.savingsGroup = group;
         this.product = product;
         this.savingsOfficer = savingsOfficer;
         if (StringUtils.isBlank(accountNo)) {
@@ -1490,7 +1490,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     }
 
     public void update(final Group group) {
-        this.group = group;
+        this.savingsGroup = group;
     }
 
     public void update(final SavingsProduct product) {
@@ -1532,7 +1532,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         if (this.client != null) {
             officeId = this.client.officeId();
         } else {
-            officeId = this.group.officeId();
+            officeId = this.savingsGroup.officeId();
         }
         return officeId;
     }
@@ -1542,7 +1542,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         if (this.client != null) {
             office = this.client.getOffice();
         } else {
-            office = this.group.getOffice();
+            office = this.savingsGroup.getOffice();
         }
         return office;
     }
@@ -1569,8 +1569,8 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
 
     public Long groupId() {
         Long id = null;
-        if (this.group != null) {
-            id = this.group.getId();
+        if (this.savingsGroup != null) {
+            id = this.savingsGroup.getId();
         }
         return id;
     }
@@ -1744,9 +1744,9 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
         if (this.client != null && this.client.isActivatedAfter(submittedOn)) {
             baseDataValidator.reset().parameter(SavingsApiConstants.submittedOnDateParamName).value(this.client.getActivationLocalDate())
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.client.activation.date");
-        } else if (this.group != null && this.group.isActivatedAfter(submittedOn)) {
+        } else if (this.savingsGroup != null && this.savingsGroup.isActivatedAfter(submittedOn)) {
 
-            baseDataValidator.reset().parameter(SavingsApiConstants.submittedOnDateParamName).value(this.group.getActivationLocalDate())
+            baseDataValidator.reset().parameter(SavingsApiConstants.submittedOnDateParamName).value(this.savingsGroup.getActivationLocalDate())
                     .failWithCodeNoParameterAddedToErrorCode("cannot.be.before.client.activation.date");
         }
 
@@ -2099,7 +2099,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
             if (!dataValidationErrors.isEmpty()) { throw new PlatformApiDataValidationException(dataValidationErrors); }
         }
 
-        if (this.group != null && this.group.isActivatedAfter(activationDate)) {
+        if (this.savingsGroup != null && this.savingsGroup.isActivatedAfter(activationDate)) {
             final DateTimeFormatter formatter = DateTimeFormat.forPattern(command.dateFormat()).withLocale(command.extractLocale());
             final String dateAsString = formatter.print(this.client.getActivationLocalDate());
             baseDataValidator.reset().parameter(SavingsApiConstants.activatedOnDateParamName).value(dateAsString)
@@ -2285,7 +2285,7 @@ public class SavingsAccount extends AbstractPersistableCustom<Long> {
     }
 
     public Group group() {
-        return this.group;
+        return this.savingsGroup;
     }
 
     public boolean isWithdrawalFeeApplicableForTransfer() {

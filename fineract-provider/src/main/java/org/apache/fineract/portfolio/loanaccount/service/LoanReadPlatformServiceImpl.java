@@ -382,6 +382,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 dynamicFilter.append(" and l.account_no = ?");
                 dynamicParams.add(searchParameters.getAccountNo());
             }
+
+            if (searchParameters.isCurrencyCodePassed()) {
+                dynamicFilter.append(" and l.currency_code = ?");
+                dynamicParams.add(searchParameters.getCurrencyCode());
+            }
         }
 
         sqlBuilder.append(dynamicFilter);
@@ -1276,7 +1281,27 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         	
             BigDecimal waivedChargeAmount = BigDecimal.ZERO;
             BigDecimal amountDisbursed = this.disbursement.amount();
-            BigDecimal totalFeeChargesAtDisbursement =this.totalFeeChargesDueAtDisbursement;
+            BigDecimal totalFeeChargesAtDisbursement = this.totalFeeChargesDueAtDisbursement == null ? BigDecimal.ZERO
+                    : this.totalFeeChargesDueAtDisbursement;
+
+            // Approved (undisbursed) loans still store cash principal. Unpaid
+            // capitalised fees belong in opening principal, not cash fees due.
+            if (!this.disbursement.isDisbursed() && this.chargesData != null) {
+                BigDecimal unpaidCapitalised = BigDecimal.ZERO;
+                for (final LoanChargeData charge : this.chargesData) {
+                    if (charge != null && charge.isUnpaidPrincipalCapitalizingFee() && charge.getAmount() != null) {
+                        unpaidCapitalised = unpaidCapitalised.add(charge.getAmount());
+                    }
+                }
+                if (unpaidCapitalised.compareTo(BigDecimal.ZERO) > 0) {
+                    amountDisbursed = amountDisbursed.add(unpaidCapitalised);
+                    this.outstandingLoanPrincipalBalance = this.outstandingLoanPrincipalBalance.add(unpaidCapitalised);
+                    totalFeeChargesAtDisbursement = totalFeeChargesAtDisbursement.subtract(unpaidCapitalised);
+                    if (totalFeeChargesAtDisbursement.compareTo(BigDecimal.ZERO) < 0) {
+                        totalFeeChargesAtDisbursement = BigDecimal.ZERO;
+                    }
+                }
+            }
 
             for (DisbursementData disbursementDetail : disbursementData) {
                 waivedChargeAmount = waivedChargeAmount.add(disbursementDetail.getWaivedChargeAmount());
@@ -1851,14 +1876,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Integer retriveLoanCounter(final Long groupId, final Integer loanType, Long productId) {
         final String sql = "Select MAX(l.loan_product_counter) from m_loan l where l.group_id = ?  and l.loan_type_enum = ? and l.product_id=?";
-        return this.jdbcTemplate.queryForInt(sql, groupId, loanType, productId);
+        return this.jdbcTemplate.queryForObject(sql, Integer.class, groupId, loanType, productId);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public Integer retriveLoanCounter(final Long clientId, Long productId) {
         final String sql = "Select MAX(l.loan_product_counter) from m_loan l where l.client_id = ? and l.product_id=?";
-        return this.jdbcTemplate.queryForInt(sql, clientId, productId);
+        return this.jdbcTemplate.queryForObject(sql, Integer.class, clientId, productId);
     }
 
     @Override
@@ -1906,6 +1931,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
         public String schema() {
             return "lc.id as id,lc.amount as amount,lc.charge_time_enum as charge_time,lc.charge_id as charge_id,l.id as loan_id," + 
+            		"lc.is_capitalized as capitalized, lc.is_paid_derived as paid, lc.waived as waived," +
             		"mc.name as charge_name,mc.charge_applies_to_enum,mc.currency_code,mc.charge_time_enum,mc.charge_calculation_enum,mc.charge_payment_mode_enum,mc.amount,mc.fee_on_day " + 
             		",mc.fee_interval,mc.fee_on_month,mc.is_penalty,mc.is_active,mc.is_deleted,mc.min_cap,mc.max_cap,mc.fee_frequency,income_or_liability_account_id,tax_group_id " + 
             		"from m_loan l  " + 
@@ -1920,10 +1946,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final BigDecimal amount = rs.getBigDecimal("amount");
             
             final Integer lifeCycleStatusId = JdbcSupport.getInteger(rs, "charge_time_enum");
-            final EnumOptionData chargeTimeType = ChargeEnumerations.chargeTimeType(lifeCycleStatusId);            
-            final LoanChargeData disbursementChargeData = new LoanChargeData(id, amount, chargeTimeType,loan_id);
-            
-            return disbursementChargeData;
+            final EnumOptionData chargeTimeType = ChargeEnumerations.chargeTimeType(lifeCycleStatusId);
+            final boolean capitalized = rs.getBoolean("capitalized");
+            final boolean paid = rs.getBoolean("paid");
+            final boolean waived = rs.getBoolean("waived");
+            return new LoanChargeData(id, amount, chargeTimeType, loan_id, capitalized, paid, waived);
         }
 
     }

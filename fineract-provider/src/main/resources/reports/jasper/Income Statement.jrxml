@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Income Statement" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <parameter name="branch" class="java.lang.String" />
+    <field name="section" class="java.lang.String" />
+    <field name="glcode" class="java.lang.String" />
+    <field name="name" class="java.lang.String" />
+    <field name="balance" class="java.lang.String" />
+    <query language="SQL">SELECT 'Income' AS section, glcode, name, balance FROM (
+select *
+from
+(
+select debits.glcode as 'glcode', debits.name as 'name', (ifnull(credits.creditamount,0)-ifnull(debits.debitamount,0)) as 'balance'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_account.classification_enum in (4)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) debits
+LEFT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'creditamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_account.classification_enum in (4)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) credits
+on debits.glcode=credits.glcode
+
+ 
+
+union
+
+ 
+
+select credits.glcode as 'glcode', credits.name as 'name', (ifnull(credits.creditamount,0)-ifnull(debits.debitamount,0)) as 'balance'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_account.classification_enum in (4)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) debits
+RIGHT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name as 'name',sum(amount) as 'creditamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_account.classification_enum in (4)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by glcode
+order by glcode) credits
+on debits.glcode=credits.glcode)as fullouterjoinresult
+order by glcode
+) income
+UNION ALL
+SELECT 'Expense' AS section, glcode, name, balance FROM (
+select *
+from
+(
+select debits.glcode as 'glcode', debits.name as 'name', (ifnull(debits.debitamount,0)-ifnull(credits.creditamount,0)) as 'balance'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_account.classification_enum in (5)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by gl_code
+order by glcode) debits
+LEFT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'creditamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_account.classification_enum in (5)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by gl_code) credits
+on debits.glcode=credits.glcode
+
+ 
+
+union
+
+ 
+
+select credits.glcode as 'glcode', credits.name as 'name', (ifnull(debits.debitamount,0)-ifnull(credits.creditamount,0)) as 'balance'
+from
+(select acc_gl_account.gl_code as 'glcode',name,sum(amount) as 'debitamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=2
+and acc_gl_account.classification_enum in (5)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by gl_code
+order by glcode) debits
+RIGHT OUTER JOIN
+(select acc_gl_account.gl_code as 'glcode',name as 'name',sum(amount) as 'creditamount'
+from acc_gl_journal_entry,acc_gl_account
+where acc_gl_account.id = acc_gl_journal_entry.account_id
+and acc_gl_journal_entry.type_enum=1
+and acc_gl_account.classification_enum in (5)
+and acc_gl_journal_entry.entry_date between $P{fromDate} and $P{toDate}
+and (acc_gl_journal_entry.office_id= $P{branch} or $P{branch}=1)
+group by gl_code
+order by glcode) credits
+on debits.glcode=credits.glcode)as fullouterjoinresult
+order by glcode
+) expense</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Income Statement</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="156" height="20"><text>section</text></element><element kind="staticText" x="180" y="0" width="156" height="20"><text>glcode</text></element><element kind="staticText" x="340" y="0" width="156" height="20"><text>name</text></element><element kind="staticText" x="500" y="0" width="156" height="20"><text>balance</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="156" height="18"><expression>$F{section}</expression></element><element kind="textField" blankWhenNull="true" x="180" y="0" width="156" height="18"><expression>$F{glcode}</expression></element><element kind="textField" blankWhenNull="true" x="340" y="0" width="156" height="18"><expression>$F{name}</expression></element><element kind="textField" blankWhenNull="true" x="500" y="0" width="156" height="18"><expression>$F{balance}</expression></element></band>
+    </detail>
+</jasperReport>

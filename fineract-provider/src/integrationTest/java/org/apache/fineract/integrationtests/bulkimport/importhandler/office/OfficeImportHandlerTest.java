@@ -72,6 +72,7 @@ public class OfficeImportHandlerTest {
         SimpleDateFormat simpleDateFormat=new SimpleDateFormat("dd MMMM yyyy");
         Date date=simpleDateFormat.parse("14 May 2001");
         firstOfficeRow.createCell(OfficeConstants.OPENED_ON_COL).setCellValue(date);
+        firstOfficeRow.createCell(OfficeConstants.SHORT_CODE_COL).setCellValue(Utils.randomStringGenerator("", 3));
 
         String currentdirectory = new File("").getAbsolutePath();
         File directory=new File(currentdirectory+"\\src\\integrationTest\\" +

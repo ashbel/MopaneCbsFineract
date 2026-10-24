@@ -21,9 +21,9 @@ package org.apache.fineract.adhocquery.domain;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -63,6 +63,10 @@ public class AdHoc extends AbstractAuditableCustom<AppUser, Long> {
 	@Column(name = "IsActive", nullable = false)
     private boolean isActive = false;
    	
+    /* EclipseLink instantiates entities reflectively and, unlike the OpenJPA
+       enhancer this fork used to run, needs a declared no-arg constructor. */
+    protected AdHoc() {}
+
     private AdHoc(final String name, final String query,final String tableName,final String tableFields ,final String email, final Long reportRunFrequency, final Long reportRunEvery, final boolean isActive) {
         this.name = StringUtils.defaultIfEmpty(name, null);
         this.query=StringUtils.defaultIfEmpty(query,null);

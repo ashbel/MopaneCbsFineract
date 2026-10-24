@@ -85,7 +85,7 @@ public class EmailMessageAssembler {
     }
 
     public EmailMessage assembleFromResourceId(final Long resourceId) {
-        final EmailMessage email = this.emailMessageRepository.findOne(resourceId);
+        final EmailMessage email = this.emailMessageRepository.findById(resourceId).orElse(null);
         if (email == null) { throw new EmailNotFoundException(resourceId); }
         return email;
     }

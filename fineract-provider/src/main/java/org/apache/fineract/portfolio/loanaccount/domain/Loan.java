@@ -36,22 +36,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -172,7 +172,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
     @ManyToOne
     @JoinColumn(name = "group_id", nullable = true)
-    private Group group;
+    private Group loanGroup;
 
     @Column(name = "loan_type_enum", nullable = false)
     private Integer loanType;
@@ -469,7 +469,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
             this.accountNumber = accountNo;
         }
         this.client = client;
-        this.group = group;
+        this.loanGroup = group;
         this.loanType = loanType;
         this.fund = fund;
         this.loanOfficer = loanOfficer;
@@ -893,7 +893,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             final LoanRepaymentScheduleProcessingWrapper wrapper = new LoanRepaymentScheduleProcessingWrapper();
             wrapper.reprocess(getCurrency(), getDisbursementDate(), getRepaymentScheduleInstallments(), charges());
             updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-            updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
         }
 
         removeOrModifyTransactionAssociatedWithLoanChargeIfDueAtDisbursement(loanCharge);
@@ -955,7 +954,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             final Map<String, Object> loanChargeChanges = loanCharge.update(command, amount);
             actualChanges.putAll(loanChargeChanges);
             updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-            updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
         }
 
         final LoanRepaymentScheduleTransactionProcessor loanRepaymentScheduleTransactionProcessor = this.transactionProcessorFactory
@@ -1144,8 +1142,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
         scheduleGeneratorDTO.setRecalculateFrom(transactionDate);
 
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
-
         existingTransactionIds.addAll(findExistingTransactionIds());
         existingReversedTransactionIds.addAll(findExistingReversedTransactionIds());
 
@@ -1286,7 +1282,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             fetchLoanChargesById(id).setActive(false);
         }
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
     }
 
     public void updateLoanCollateral(final Set<LoanCollateral> loanCollateral) {
@@ -1498,7 +1493,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         // FIXME: AA - We may require separate api command to move loan from one
         // group to another
         final String groupIdParamName = "groupId";
-        final Long groupId = this.group == null ? null : this.group.getId();
+        final Long groupId = this.loanGroup == null ? null : this.loanGroup.getId();
         if (command.isChangeInLongParameterNamed(groupIdParamName, groupId)) {
             final Long newValue = command.longValueOfParameterNamed(groupIdParamName);
             actualChanges.put(groupIdParamName, newValue);
@@ -1638,8 +1633,8 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 throw new InvalidLoanStateTransitionException("submittal", "cannot.be.before.client.activation.date", errorMessage,
                         getSubmittedOnDate());
             }
-        } else if (!(this.group == null)) {
-            if (getSubmittedOnDate().isBefore(this.group.getActivationLocalDate())) {
+        } else if (!(this.loanGroup == null)) {
+            if (getSubmittedOnDate().isBefore(this.loanGroup.getActivationLocalDate())) {
                 final String errorMessage = "The date on which a loan is submitted cannot be earlier than groups's activation date.";
                 throw new InvalidLoanStateTransitionException("submittal", "cannot.be.before.group.activation.date", errorMessage,
                         getSubmittedOnDate());
@@ -1736,7 +1731,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
             recalculateLoanCharge(loanCharge, penaltyWaitPeriod);
         }
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
     }
 
     public boolean isInterestRecalculationEnabledForProduct() {
@@ -2115,7 +2109,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
         validateActivityNotBeforeClientOrGroupTransferDate(LoanEvent.LOAN_CREATED, submittedOn);
 
-        if (this.group != null && this.group.isActivatedAfter(submittedOn)) {
+        if (this.loanGroup != null && this.loanGroup.isActivatedAfter(submittedOn)) {
             final String errorMessage = "The date on which a loan is submitted cannot be earlier than groups's activation date.";
             throw new InvalidLoanStateTransitionException("submittal", "cannot.be.before.group.activation.date", errorMessage, submittedOn);
         }
@@ -2134,8 +2128,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
         }
 
         updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
-
         // validate if disbursement date is a holiday or a non-working day
         validateDisbursementDateIsOnNonWorkingDay(workingDays, allowTransactionsOnNonWorkingDay);
         validateDisbursementDateIsOnHoliday(allowTransactionsOnHoliday, holidays);
@@ -2772,6 +2764,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 recalculateLoanCharge(loanCharge, scheduleGeneratorDTO.getPenaltyWaitPeriod());
             }
         }
+        updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
     }
 
     public LoanScheduleModel regenerateScheduleModel(final ScheduleGeneratorDTO scheduleGeneratorDTO) {
@@ -2988,7 +2981,6 @@ public class Loan extends AbstractPersistableCustom<Long> {
                 regenerateRepaymentSchedule(scheduleGeneratorDTO, currentUser);
                 if (isDisbursedAmountChanged) {
                     updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesDueAtDisbursement());
-                    updateSummaryWithTotalFeeChargesDueAtDisbursement(deriveSumTotalOfChargesCapitalisedDisbursement());
                 }
             }else if(isPeriodicAccrualAccountingEnabledOnLoanProduct()){
                 for (final LoanRepaymentScheduleInstallment period : getRepaymentScheduleInstallments()) {
@@ -4381,8 +4373,8 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
     public Long getGroupId() {
         Long groupId = null;
-        if (this.group != null) {
-            groupId = this.group.getId();
+        if (this.loanGroup != null) {
+            groupId = this.loanGroup.getId();
         }
         return groupId;
     }
@@ -4392,7 +4384,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         if (this.client != null) {
             officeId = this.client.officeId();
         } else {
-            officeId = this.group.officeId();
+            officeId = this.loanGroup.officeId();
         }
         return officeId;
     }
@@ -4402,7 +4394,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
         if (this.client != null) {
             office = this.client.getOffice();
         } else {
-            office = this.group.getOffice();
+            office = this.loanGroup.getOffice();
         }
         return office;
     }
@@ -4726,11 +4718,11 @@ public class Loan extends AbstractPersistableCustom<Long> {
     }
 
     public Group group() {
-        return this.group;
+        return this.loanGroup;
     }
 
     public void updateGroup(final Group newGroup) {
-        this.group = newGroup;
+        this.loanGroup = newGroup;
     }
 
     public Integer getCurrentLoanCounter() {
@@ -6351,7 +6343,7 @@ public class Loan extends AbstractPersistableCustom<Long> {
 
 
     public Group getGroup() {
-        return group;
+        return this.loanGroup;
     }
 
     public LoanProduct getLoanProduct() {

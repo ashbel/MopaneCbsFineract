@@ -130,9 +130,9 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
 
     @Override
     public List<EnumOptionData> retrieveInterestRateFrequencyTypeOptions() {
-        // support for monthly and annual percentage rate (MPR) and (APR)
-        final List<EnumOptionData> interestRateFrequencyTypeOptions = Arrays.asList(interestRateFrequencyType(PeriodFrequencyType.MONTHS),
-                interestRateFrequencyType(PeriodFrequencyType.YEARS));
+        // support for weekly, monthly and annual percentage rate
+        final List<EnumOptionData> interestRateFrequencyTypeOptions = Arrays.asList(interestRateFrequencyType(PeriodFrequencyType.WEEKS),
+                interestRateFrequencyType(PeriodFrequencyType.MONTHS), interestRateFrequencyType(PeriodFrequencyType.YEARS));
         return interestRateFrequencyTypeOptions;
     }
 
@@ -140,7 +140,7 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
     public Collection<TransactionProcessingStrategyData> retreiveTransactionProcessingStrategies() {
 
         final Collection<TransactionProcessingStrategyData> strategyOptions = new ArrayList<>();
-        Sort sort = new Sort("sortOrder");
+        Sort sort = Sort.by("sortOrder");
         final List<LoanTransactionProcessingStrategy> strategies = this.loanTransactionProcessingStrategyRepository.findAll(sort);
         for (final LoanTransactionProcessingStrategy strategy : strategies) {
             strategyOptions.add(strategy.toData());

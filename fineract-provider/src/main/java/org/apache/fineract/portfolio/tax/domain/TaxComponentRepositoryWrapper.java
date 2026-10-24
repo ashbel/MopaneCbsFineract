@@ -34,7 +34,7 @@ public class TaxComponentRepositoryWrapper {
 
     public TaxComponent findOneWithNotFoundDetection(final Long id) {
 
-        final TaxComponent taxComponent = this.repository.findOne(id);
+        final TaxComponent taxComponent = this.repository.findById(id).orElse(null);
         if (taxComponent == null) { throw new TaxComponentNotFoundException(id); }
 
         return taxComponent;

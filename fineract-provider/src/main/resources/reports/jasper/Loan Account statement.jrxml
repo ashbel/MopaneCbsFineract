@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Loan Account statement" pageWidth="950" pageHeight="595" orientation="Landscape" columnWidth="910" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="ondate" class="java.lang.String" />
+    <parameter name="todate" class="java.lang.String" />
+    <parameter name="Account" class="java.lang.String" />
+    <field name="type" class="java.lang.String" />
+    <field name="Disbursement" class="java.lang.String" />
+    <field name="Repayment" class="java.lang.String" />
+    <field name="Contra" class="java.lang.String" />
+    <field name="Waive Interest" class="java.lang.String" />
+    <field name="Repayment At Disbursement" class="java.lang.String" />
+    <field name="Write-Off" class="java.lang.String" />
+    <field name="Marked for Rescheduling" class="java.lang.String" />
+    <field name="Recovery Repayment" class="java.lang.String" />
+    <field name="Waive Charges" class="java.lang.String" />
+    <field name="Apply Charges" class="java.lang.String" />
+    <field name="Apply Interest" class="java.lang.String" />
+    <field name="transaction type" class="java.lang.String" />
+    <query language="SQL">select mlt.transaction_date 'Date',
+case mlt.transaction_type_enum
+when 1 then 'Disbursement'
+when 2 then 'Repayment'
+when 3 then 'Contra'
+when 4 then 'Waive Interest'
+when 5 then 'Repayment At Disbursement'
+when 6 then 'Write-Off'
+when 7 then 'Marked for Rescheduling'
+when 8 then 'Recovery Repayment'
+when 9 then 'Waive Charges'
+when 10 then 'Apply Charges'
+when 11 then 'Apply Interest'
+end as 'type',
+
+if(mlt.transaction_type_enum = 1, mlt.amount,0) as 'Disbursement',
+if(mlt.transaction_type_enum = 2, mlt.amount,0) as 'Repayment',
+if(mlt.transaction_type_enum = 3, mlt.amount,0) as 'Contra',
+if(mlt.transaction_type_enum = 4, mlt.amount,0) as 'Waive Interest',
+if(mlt.transaction_type_enum = 5, mlt.amount,0) as 'Repayment At Disbursement',
+if(mlt.transaction_type_enum = 6, mlt.amount,0) as 'Write-Off',
+if(mlt.transaction_type_enum = 7, mlt.amount,0) as 'Marked for Rescheduling',
+if(mlt.transaction_type_enum = 8, mlt.amount,0) as 'Recovery Repayment',
+if(mlt.transaction_type_enum = 9, mlt.amount,0) as 'Waive Charges',
+if(mlt.transaction_type_enum = 10, mlt.amount,0) as 'Apply Charges',
+if(mlt.transaction_type_enum = 11, mlt.amount,0) as 'Apply Interest',
+ifnull(concat('Ch: ', mpd.check_number,',','Re: ', mpd.receipt_number,',','B.No: ',mpd.bank_number,',','R.NO: ',mpd.routing_code,',','Note: ',mn.note,''), '') 'Description',
+ifnull(mlt.amount,0) 'Amount',
+ifnull(mlt.principal_portion_derived,0) 'Principal',
+ifnull(mlt.interest_portion_derived,0) 'Intrest',
+ifnull(mpd.receipt_number,0) 'Recepit No',
+case mpd.payment_type_id
+when 19 then 'Cash'
+when 20 then 'check'
+when 21 then 'Airtel Money'
+else ' '
+end as 'transaction type',
+concat(mc.display_name,'(','ID',mc.id,')') 'Name',
+ml.account_no
+ 
+from m_loan_transaction mlt
+left join m_payment_detail mpd
+on mpd.id=mlt.payment_detail_id
+left join m_loan ml
+on ml.id=mlt.loan_id
+left join m_product_loan mpl
+on mpl.id=ml.product_id
+left join m_client mc
+on ml.client_id=mc.id
+left join m_note mn
+on mn.loan_transaction_id=mlt.id
+where ml.account_no=$P{Account} and mlt.transaction_date between $P{ondate} and $P{todate}</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Loan Account statement</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>type</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Disbursement</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Repayment</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Contra</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Waive Interest</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Repayment At Disbursement</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Write-Off</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Marked for Rescheduling</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Recovery Repayment</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Waive Charges</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Apply Charges</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Apply Interest</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>transaction type</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{type}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Disbursement}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Repayment}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Contra}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Waive Interest}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Repayment At Disbursement}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Write-Off}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Marked for Rescheduling}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Recovery Repayment}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Waive Charges}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Apply Charges}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Apply Interest}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{transaction type}</expression></element></band>
+    </detail>
+</jasperReport>

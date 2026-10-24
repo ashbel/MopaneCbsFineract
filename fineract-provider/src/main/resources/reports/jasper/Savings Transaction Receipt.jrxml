@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Savings Transaction Receipt" pageWidth="950" pageHeight="595" orientation="Landscape" columnWidth="910" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="transactionId" class="java.lang.String" />
+    <field name="txn_id" class="java.lang.String" />
+    <field name="client_name" class="java.lang.String" />
+    <field name="client_id" class="java.lang.String" />
+    <field name="sav_account_number" class="java.lang.String" />
+    <field name="sav_account_name" class="java.lang.String" />
+    <field name="txn_date" class="java.lang.String" />
+    <field name="txn_date_time" class="java.lang.String" />
+    <field name="txn_type" class="java.lang.String" />
+    <field name="acc_txn_type" class="java.lang.String" />
+    <field name="currency_code" class="java.lang.String" />
+    <field name="txn_amount" class="java.lang.String" />
+    <field name="txn_eff_date" class="java.lang.String" />
+    <field name="staff_name" class="java.lang.String" />
+    <query language="SQL">select
+     stxn.id txn_id,
+	concat(c.display_name,' - ', c.id) client_name, c.id client_id,
+	s.account_no sav_account_number, 
+	prod.name sav_account_name,
+	stxn.transaction_date txn_date,
+	stxn.created_date txn_date_time, 
+	concat('txn_type.',stxn.transaction_type_enum) txn_type,
+	concat('accounting_txn_type.',stxn.transaction_type_enum) acc_txn_type,
+	s.currency_code currency_code,
+	stxn.amount txn_amount,
+   stxn.transaction_date txn_eff_date,
+   staff.display_name staff_name
+ from m_savings_account_transaction stxn
+ left join m_savings_account s on stxn.savings_account_id = s.id
+ left join m_savings_product prod on s.product_id = prod.id
+ left join m_client c on s.client_id = c.id
+ left join m_appuser usr on stxn.appuser_id = usr.id
+ left join m_staff staff on usr.staff_id = staff.id
+ where stxn.id = $P{transactionId};</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Savings Transaction Receipt</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>txn_id</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>client_name</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>client_id</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>sav_account_number</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>sav_account_name</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>txn_date</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>txn_date_time</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>txn_type</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>acc_txn_type</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>currency_code</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>txn_amount</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>txn_eff_date</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>staff_name</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{txn_id}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{client_name}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{client_id}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{sav_account_number}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{sav_account_name}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{txn_date}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{txn_date_time}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{txn_type}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{acc_txn_type}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{currency_code}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{txn_amount}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{txn_eff_date}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{staff_name}</expression></element></band>
+    </detail>
+</jasperReport>

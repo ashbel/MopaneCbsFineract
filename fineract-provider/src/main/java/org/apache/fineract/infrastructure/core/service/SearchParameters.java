@@ -98,16 +98,20 @@ public final class SearchParameters {
 
     public static SearchParameters forLoans(final String sqlSearch, final String externalId, final Integer offset, final Integer limit,
             final String orderBy, final String sortOrder, final String accountNo) {
+        return forLoans(sqlSearch, externalId, offset, limit, orderBy, sortOrder, accountNo, null);
+    }
+
+    public static SearchParameters forLoans(final String sqlSearch, final String externalId, final Integer offset, final Integer limit,
+            final String orderBy, final String sortOrder, final String accountNo, final String currencyCode) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final Long staffId = null;
         final Long loanId = null;
         final Long savingsId = null;
         final Boolean orphansOnly = false;
-        final boolean isSelfUser = false;
 
         return new SearchParameters(sqlSearch, null, externalId, null, null, null, null, offset, maxLimitAllowed, orderBy, sortOrder,
-                staffId, accountNo, loanId, savingsId, orphansOnly, isSelfUser);
+                staffId, accountNo, loanId, savingsId, orphansOnly, currencyCode);
     }
 
     public static SearchParameters forJournalEntries(final Long officeId, final Integer offset, final Integer limit, final String orderBy,

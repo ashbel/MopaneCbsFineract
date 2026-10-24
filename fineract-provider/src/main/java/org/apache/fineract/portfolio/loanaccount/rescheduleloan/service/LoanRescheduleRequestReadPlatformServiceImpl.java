@@ -44,7 +44,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.util.StringUtils;
 
 @Service
 public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanRescheduleRequestReadPlatformService {
@@ -283,7 +282,7 @@ public class LoanRescheduleRequestReadPlatformServiceImpl implements LoanResched
     public List<LoanRescheduleRequestData> retrieveAllRescheduleRequests(String command) {
         LoanRescheduleRequestRowMapperForBulkApproval loanRescheduleRequestRowMapperForBulkApproval = new LoanRescheduleRequestRowMapperForBulkApproval();
         String sql = "select " + loanRescheduleRequestRowMapperForBulkApproval.schema();
-        if (!StringUtils.isNullOrEmpty(command) && !command.equalsIgnoreCase(RescheduleLoansApiConstants.allCommandParamName)) {
+        if (!org.apache.commons.lang3.StringUtils.isBlank(command) && !command.equalsIgnoreCase(RescheduleLoansApiConstants.allCommandParamName)) {
             sql = sql + " where lrr.status_enum = ? ";
             Integer statusParam = 100;
             if (command.equalsIgnoreCase(RescheduleLoansApiConstants.approveCommandParamName)) {

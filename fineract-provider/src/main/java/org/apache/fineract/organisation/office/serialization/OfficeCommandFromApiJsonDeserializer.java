@@ -49,7 +49,7 @@ public final class OfficeCommandFromApiJsonDeserializer {
      * The parameters supported for this command.
      */
     private final Set<String> supportedParameters = new HashSet<>(Arrays.asList("name", "parentId", "openingDate", "externalId",
-            "locale", "dateFormat"));
+            "shortCode", "locale", "dateFormat"));
 
     private final FromJsonHelper fromApiJsonHelper;
 
@@ -71,6 +71,9 @@ public final class OfficeCommandFromApiJsonDeserializer {
 
         final String name = this.fromApiJsonHelper.extractStringNamed("name", element);
         baseDataValidator.reset().parameter("name").value(name).notBlank().notExceedingLengthOf(100);
+
+        final String shortCode = this.fromApiJsonHelper.extractStringNamed("shortCode", element);
+        baseDataValidator.reset().parameter("shortCode").value(shortCode).notBlank().matchesRegularExpression("^[A-Za-z0-9]{3}$");
 
         final LocalDate openingDate = this.fromApiJsonHelper.extractLocalDateNamed("openingDate", element);
         baseDataValidator.reset().parameter("openingDate").value(openingDate).notNull();
@@ -117,6 +120,11 @@ public final class OfficeCommandFromApiJsonDeserializer {
         if (this.fromApiJsonHelper.parameterExists("externalId", element)) {
             final String externalId = this.fromApiJsonHelper.extractStringNamed("externalId", element);
             baseDataValidator.reset().parameter("externalId").value(externalId).notExceedingLengthOf(100);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists("shortCode", element)) {
+            final String shortCode = this.fromApiJsonHelper.extractStringNamed("shortCode", element);
+            baseDataValidator.reset().parameter("shortCode").value(shortCode).notBlank().matchesRegularExpression("^[A-Za-z0-9]{3}$");
         }
 
         if (this.fromApiJsonHelper.parameterExists("parentId", element)) {

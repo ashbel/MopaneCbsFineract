@@ -449,14 +449,6 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         public LoanAccountSummaryData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
 
             final Long id = JdbcSupport.getLong(rs, "id");
-            //Get Accrued Interest Of Loan
-            //Add accrued interest Ashbel
-            final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(id, true);
-            Money[] receivables = loan.retriveAccruedInterestTillToday(DateUtils.getLocalDateOfTenant());
-            BigDecimal amount = receivables[0].getAmount();
-            
-            
-        	
             final String accountNo = rs.getString("accountNo");
             final String externalId = rs.getString("externalId");
             final Long productId = JdbcSupport.getLong(rs, "productId");
@@ -516,12 +508,18 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
             final BigDecimal feeChargesOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "feeChargesOutstanding");
 
             final BigDecimal penaltyChargesOutstanding = JdbcSupport.getBigDecimalDefaultToZeroIfNull(rs, "penaltyChargesOutstanding");
-            
-            if(loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() && loanStatus.id().intValue() >= 300) {
-            	amount = BigDecimal.ZERO;
+
+            // Accrued interest only after disbursement. Approved loans already have a schedule from
+            // expected_disbursedon_date, which otherwise shows as a fake viewclient balance.
+            BigDecimal amount = BigDecimal.ZERO;
+            if (loanStatus.id().intValue() >= 300 && this.loanRepositoryWrapper != null) {
+                final Loan loan = this.loanRepositoryWrapper.findOneWithNotFoundDetection(id, true);
+                Money[] receivables = loan.retriveAccruedInterestTillToday(DateUtils.getLocalDateOfTenant());
+                amount = receivables[0].getAmount();
+                if (loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+                    amount = BigDecimal.ZERO;
+                }
             }
-            
-            
 
             final BigDecimal loanBalance = principalOutstanding.add(interestOverdue).add(amount).add(feeChargesOutstanding).add(penaltyChargesOutstanding);
             

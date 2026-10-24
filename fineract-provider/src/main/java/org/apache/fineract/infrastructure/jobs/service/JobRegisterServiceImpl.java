@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.exception.PlatformInternalServerException;
@@ -395,7 +395,11 @@ public class JobRegisterServiceImpl implements JobRegisterService, ApplicationLi
         cronTriggerFactoryBean.setGroup(scheduledJobDetails.getGroupName());
         cronTriggerFactoryBean.setCronExpression(scheduledJobDetails.getCronExpression());
         cronTriggerFactoryBean.setPriority(scheduledJobDetails.getTaskPriority());
-        cronTriggerFactoryBean.afterPropertiesSet();
+        try {
+            cronTriggerFactoryBean.afterPropertiesSet();
+        } catch (final java.text.ParseException e) {
+            throw new IllegalArgumentException("Invalid cron expression " + scheduledJobDetails.getCronExpression(), e);
+        }
         return cronTriggerFactoryBean.getObject();
     }
 

@@ -22,7 +22,7 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -730,7 +730,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 .append(dataTableNameAlias).append("_").append(name).append("'");
         int codeId = 0;
         try {
-            codeId = this.jdbcTemplate.queryForInt(checkColumnCodeMapping.toString());
+            codeId = this.jdbcTemplate.queryForObject(checkColumnCodeMapping.toString(), Integer.class);
         } catch (final EmptyResultDataAccessException e) {
             logger.info(e.getMessage());
         }
@@ -792,7 +792,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                 .append(" AND i.TABLE_NAME = '").append(datatableName).append("' AND i.CONSTRAINT_NAME = 'fk_").append(datatableAlias)
                 .append("_").append(name).append("' ");
         @SuppressWarnings("deprecation")
-        final int count = this.jdbcTemplate.queryForInt(findFKSql.toString());
+        final int count = this.jdbcTemplate.queryForObject(findFKSql.toString(), Integer.class);
         if (count > 0) {
             codeMappings.add(datatableAlias + "_" + name);
             constrainBuilder.append(", DROP FOREIGN KEY `fk_").append(datatableAlias).append("_").append(name).append("` ");

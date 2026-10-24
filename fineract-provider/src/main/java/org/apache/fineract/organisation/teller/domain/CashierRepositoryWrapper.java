@@ -32,7 +32,7 @@ public class CashierRepositoryWrapper {
     }
 
     public Cashier findOneWithNotFoundDetection(final Long id) {
-        final Cashier cashier = this.repository.findOne(id);
+        final Cashier cashier = this.repository.findById(id).orElse(null);
         if (cashier == null) { throw new TellerNotFoundException(id); }
         return cashier;
     }

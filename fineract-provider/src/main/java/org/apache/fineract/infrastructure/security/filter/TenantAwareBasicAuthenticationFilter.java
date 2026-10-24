@@ -20,12 +20,12 @@ package org.apache.fineract.infrastructure.security.filter;
 
 import java.io.IOException;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.fineract.infrastructure.cache.domain.CacheType;
@@ -97,10 +97,8 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
     }
 
     @Override
-    public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain) throws IOException, ServletException {
-
-        final HttpServletRequest request = (HttpServletRequest) req;
-        final HttpServletResponse response = (HttpServletResponse) res;
+    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
+            throws IOException, ServletException {
 
         final StopWatch task = new StopWatch();
         task.start();
@@ -150,7 +148,7 @@ public class TenantAwareBasicAuthenticationFilter extends BasicAuthenticationFil
                 }
             }
 
-            super.doFilter(req, res, chain);
+            super.doFilterInternal(request, response, chain);
         } catch (final InvalidTenantIdentiferException e) {
             // deal with exception at low level
             SecurityContextHolder.getContext().setAuthentication(null);

@@ -22,7 +22,7 @@ import static org.apache.fineract.portfolio.savings.SavingsApiConstants.SAVINGS_
 
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -242,7 +242,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                 if (changes.containsKey(SavingsApiConstants.groupIdParamName)) {
                     final Long groupId = command.longValueOfParameterNamed(SavingsApiConstants.groupIdParamName);
                     if (groupId != null) {
-                        final Group group = this.groupRepository.findOne(groupId);
+                        final Group group = this.groupRepository.findById(groupId).orElse(null);
                         if (group == null) { throw new GroupNotFoundException(groupId); }
                         if (group.isNotActive()) {
                             if (group.isCenter()) { throw new CenterNotActiveException(groupId); }
@@ -257,7 +257,7 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
 
                 if (changes.containsKey(SavingsApiConstants.productIdParamName)) {
                     final Long productId = command.longValueOfParameterNamed(SavingsApiConstants.productIdParamName);
-                    final SavingsProduct product = this.savingsProductRepository.findOne(productId);
+                    final SavingsProduct product = this.savingsProductRepository.findById(productId).orElse(null);
                     if (product == null) { throw new SavingsProductNotFoundException(productId); }
 
                     account.update(product);

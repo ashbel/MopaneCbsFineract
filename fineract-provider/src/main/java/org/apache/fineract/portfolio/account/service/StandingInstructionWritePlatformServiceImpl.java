@@ -165,7 +165,7 @@ public class StandingInstructionWritePlatformServiceImpl implements StandingInst
     @Override
     public CommandProcessingResult update(final Long id, final JsonCommand command) {
         this.standingInstructionDataValidator.validateForUpdate(command);
-        AccountTransferStandingInstruction standingInstructionsForUpdate = this.standingInstructionRepository.findOne(id);
+        AccountTransferStandingInstruction standingInstructionsForUpdate = this.standingInstructionRepository.findById(id).orElse(null);
         if (standingInstructionsForUpdate == null) { throw new StandingInstructionNotFoundException(id); }
         final Map<String, Object> actualChanges = standingInstructionsForUpdate.update(command);
         return new CommandProcessingResultBuilder() //
@@ -177,7 +177,7 @@ public class StandingInstructionWritePlatformServiceImpl implements StandingInst
 
     @Override
     public CommandProcessingResult delete(final Long id) {
-        AccountTransferStandingInstruction standingInstructionsForUpdate = this.standingInstructionRepository.findOne(id);
+        AccountTransferStandingInstruction standingInstructionsForUpdate = this.standingInstructionRepository.findById(id).orElse(null);
         // update the "deleted" and "name" properties of the standing instruction
         standingInstructionsForUpdate.delete();
         

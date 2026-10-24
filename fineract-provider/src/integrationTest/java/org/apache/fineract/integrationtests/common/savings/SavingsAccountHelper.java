@@ -39,8 +39,8 @@ import com.google.gson.Gson;
 import com.jayway.restassured.specification.RequestSpecification;
 import com.jayway.restassured.specification.ResponseSpecification;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 @SuppressWarnings({ "rawtypes" })
 public class SavingsAccountHelper {
