@@ -21,7 +21,7 @@ ifnull(concat('Ch: ', mpd.check_number,',','Re: ', mpd.receipt_number,',','B.N0:
 if(mst.transaction_type_enum = 1, mst.amount,0) as 'Credited',
 if(mst.transaction_type_enum = 2, mst.amount,0) as 'Debited',
 mst.running_balance_derived 'Blance',
-case mpd.payment_type_cv_id
+case mpd.payment_type_id
 when 19 then 'Cash'
 when 20 then 'check'
 when 21 then 'Airtel Money'

@@ -6,16 +6,14 @@
     <parameter name="CurrencyId" class="java.lang.String" />
     <field name="currency" class="java.lang.String" />
     <field name="Name" class="java.lang.String" />
-    <field name="currencyName" class="java.lang.String" />
-    <field name="loanId" class="java.lang.String" />
-    <field name="principal" class="java.lang.String" />
-    <field name="interest" class="java.lang.String" />
-    <field name="prinPaid" class="java.lang.String" />
-    <field name="intPaid" class="java.lang.String" />
-    <field name="prinOverdue" class="java.lang.String" />
-    <field name="intOverdue" class="java.lang.String" />
-    <field name="arrPeriod" class="java.lang.String" />
-    <field name="minOverdueDate" class="java.lang.String" />
+    <field name="No Of Loans" class="java.lang.String" />
+    <field name="Original Principal" class="java.lang.String" />
+    <field name="Original Interest" class="java.lang.String" />
+    <field name="Principal Paid" class="java.lang.String" />
+    <field name="Interest Paid" class="java.lang.String" />
+    <field name="Principal Overdue" class="java.lang.String" />
+    <field name="Interest Overdue" class="java.lang.String" />
+    <field name="Weeks In Arrears (Up To)" class="java.lang.String" />
     <query language="SQL">SELECT 
   IFNULL(periods.currencyName, periods.currency) as currency, ars.Name as Name,
   periods.period_no 'Weeks In Arrears (Up To)', 
@@ -111,9 +109,9 @@ ORDER BY periods.currency, periods.pid</query>
     <title height="30">
         <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Aging Summary (Arrears in Weeks)(Pentaho)</text></element></title>
     <columnHeader height="22">
-        <element kind="staticText" x="20" y="0" width="66" height="20"><text>currency</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>currencyName</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>loanId</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>principal</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>interest</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>prinPaid</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>intPaid</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>prinOverdue</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>intOverdue</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>arrPeriod</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>minOverdueDate</text></element></columnHeader>
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>currency</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>No Of Loans</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Original Principal</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Original Interest</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Principal Paid</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Interest Paid</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Principal Overdue</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Interest Overdue</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Weeks In Arrears (Up To)</text></element></columnHeader>
     <detail>
         <band height="18">
-            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{currency}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{currencyName}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{loanId}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{principal}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{interest}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{prinPaid}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{intPaid}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{prinOverdue}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{intOverdue}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{arrPeriod}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{minOverdueDate}</expression></element></band>
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{currency}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{No Of Loans}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Original Principal}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Original Interest}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Principal Paid}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Interest Paid}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Principal Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Interest Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Weeks In Arrears (Up To)}</expression></element></band>
     </detail>
 </jasperReport>

@@ -48,7 +48,7 @@
   LEFT JOIN m_staff ms ON ms.id=ml.loan_officer_id
   LEFT JOIN m_currency cu ON cu.code=ml.currency_code
   where mo.id = $P{Branch} 
-  and (ifnull(ml.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+  and (ifnull(ml.loan_officer_id, -10) = -1 or "-1" = -1)
    AND mr.duedate BETWEEN $P{startDate} AND $P{endDate}
 
 

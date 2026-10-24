@@ -49,7 +49,7 @@ ifnull(mlt.amount,0) 'Amount',
 ifnull(mlt.principal_portion_derived,0) 'Principal',
 ifnull(mlt.interest_portion_derived,0) 'Intrest',
 ifnull(mpd.receipt_number,0) 'Recepit No',
-case mpd.payment_type_cv_id
+case mpd.payment_type_id
 when 19 then 'Cash'
 when 20 then 'check'
 when 21 then 'Airtel Money'

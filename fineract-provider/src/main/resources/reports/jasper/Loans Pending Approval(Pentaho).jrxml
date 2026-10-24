@@ -47,7 +47,7 @@ left join r_enum_value tf on tf.enum_name = "term_period_frequency_enum" and tf.
 
 
 where o.id = $P{Branch}
-and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+and (ifnull(l.loan_officer_id, -10) = -1 or "-1" = -1)
 and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
 and (l.product_id = $P{loanProductId} or "-10" = $P{loanProductId})
 and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})

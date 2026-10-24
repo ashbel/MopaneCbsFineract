@@ -58,7 +58,7 @@ left join m_fund f on f.id = l.fund_id
 
 
 where o.id = $P{Branch}
-and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or -1 = ${Loan Officer})
+and (ifnull(l.loan_officer_id, -10) = -1 or -1 = -1)
 and (l.currency_code = $P{CurrencyId} or -1 = $P{CurrencyId})
 and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
 and (l.product_id = $P{loanProductId} or -1 = $P{loanProductId})

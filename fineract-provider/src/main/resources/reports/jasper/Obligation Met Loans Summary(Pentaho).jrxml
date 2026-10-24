@@ -50,7 +50,7 @@ left join m_staff lo on lo.id = l.loan_officer_id
 left join m_currency cur on cur.code = l.currency_code
 left join m_fund f on f.id = l.fund_id
 where o.id = $P{Branch}
-and (ifnull(l.loan_officer_id, -10) = ${Loan Officer} or "-1" = ${Loan Officer})
+and (ifnull(l.loan_officer_id, -10) = -1 or "-1" = -1)
 and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
 and (l.product_id = $P{loanProductId} or "-1" = $P{loanProductId})
 and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})
