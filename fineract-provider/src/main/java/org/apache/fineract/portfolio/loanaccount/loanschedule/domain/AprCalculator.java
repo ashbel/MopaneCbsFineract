@@ -21,19 +21,22 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.domain;
 import java.math.BigDecimal;
 
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AprCalculator {
 
-    public BigDecimal calculateFrom(final PeriodFrequencyType interestPeriodFrequencyType, final BigDecimal interestRatePerPeriod) {
+    public BigDecimal calculateFrom(final PeriodFrequencyType interestPeriodFrequencyType, final BigDecimal interestRatePerPeriod,
+            final WeeksInYearType weeksInYearType) {
         BigDecimal defaultAnnualNominalInterestRate = BigDecimal.ZERO;
+        final int weeksInYear = WeeksInYearType.fromInt(weeksInYearType == null ? null : weeksInYearType.getValue()).getValue();
         switch (interestPeriodFrequencyType) {
             case DAYS:
                 defaultAnnualNominalInterestRate = interestRatePerPeriod.multiply(BigDecimal.valueOf(365));
             break;
             case WEEKS:
-                defaultAnnualNominalInterestRate = interestRatePerPeriod.multiply(BigDecimal.valueOf(52));
+                defaultAnnualNominalInterestRate = interestRatePerPeriod.multiply(BigDecimal.valueOf(weeksInYear));
             break;
             case MONTHS:
                 defaultAnnualNominalInterestRate = interestRatePerPeriod.multiply(BigDecimal.valueOf(12));

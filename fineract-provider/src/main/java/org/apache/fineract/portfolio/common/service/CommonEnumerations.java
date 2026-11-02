@@ -26,6 +26,7 @@ import org.apache.fineract.portfolio.common.domain.ConditionType;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 
 public class CommonEnumerations {
     
@@ -162,6 +163,17 @@ public class CommonEnumerations {
             break;
         }
         return optionData;
+    }
+
+    public static EnumOptionData weeksInYearType(final int id) {
+        return weeksInYearType(WeeksInYearType.fromInt(id));
+    }
+
+    public static EnumOptionData weeksInYearType(final WeeksInYearType type) {
+        if (type == WeeksInYearType.WEEKS_48) {
+            return new EnumOptionData(WeeksInYearType.WEEKS_48.getValue().longValue(), WeeksInYearType.WEEKS_48.getCode(), "4-week month");
+        }
+        return new EnumOptionData(WeeksInYearType.WEEKS_52.getValue().longValue(), WeeksInYearType.WEEKS_52.getCode(), "52 weeks");
     }
 
 }

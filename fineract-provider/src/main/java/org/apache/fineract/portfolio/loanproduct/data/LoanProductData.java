@@ -35,6 +35,7 @@ import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.charge.data.ChargeData;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.common.service.CommonEnumerations;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateData;
@@ -112,6 +113,7 @@ public class LoanProductData {
     private final Integer overdueDaysForNPA;
     private final EnumOptionData daysInMonthType;
     private final EnumOptionData daysInYearType;
+    private final EnumOptionData weeksInYearType;
     private final boolean isInterestRecalculationEnabled;
     private final LoanProductInterestRecalculationData interestRecalculationData;
     private final Integer minimumDaysBetweenDisbursalAndFirstRepayment;
@@ -157,6 +159,8 @@ public class LoanProductData {
     private final List<EnumOptionData> daysInMonthTypeOptions;
     @SuppressWarnings("unused")
     private final List<EnumOptionData> daysInYearTypeOptions;
+    @SuppressWarnings("unused")
+    private final List<EnumOptionData> weeksInYearTypeOptions;
     @SuppressWarnings("unused")
     private final List<EnumOptionData> interestRecalculationCompoundingTypeOptions;
     @SuppressWarnings("unused")
@@ -251,6 +255,7 @@ public class LoanProductData {
 
         final EnumOptionData daysInMonthType = null;
         final EnumOptionData daysInYearType = null;
+        final EnumOptionData weeksInYearType = null;
         final boolean isInterestRecalculationEnabled = false;
         final LoanProductInterestRecalculationData interestRecalculationData = null;
         final Integer minimumDaysBetweenDisbursalAndFirstRepayment = null;
@@ -267,7 +272,7 @@ public class LoanProductData {
                 transactionProcessingStrategyId, transactionProcessingStrategyName, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
                 graceOnInterestCharged, charges, accountingType, includeInBorrowerCycle, useBorrowerCycle, startDate, closeDate, status,
                 externalId, principalVariations, interestRateVariations, numberOfRepaymentVariations, multiDisburseLoan, maxTrancheCount,
-                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType,
+                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, weeksInYearType,
                 isInterestRecalculationEnabled, interestRecalculationData, minimumDaysBetweenDisbursalAndFirstRepayment,
                 holdGuaranteeFunds, productGuaranteeData, principalThresholdForLastInstallment,
                 accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineInstallmentAmount, installmentAmountInMultiplesOf,
@@ -339,6 +344,7 @@ public class LoanProductData {
 
         final EnumOptionData daysInMonthType = null;
         final EnumOptionData daysInYearType = null;
+        final EnumOptionData weeksInYearType = null;
         final boolean isInterestRecalculationEnabled = false;
         final LoanProductInterestRecalculationData interestRecalculationData = null;
         final Integer minimumDaysBetweenDisbursalAndFirstRepayment = null;
@@ -360,7 +366,7 @@ public class LoanProductData {
                 transactionProcessingStrategyId, transactionProcessingStrategyName, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
                 graceOnInterestCharged, charges, accountingType, includeInBorrowerCycle, useBorrowerCycle, startDate, closeDate, status,
                 externalId, principalVariations, interestRateVariations, numberOfRepaymentVariations, multiDisburseLoan, maxTrancheCount,
-                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType,
+                outstandingLoanBalance, graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, weeksInYearType,
                 isInterestRecalculationEnabled, interestRecalculationData, minimumDaysBetweenDisbursalAndFirstRepayment,
                 holdGuaranteeFunds, productGuaranteeData, principalThresholdForLastInstallment,
                 accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineInstallmentAmount, installmentAmountInMultiplesOf,
@@ -438,6 +444,7 @@ public class LoanProductData {
 
         final EnumOptionData daysInMonthType = CommonEnumerations.daysInMonthType(DaysInMonthType.ACTUAL);
         final EnumOptionData daysInYearType = CommonEnumerations.daysInYearType(DaysInYearType.ACTUAL);
+        final EnumOptionData weeksInYearType = CommonEnumerations.weeksInYearType(WeeksInYearType.WEEKS_52);
         final boolean isInterestRecalculationEnabled = false;
         final LoanProductInterestRecalculationData interestRecalculationData = LoanProductInterestRecalculationData
                 .sensibleDefaultsForNewLoanProductCreation();
@@ -461,7 +468,7 @@ public class LoanProductData {
                 graceOnInterestCharged, charges, accountingType, includeInBorrowerCycle, useBorrowerCycle, startDate, closeDate, status,
                 externalId, principalVariationsForBorrowerCycle, interestRateVariationsForBorrowerCycle,
                 numberOfRepaymentVariationsForBorrowerCycle, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
-                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, weeksInYearType, isInterestRecalculationEnabled,
                 interestRecalculationData, minimumDaysBetweenDisbursalAndFirstRepayment, holdGuaranteeFunds, productGuaranteeData,
                 principalThresholdForLastInstallment, accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineInstallmentAmount,
                 installmentAmountInMultiplesOf, loanProductConfigurableAttributes, isLinkedToFloatingInterestRates, floatingRateId,
@@ -532,6 +539,7 @@ public class LoanProductData {
 
         final EnumOptionData daysInMonthType = CommonEnumerations.daysInMonthType(DaysInMonthType.ACTUAL);
         final EnumOptionData daysInYearType = CommonEnumerations.daysInYearType(DaysInYearType.ACTUAL);
+        final EnumOptionData weeksInYearType = CommonEnumerations.weeksInYearType(WeeksInYearType.WEEKS_52);
         final boolean isInterestRecalculationEnabled = false;
         final LoanProductInterestRecalculationData interestRecalculationData = LoanProductInterestRecalculationData
                 .sensibleDefaultsForNewLoanProductCreation();
@@ -555,7 +563,7 @@ public class LoanProductData {
                 graceOnInterestCharged, charges, accountingType, includeInBorrowerCycle, useBorrowerCycle, startDate, closeDate, status,
                 externalId, principalVariationsForBorrowerCycle, interestRateVariationsForBorrowerCycle,
                 numberOfRepaymentVariationsForBorrowerCycle, multiDisburseLoan, maxTrancheCount, outstandingLoanBalance,
-                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                graceOnArrearsAgeing, overdueDaysForNPA, daysInMonthType, daysInYearType, weeksInYearType, isInterestRecalculationEnabled,
                 interestRecalculationData, minimumDaysBetweenDisbursalAndFirstRepayment, holdGuaranteeFunds, productGuaranteeData,
                 principalThresholdForLastInstallment, accountMovesOutOfNPAOnlyOnArrearsCompletion, canDefineInstallmentAmount,
                 installmentAmountInMultiplesOf, loanProductConfigurableAttributes, isLinkedToFloatingInterestRates, floatingRateId,
@@ -591,7 +599,7 @@ public class LoanProductData {
             Collection<LoanProductBorrowerCycleVariationData> interestRateVariations,
             Collection<LoanProductBorrowerCycleVariationData> numberOfRepaymentVariations, Boolean multiDisburseLoan,
             Integer maxTrancheCount, BigDecimal outstandingLoanBalance, final Integer graceOnArrearsAgeing, final Integer overdueDaysForNPA,
-            final EnumOptionData daysInMonthType, final EnumOptionData daysInYearType, final boolean isInterestRecalculationEnabled, final LoanProductInterestRecalculationData interestRecalculationData,
+            final EnumOptionData daysInMonthType, final EnumOptionData daysInYearType, final EnumOptionData weeksInYearType, final boolean isInterestRecalculationEnabled, final LoanProductInterestRecalculationData interestRecalculationData,
             final Integer minimumDaysBetweenDisbursalAndFirstRepayment, boolean holdGuaranteeFunds,
             final LoanProductGuaranteeData loanProductGuaranteeData, final BigDecimal principalThresholdForLastInstallment,
             final boolean accountMovesOutOfNPAOnlyOnArrearsCompletion, boolean canDefineInstallmentAmount,
@@ -683,6 +691,7 @@ public class LoanProductData {
         this.overdueDaysForNPA = overdueDaysForNPA;
         this.daysInMonthType = daysInMonthType;
         this.daysInYearType = daysInYearType;
+        this.weeksInYearType = weeksInYearType;
         this.isInterestRecalculationEnabled = isInterestRecalculationEnabled;
         this.interestRecalculationData = interestRecalculationData;
         this.holdGuaranteeFunds = holdGuaranteeFunds;
@@ -693,6 +702,7 @@ public class LoanProductData {
 
         this.daysInMonthTypeOptions = null;
         this.daysInYearTypeOptions = null;
+        this.weeksInYearTypeOptions = null;
         this.interestRecalculationCompoundingTypeOptions = null;
         this.rescheduleStrategyTypeOptions = null;
         this.interestRecalculationFrequencyTypeOptions = null;
@@ -716,7 +726,7 @@ public class LoanProductData {
             final Collection<FundData> fundOptions, final Collection<TransactionProcessingStrategyData> transactionStrategyOptions,
             final Map<String, List<GLAccountData>> accountingMappingOptions, final List<EnumOptionData> accountingRuleOptions,
             final List<EnumOptionData> valueConditionTypeOptions, final List<EnumOptionData> daysInMonthTypeOptions,
-            final List<EnumOptionData> daysInYearTypeOptions, final List<EnumOptionData> interestRecalculationCompoundingTypeOptions,
+            final List<EnumOptionData> daysInYearTypeOptions, final List<EnumOptionData> weeksInYearTypeOptions, final List<EnumOptionData> interestRecalculationCompoundingTypeOptions,
             final List<EnumOptionData> rescheduleStrategyTypeOptions, final List<EnumOptionData> interestRecalculationFrequencyTypeOptions,
             final List<EnumOptionData> preCloseInterestCalculationStrategyOptions, final List<FloatingRateData> floatingRateOptions,
             final List<EnumOptionData> interestRecalculationNthDayTypeOptions,
@@ -817,6 +827,7 @@ public class LoanProductData {
 
         this.daysInMonthType = productData.daysInMonthType;
         this.daysInYearType = productData.daysInYearType;
+        this.weeksInYearType = productData.weeksInYearType;
         this.isInterestRecalculationEnabled = productData.isInterestRecalculationEnabled;
         this.interestRecalculationData = productData.interestRecalculationData;
         this.holdGuaranteeFunds = productData.holdGuaranteeFunds;
@@ -826,6 +837,7 @@ public class LoanProductData {
 
         this.daysInMonthTypeOptions = daysInMonthTypeOptions;
         this.daysInYearTypeOptions = daysInYearTypeOptions;
+        this.weeksInYearTypeOptions = weeksInYearTypeOptions;
         this.interestRecalculationCompoundingTypeOptions = interestRecalculationCompoundingTypeOptions;
         this.rescheduleStrategyTypeOptions = rescheduleStrategyTypeOptions;
         this.allowAttributeOverrides = productData.allowAttributeOverrides;
@@ -1041,6 +1053,10 @@ public class LoanProductData {
 
     public EnumOptionData getDaysInYearType() {
         return this.daysInYearType;
+    }
+
+    public EnumOptionData getWeeksInYearType() {
+        return this.weeksInYearType;
     }
 
     public boolean isInterestRecalculationEnabled() {

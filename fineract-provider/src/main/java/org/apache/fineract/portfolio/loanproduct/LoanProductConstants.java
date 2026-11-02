@@ -82,6 +82,7 @@ public interface LoanProductConstants {
     public static final String isInterestRecalculationEnabledParameterName = "isInterestRecalculationEnabled";
     public static final String daysInYearTypeParameterName = "daysInYearType";
     public static final String daysInMonthTypeParameterName = "daysInMonthType";
+    public static final String weeksInYearTypeParameterName = "weeksInYearType";
     public static final String interestRecalculationCompoundingMethodParameterName = "interestRecalculationCompoundingMethod";
     public static final String rescheduleStrategyMethodParameterName = "rescheduleStrategyMethod";
     public static final String recalculationRestFrequencyTypeParameterName = "recalculationRestFrequencyType";
