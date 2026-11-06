@@ -35,9 +35,14 @@
   </GlobalNamingResources>
 
   <Service name="Catalina">
-    <!-- HTTP only — TLS terminated at host Nginx -->
+    <!-- HTTP only — TLS terminated at host Nginx.
+         scheme/secure satisfy Spring Security when a local proxy does not
+         send X-Forwarded-Proto. RemoteIpValve below overrides both when
+         that header is present. -->
     <Connector port="8080"
                protocol="HTTP/1.1"
+               scheme="https"
+               secure="true"
                connectionTimeout="20000"
                URIEncoding="UTF-8"
                compression="on"

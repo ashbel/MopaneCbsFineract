@@ -29,6 +29,8 @@
 		<properties>
 			<property name="eclipselink.weaving" value="false"/>
 			<property name="eclipselink.target-database" value="MySQL"/>
+			<property name="eclipselink.cache.shared.default" value="false"/>
+			<property name="eclipselink.session.customizer" value="org.apache.fineract.infrastructure.core.service.TenantConnectionSessionCustomizer"/>
 		</properties>
 	</persistence-unit>
 </persistence>

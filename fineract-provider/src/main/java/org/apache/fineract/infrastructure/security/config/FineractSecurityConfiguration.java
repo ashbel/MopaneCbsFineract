@@ -104,14 +104,22 @@ public class FineractSecurityConfiguration {
         @Order(1)
         public SecurityFilterChain apiChain(final HttpSecurity http, final TenantAwareBasicAuthenticationFilter basicFilter,
                 final TwoFactorAuthenticationFilter twoFactorFilter) throws Exception {
-            http.securityMatcher("/api/**").csrf(AbstractHttpConfigurer::disable)
+            // Ant matchers, not MVC. These routes are served by Jersey, and an MVC
+            // matcher never selects this chain, so the tenant filter never runs.
+            http.securityMatcher(new AntPathRequestMatcher("/api/**")).csrf(AbstractHttpConfigurer::disable)
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .requiresChannel(channel -> channel.anyRequest().requiresSecure())
-                    .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/*/authentication", "/api/*/self/authentication",
-                                    "/api/*/self/registration", "/api/*/self/registration/user", "/api/*/staffmobiledevices/activate")
-                            .permitAll().requestMatchers("/api/*/twofactor", "/api/*/twofactor/validate").authenticated().anyRequest()
-                            .hasAuthority("TWOFACTOR_AUTHENTICATED"))
+                    .authorizeHttpRequests(auth -> auth
+                            .requestMatchers(new AntPathRequestMatcher("/api/**", HttpMethod.OPTIONS.name())).permitAll()
+                            .requestMatchers(new AntPathRequestMatcher("/api/*/authentication", HttpMethod.POST.name()),
+                                    new AntPathRequestMatcher("/api/*/self/authentication", HttpMethod.POST.name()),
+                                    new AntPathRequestMatcher("/api/*/self/registration", HttpMethod.POST.name()),
+                                    new AntPathRequestMatcher("/api/*/self/registration/user", HttpMethod.POST.name()),
+                                    new AntPathRequestMatcher("/api/*/staffmobiledevices/activate", HttpMethod.POST.name()))
+                            .permitAll()
+                            .requestMatchers(new AntPathRequestMatcher("/api/*/twofactor"),
+                                    new AntPathRequestMatcher("/api/*/twofactor/validate"))
+                            .authenticated().anyRequest().hasAuthority("TWOFACTOR_AUTHENTICATED"))
                     .addFilterAt(basicFilter, BasicAuthenticationFilter.class)
                     .addFilterAfter(twoFactorFilter, BasicAuthenticationFilter.class);
             return http.build();
@@ -142,13 +150,15 @@ public class FineractSecurityConfiguration {
         @Order(1)
         public SecurityFilterChain apiChain(final HttpSecurity http, final TenantAwareTenantIdentifierFilter tenantFilter,
                 final LegacyBearerTokenFilter bearerTokenFilter, final TwoFactorAuthenticationFilter twoFactorFilter) throws Exception {
-            http.securityMatcher("/api/**").csrf(AbstractHttpConfigurer::disable)
+            http.securityMatcher(new AntPathRequestMatcher("/api/**")).csrf(AbstractHttpConfigurer::disable)
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .requiresChannel(channel -> channel.anyRequest().requiresSecure())
-                    .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/oauth/token").permitAll()
-                            .requestMatchers("/api/*/twofactor", "/api/*/twofactor/validate").authenticated().anyRequest()
-                            .hasAuthority("TWOFACTOR_AUTHENTICATED"))
+                    .authorizeHttpRequests(auth -> auth
+                            .requestMatchers(new AntPathRequestMatcher("/api/**", HttpMethod.OPTIONS.name())).permitAll()
+                            .requestMatchers(new AntPathRequestMatcher("/api/oauth/token", HttpMethod.POST.name())).permitAll()
+                            .requestMatchers(new AntPathRequestMatcher("/api/*/twofactor"),
+                                    new AntPathRequestMatcher("/api/*/twofactor/validate"))
+                            .authenticated().anyRequest().hasAuthority("TWOFACTOR_AUTHENTICATED"))
                     .addFilterBefore(tenantFilter, SecurityContextHolderFilter.class)
                     .addFilterAfter(bearerTokenFilter, SecurityContextHolderFilter.class)
                     .addFilterAfter(twoFactorFilter, LegacyBearerTokenFilter.class);
