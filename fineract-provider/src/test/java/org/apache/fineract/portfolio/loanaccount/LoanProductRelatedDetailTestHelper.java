@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.LoanScheduleGenerator;
 import org.apache.fineract.portfolio.loanproduct.domain.AmortizationMethod;
@@ -151,12 +152,14 @@ public class LoanProductRelatedDetailTestHelper {
 
         final Integer daysInMonthType = DaysInMonthType.ACTUAL.getValue();
         final Integer daysInYearType = DaysInYearType.ACTUAL.getValue();
+        final Integer weeksInYearType = WeeksInYearType.WEEKS_52.getValue();
         final boolean isInterestRecalculationEnabled = false;
         final boolean considerPartialPeriodInterest = false;
         final boolean isEqualAmortization = false;
         return new LoanProductRelatedDetail(currency, defaultPrincipal, defaultNominalInterestRatePerPeriod, interestPeriodFrequencyType,
                 defaultAnnualNominalInterestRate, interestMethod, interestCalculationPeriodMethod, considerPartialPeriodInterest, repayEvery,
                 repaymentFrequencyType, defaultNumberOfRepayments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
-                amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, isEqualAmortization);
+                amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                isEqualAmortization, weeksInYearType);
     }
 }

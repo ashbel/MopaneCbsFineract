@@ -36,6 +36,7 @@ import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
 import org.apache.fineract.portfolio.common.domain.DayOfWeekType;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.common.domain.NthDayType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.loanaccount.data.DisbursementData;
@@ -159,6 +160,8 @@ public final class LoanApplicationTerms {
 
     private final DaysInYearType daysInYearType;
 
+    private final WeeksInYearType weeksInYearType;
+
     private final boolean interestRecalculationEnabled;
 
     private final LoanRescheduleStrategyMethod rescheduleStrategyMethod;
@@ -228,7 +231,7 @@ public final class LoanApplicationTerms {
             final Integer graceOnInterestCharged, final LocalDate interestChargedFromDate, final Money inArrearsTolerance,
             final boolean multiDisburseLoan, final BigDecimal emiAmount, final List<DisbursementData> disbursementDatas,
             final BigDecimal maxOutstandingBalance, final Integer graceOnArrearsAgeing, final DaysInMonthType daysInMonthType,
-            final DaysInYearType daysInYearType, final boolean isInterestRecalculationEnabled,
+            final DaysInYearType daysInYearType, final WeeksInYearType weeksInYearType, final boolean isInterestRecalculationEnabled,
             final RecalculationFrequencyType recalculationFrequencyType, final CalendarInstance restCalendarInstance,
             final InterestRecalculationCompoundingMethod interestRecalculationCompoundingMethod,
             final CalendarInstance compoundingCalendarInstance, final RecalculationFrequencyType compoundingFrequencyType,
@@ -247,7 +250,7 @@ public final class LoanApplicationTerms {
                 allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
                 calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
                 interestChargedFromDate, inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance,
-                graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled, rescheduleStrategyMethod,
+                graceOnArrearsAgeing, daysInMonthType, daysInYearType, weeksInYearType, isInterestRecalculationEnabled, rescheduleStrategyMethod,
                 interestRecalculationCompoundingMethod, restCalendarInstance, recalculationFrequencyType, compoundingCalendarInstance,
                 compoundingFrequencyType, principalThresholdForLastInstalment, installmentAmountInMultiplesOf,
                 preClosureInterestCalculationStrategy, loanCalendar, approvedAmount, loanTermVariations, calendarHistoryDataWrapper,
@@ -318,6 +321,7 @@ public final class LoanApplicationTerms {
         // Interest recalculation settings
         final DaysInMonthType daysInMonthType = loanProductRelatedDetail.fetchDaysInMonthType();
         final DaysInYearType daysInYearType = loanProductRelatedDetail.fetchDaysInYearType();
+        final WeeksInYearType weeksInYearType = loanProductRelatedDetail.fetchWeeksInYearType();
         final boolean isInterestRecalculationEnabled = loanProductRelatedDetail.isInterestRecalculationEnabled();
         final boolean isInterestChargedFromDateSameAsDisbursalDateEnabled = false;
         final boolean isEqualAmortization = loanProductRelatedDetail.isEqualAmortization();
@@ -327,7 +331,7 @@ public final class LoanApplicationTerms {
                 interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate,
                 repaymentsStartingFromDate, calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
                 graceOnInterestCharged, interestChargedFromDate, inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas,
-                maxOutstandingBalance, loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType,
+                maxOutstandingBalance, loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType, weeksInYearType,
                 isInterestRecalculationEnabled, rescheduleStrategyMethod, compoundingMethod, restCalendarInstance,
                 recalculationFrequencyType, compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment,
                 installmentAmountInMultiplesOf, loanPreClosureInterestCalculationStrategy, loanCalendar, approvedAmount,
@@ -370,6 +374,7 @@ public final class LoanApplicationTerms {
         // Interest recalculation settings
         final DaysInMonthType daysInMonthType = loanProductRelatedDetail.fetchDaysInMonthType();
         final DaysInYearType daysInYearType = loanProductRelatedDetail.fetchDaysInYearType();
+        final WeeksInYearType weeksInYearType = loanProductRelatedDetail.fetchWeeksInYearType();
         final boolean isInterestRecalculationEnabled = loanProductRelatedDetail.isInterestRecalculationEnabled();
         LoanRescheduleStrategyMethod rescheduleStrategyMethod = null;
         InterestRecalculationCompoundingMethod interestRecalculationCompoundingMethod = null;
@@ -386,7 +391,7 @@ public final class LoanApplicationTerms {
                 allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
                 calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
                 interestChargedFromDate, inArrearsTolerance, multiDisburseLoan, emiAmount, disbursementDatas, maxOutstandingBalance,
-                loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                loanProductRelatedDetail.getGraceOnDueDate(), daysInMonthType, daysInYearType, weeksInYearType, isInterestRecalculationEnabled,
                 rescheduleStrategyMethod, interestRecalculationCompoundingMethod, restCalendarInstance, recalculationFrequencyType,
                 compoundingCalendarInstance, compoundingFrequencyType, principalThresholdForLastInstalment, installmentAmountInMultiplesOf,
                 loanPreClosureInterestCalculationStrategy, loanCalendar, approvedAmount, loanTermVariations, calendarHistoryDataWrapper,
@@ -408,7 +413,8 @@ public final class LoanApplicationTerms {
                 applicationTerms.recurringMoratoriumOnPrincipalPeriods, applicationTerms.interestPaymentGrace, applicationTerms.interestChargingGrace, applicationTerms.interestChargedFromDate,
                 applicationTerms.inArrearsTolerance, applicationTerms.multiDisburseLoan, applicationTerms.actualFixedEmiAmount,
                 applicationTerms.disbursementDatas, applicationTerms.maxOutstandingBalance, applicationTerms.graceOnArrearsAgeing,
-                applicationTerms.daysInMonthType, applicationTerms.daysInYearType, applicationTerms.interestRecalculationEnabled,
+                applicationTerms.daysInMonthType, applicationTerms.daysInYearType, applicationTerms.weeksInYearType,
+                applicationTerms.interestRecalculationEnabled,
                 applicationTerms.rescheduleStrategyMethod, applicationTerms.interestRecalculationCompoundingMethod,
                 applicationTerms.restCalendarInstance, applicationTerms.recalculationFrequencyType,
                 applicationTerms.compoundingCalendarInstance, applicationTerms.compoundingFrequencyType,
@@ -431,7 +437,7 @@ public final class LoanApplicationTerms {
             final Integer interestChargingGrace, final LocalDate interestChargedFromDate, final Money inArrearsTolerance,
             final boolean multiDisburseLoan, final BigDecimal emiAmount, final List<DisbursementData> disbursementDatas,
             final BigDecimal maxOutstandingBalance, final Integer graceOnArrearsAgeing, final DaysInMonthType daysInMonthType,
-            final DaysInYearType daysInYearType, final boolean isInterestRecalculationEnabled,
+            final DaysInYearType daysInYearType, final WeeksInYearType weeksInYearType, final boolean isInterestRecalculationEnabled,
             final LoanRescheduleStrategyMethod rescheduleStrategyMethod,
             final InterestRecalculationCompoundingMethod interestRecalculationCompoundingMethod,
             final CalendarInstance restCalendarInstance, final RecalculationFrequencyType recalculationFrequencyType,
@@ -480,6 +486,7 @@ public final class LoanApplicationTerms {
         this.graceOnArrearsAgeing = graceOnArrearsAgeing;
         this.daysInMonthType = daysInMonthType;
         this.daysInYearType = daysInYearType;
+        this.weeksInYearType = weeksInYearType == null ? WeeksInYearType.WEEKS_52 : weeksInYearType;
         this.interestRecalculationEnabled = isInterestRecalculationEnabled;
         this.rescheduleStrategyMethod = rescheduleStrategyMethod;
         this.interestRecalculationCompoundingMethod = interestRecalculationCompoundingMethod;
@@ -1103,6 +1110,8 @@ public final class LoanApplicationTerms {
                 .getCode().equalsIgnoreCase("DaysInYearType.actual"));
         if (daysInYearToUse) {
             periodsInOneYear = this.daysInYearType.getValue().longValue();
+        } else if (this.repaymentPeriodFrequencyType.isWeekly() && !this.interestCalculationPeriodMethod.isDaily()) {
+            periodsInOneYear = this.weeksInYearType.getValue().longValue();
         } else {
             periodsInOneYear = calculator.calculate(this.repaymentPeriodFrequencyType).longValue();
         }
@@ -1343,7 +1352,8 @@ public final class LoanApplicationTerms {
                 this.interestCalculationPeriodMethod, this.allowPartialPeriodInterestCalcualtion, this.repaymentEvery,
                 this.repaymentPeriodFrequencyType, this.numberOfRepayments, this.principalGrace, this.recurringMoratoriumOnPrincipalPeriods, this.interestPaymentGrace,
                 this.interestChargingGrace, this.amortizationMethod, this.inArrearsTolerance.getAmount(), this.graceOnArrearsAgeing,
-                this.daysInMonthType.getValue(), this.daysInYearType.getValue(), this.interestRecalculationEnabled, this.isEqualAmortization);
+                this.daysInMonthType.getValue(), this.daysInYearType.getValue(), this.interestRecalculationEnabled, this.isEqualAmortization,
+                this.weeksInYearType.getValue());
     }
 
     public Integer getLoanTermFrequency() {

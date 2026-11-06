@@ -39,6 +39,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.portfolio.calendar.service.CalendarUtils;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestCalculationPeriodMethod;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
@@ -88,6 +89,7 @@ public final class LoanProductDataValidator {
             LoanProductConstants.maxTrancheCountParameterName, LoanProductConstants.graceOnArrearsAgeingParameterName,
             LoanProductConstants.overdueDaysForNPAParameterName, LoanProductConstants.isInterestRecalculationEnabledParameterName,
             LoanProductConstants.daysInYearTypeParameterName, LoanProductConstants.daysInMonthTypeParameterName,
+            LoanProductConstants.weeksInYearTypeParameterName,
             LoanProductConstants.rescheduleStrategyMethodParameterName,
             LoanProductConstants.interestRecalculationCompoundingMethodParameterName,
             LoanProductConstants.recalculationRestFrequencyIntervalParameterName,
@@ -639,6 +641,7 @@ public final class LoanProductDataValidator {
         validateVariableInstallmentSettings(baseDataValidator, element);
 
         validatePartialPeriodSupport(interestCalculationPeriodType, baseDataValidator, element, null);
+        validateWeeksInYearType(element, baseDataValidator, null);
 
         if(this.fromApiJsonHelper.parameterExists(LoanProductConstants.canUseForTopup, element)){
             final Boolean canUseForTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.canUseForTopup,
@@ -1490,6 +1493,7 @@ public final class LoanProductDataValidator {
         validateVariableInstallmentSettings(baseDataValidator, element);
 
         validatePartialPeriodSupport(interestCalculationPeriodType, baseDataValidator, element, loanProduct);
+        validateWeeksInYearType(element, baseDataValidator, loanProduct);
 
         if(this.fromApiJsonHelper.parameterExists(LoanProductConstants.canUseForTopup, element)){
             final Boolean canUseForTopup = this.fromApiJsonHelper.extractBooleanNamed(LoanProductConstants.canUseForTopup,
@@ -2025,6 +2029,36 @@ public final class LoanProductDataValidator {
                     "must.be.greter.than.sum.of.min.funds");
         }
 
+    }
+
+    private void validateWeeksInYearType(final JsonElement element, final DataValidatorBuilder baseDataValidator,
+            final LoanProduct existingProduct) {
+        Integer weeksInYearType = WeeksInYearType.WEEKS_52.getValue();
+        Integer repaymentFrequencyType = null;
+        Integer interestCalculationPeriodType = null;
+        if (existingProduct != null) {
+            weeksInYearType = existingProduct.fetchWeeksInYearType().getValue();
+            repaymentFrequencyType = existingProduct.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+            interestCalculationPeriodType = existingProduct.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue();
+        }
+        if (this.fromApiJsonHelper.parameterExists(LoanProductConstants.weeksInYearTypeParameterName, element)) {
+            weeksInYearType = this.fromApiJsonHelper.extractIntegerNamed(LoanProductConstants.weeksInYearTypeParameterName, element,
+                    Locale.getDefault());
+            baseDataValidator.reset().parameter(LoanProductConstants.weeksInYearTypeParameterName).value(weeksInYearType).notNull()
+                    .isOneOfTheseValues(WeeksInYearType.WEEKS_52.getValue(), WeeksInYearType.WEEKS_48.getValue());
+        }
+        if (this.fromApiJsonHelper.parameterExists("repaymentFrequencyType", element)) {
+            repaymentFrequencyType = this.fromApiJsonHelper.extractIntegerNamed("repaymentFrequencyType", element, Locale.getDefault());
+        }
+        if (this.fromApiJsonHelper.parameterExists("interestCalculationPeriodType", element)) {
+            interestCalculationPeriodType = this.fromApiJsonHelper.extractIntegerNamed("interestCalculationPeriodType", element,
+                    Locale.getDefault());
+        }
+        if (WeeksInYearType.isUnsupportedDailyWeekly(weeksInYearType, PeriodFrequencyType.fromInt(repaymentFrequencyType).isWeekly(),
+                InterestCalculationPeriodMethod.fromInt(interestCalculationPeriodType).isDaily())) {
+            baseDataValidator.reset().parameter(LoanProductConstants.weeksInYearTypeParameterName).value(weeksInYearType)
+                    .failWithCode("cannot.be.used.when.interest.is.calculated.daily");
+        }
     }
 
     private void validatePartialPeriodSupport(final Integer interestCalculationPeriodType, final DataValidatorBuilder baseDataValidator,

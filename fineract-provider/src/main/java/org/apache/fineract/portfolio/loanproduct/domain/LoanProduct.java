@@ -53,6 +53,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateDTO;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRatePeriodData;
@@ -223,6 +224,10 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
         Integer minimumGapBetweenInstallments = null;
         Integer maximumGapBetweenInstallments = null;
 
+        final WeeksInYearType weeksInYearType = WeeksInYearType.fromInt(command
+                .parameterExists(LoanProductConstants.weeksInYearTypeParameterName) ? command
+                .integerValueOfParameterNamed(LoanProductConstants.weeksInYearTypeParameterName) : null);
+
         final Boolean isLinkedToFloatingInterestRates = command.booleanObjectValueOfParameterNamed("isLinkedToFloatingInterestRates");
         if (isLinkedToFloatingInterestRates != null && isLinkedToFloatingInterestRates) {
             interestRateDifferential = command.bigDecimalValueOfParameterNamed("interestRateDifferential");
@@ -236,7 +241,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
             interestRatePerPeriod = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
             minInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("minInterestRatePerPeriod");
             maxInterestRatePerPeriod = command.bigDecimalValueOfParameterNamed("maxInterestRatePerPeriod");
-            annualInterestRate = aprCalculator.calculateFrom(interestFrequencyType, interestRatePerPeriod);
+            annualInterestRate = aprCalculator.calculateFrom(interestFrequencyType, interestRatePerPeriod, weeksInYearType);
         }
 
         final Boolean isVariableInstallmentsAllowed = command
@@ -351,7 +356,7 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
                 installmentAmountInMultiplesOf, loanConfigurableAttributes, isLinkedToFloatingInterestRates, floatingRate,
                 interestRateDifferential, minDifferentialLendingRate, maxDifferentialLendingRate, defaultDifferentialLendingRate,
                 isFloatingInterestRateCalculationAllowed, isVariableInstallmentsAllowed, minimumGapBetweenInstallments,
-                maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization);
+                maximumGapBetweenInstallments, syncExpectedWithDisbursementDate, canUseForTopup, isEqualAmortization, weeksInYearType);
 
     }
 
@@ -581,7 +586,8 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
             BigDecimal minDifferentialLendingRate, BigDecimal maxDifferentialLendingRate, BigDecimal defaultDifferentialLendingRate,
             Boolean isFloatingInterestRateCalculationAllowed, final Boolean isVariableInstallmentsAllowed,
             final Integer minimumGapBetweenInstallments, final Integer maximumGapBetweenInstallments,
-            final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization) {
+            final boolean syncExpectedWithDisbursementDate, final boolean canUseForTopup, final boolean isEqualAmortization,
+            final WeeksInYearType weeksInYearType) {
         this.fund = fund;
         this.transactionProcessingStrategy = transactionProcessingStrategy;
         this.name = name.trim();
@@ -613,7 +619,8 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
                 interestPeriodFrequencyType, defaultAnnualNominalInterestRate, interestMethod, interestCalculationPeriodMethod,
                 considerPartialPeriodInterest, repayEvery, repaymentFrequencyType, defaultNumberOfInstallments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods,
                 graceOnInterestPayment, graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing,
-                daysInMonthType.getValue(), daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization);
+                daysInMonthType.getValue(), daysInYearType.getValue(), isInterestRecalculationEnabled, isEqualAmortization,
+                weeksInYearType.getValue());
 
         this.loanProductRelatedDetail.validateRepaymentPeriodWithGraceSettings();
 
@@ -1298,6 +1305,10 @@ public class LoanProduct extends AbstractPersistableCustom<Long> {
 
     public DaysInYearType fetchDaysInYearType() {
         return this.loanProductRelatedDetail.fetchDaysInYearType();
+    }
+
+    public WeeksInYearType fetchWeeksInYearType() {
+        return this.loanProductRelatedDetail.fetchWeeksInYearType();
     }
 
     public LoanProductInterestRecalculationDetails getProductInterestRecalculationDetails() {
