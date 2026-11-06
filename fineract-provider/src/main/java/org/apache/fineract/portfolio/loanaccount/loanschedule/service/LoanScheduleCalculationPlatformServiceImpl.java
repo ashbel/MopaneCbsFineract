@@ -107,7 +107,7 @@ public class LoanScheduleCalculationPlatformServiceImpl implements LoanScheduleC
          * same
          **/
         final Long productId = this.fromJsonHelper.extractLongNamed("productId", query.parsedJson());
-        final LoanProduct loanProduct = this.loanProductRepository.findOne(productId);
+        final LoanProduct loanProduct = this.loanProductRepository.findById(productId).orElse(null);
         if (loanProduct == null) { throw new LoanProductNotFoundException(productId); }
 
         if (validateParams) {

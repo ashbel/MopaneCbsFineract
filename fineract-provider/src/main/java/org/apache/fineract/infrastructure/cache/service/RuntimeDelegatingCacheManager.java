@@ -31,7 +31,6 @@ import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.stereotype.Component;
 
@@ -46,12 +45,12 @@ import org.springframework.stereotype.Component;
 @Component(value = "runtimeDelegatingCacheManager")
 public class RuntimeDelegatingCacheManager implements CacheManager {
 
-    private final EhCacheCacheManager ehcacheCacheManager;
+    private final FineractEhCacheCacheManager ehcacheCacheManager;
     private final CacheManager noOpCacheManager = new NoOpCacheManager();
     private CacheManager currentCacheManager;
 
     @Autowired
-    public RuntimeDelegatingCacheManager(final EhCacheCacheManager ehCacheCacheManager) {
+    public RuntimeDelegatingCacheManager(final FineractEhCacheCacheManager ehCacheCacheManager) {
         this.ehcacheCacheManager = ehCacheCacheManager;
         this.currentCacheManager = this.noOpCacheManager;
     }
@@ -69,7 +68,7 @@ public class RuntimeDelegatingCacheManager implements CacheManager {
     public Collection<CacheData> retrieveAll() {
 
         final boolean noCacheEnabled = this.currentCacheManager instanceof NoOpCacheManager;
-        final boolean ehcacheEnabled = this.currentCacheManager instanceof EhCacheCacheManager;
+        final boolean ehcacheEnabled = this.currentCacheManager instanceof FineractEhCacheCacheManager;
 
         // final boolean distributedCacheEnabled = false;
 

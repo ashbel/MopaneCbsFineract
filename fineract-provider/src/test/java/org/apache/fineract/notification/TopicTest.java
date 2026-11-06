@@ -19,7 +19,7 @@
 package org.apache.fineract.notification;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.refEq;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,9 +37,17 @@ import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.apache.fineract.useradministration.domain.Role;
 import org.apache.fineract.useradministration.domain.RoleRepository;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 
+/**
+ * Both methods stub a mock, call that same mock, and then verify it: they exercise
+ * no Fineract code, and they also read the mocks before stubbing them, so they have
+ * never passed. Left visible as skipped rather than reordered into a green test that
+ * still asserts nothing. Real coverage means driving TopicWritePlatformService and
+ * TopicSubscriberWritePlatformService against their repositories.
+ */
 public class TopicTest {
 
 	@Mock
@@ -60,6 +68,7 @@ public class TopicTest {
 	@Mock
 	private AppUserRepository appUserRepository;
 	
+	@Ignore("asserts only mock interactions; see class javadoc")
 	@Test
 	public void testTopicStorage() {
 		Office office = officeRepository.getOne(1L);
@@ -88,10 +97,11 @@ public class TopicTest {
 	
 	}
 	
+	@Ignore("asserts only mock interactions; see class javadoc")
 	@Test
 	public void testTopicSubscriberStorage() {
-		AppUser user = appUserRepository.findOne(1L);
-		Topic topic = topicRepository.findOne(1L);
+		AppUser user = appUserRepository.findById(1L).orElse(null);
+		Topic topic = topicRepository.findById(1L).orElse(null);
 		
 		TopicSubscriber topicSubscriber = new TopicSubscriber(topic, user, new Date());
 		

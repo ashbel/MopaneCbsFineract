@@ -31,7 +31,8 @@ import org.springframework.stereotype.Component;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.jayway.jsonpath.JsonModel;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 
 /**
  * Provides methods to create dependency map among the various batchRequests. It
@@ -136,7 +137,7 @@ public class ResolutionHelper {
         // Create a duplicate request
         final BatchRequest br = request;
 
-        final JsonModel responseJsonModel = JsonModel.model(parentResponse.getBody());
+        final DocumentContext responseDocumentContext = JsonPath.parse(parentResponse.getBody());
 
         // Gets the body from current Request as a JsonObject
         final JsonObject jsonRequestBody = this.fromJsonHelper.parse(request.getBody()).getAsJsonObject();
@@ -147,7 +148,7 @@ public class ResolutionHelper {
         // parameter
         for (Entry<String, JsonElement> element : jsonRequestBody.entrySet()) {
             final String key = element.getKey();
-            final JsonElement value = resolveDependentVariables(element, responseJsonModel);
+            final JsonElement value = resolveDependentVariables(element, responseDocumentContext);
             jsonResultBody.add(key, value);
         }
 
@@ -169,7 +170,7 @@ public class ResolutionHelper {
             
             for (String parameter : parameters) {
                 if (parameter.contains("$.")) {
-                    final String resParamValue = responseJsonModel.get(parameter).toString();
+                    final String resParamValue = responseDocumentContext.read(parameter).toString();
                     relativeUrl = relativeUrl.replace(parameter, resParamValue);
                     br.setRelativeUrl(relativeUrl+queryParams);
                 }
@@ -179,53 +180,53 @@ public class ResolutionHelper {
         return br;
     }
 
-    private JsonElement resolveDependentVariables(final Entry<String, JsonElement> entryElement, final JsonModel responseJsonModel) {
+    private JsonElement resolveDependentVariables(final Entry<String, JsonElement> entryElement, final DocumentContext responseDocumentContext) {
         JsonElement value = null;
 
         final JsonElement element = entryElement.getValue();
 
         if (element.isJsonObject()) {
             final JsonObject jsObject = element.getAsJsonObject();
-            value = processJsonObject(jsObject, responseJsonModel);
+            value = processJsonObject(jsObject, responseDocumentContext);
         } else if (element.isJsonArray()) {
             final JsonArray jsElementArray = element.getAsJsonArray();
-            value = processJsonArray(jsElementArray, responseJsonModel);
+            value = processJsonArray(jsElementArray, responseDocumentContext);
         } else {
-            value = resolveDependentVariable(element, responseJsonModel);
+            value = resolveDependentVariable(element, responseDocumentContext);
         }
         return value;
     }
 
-    private JsonElement processJsonObject(final JsonObject jsObject, final JsonModel responseJsonModel) {
+    private JsonElement processJsonObject(final JsonObject jsObject, final DocumentContext responseDocumentContext) {
         JsonObject valueObj = new JsonObject();
         for (Entry<String, JsonElement> element : jsObject.entrySet()) {
             final String key = element.getKey();
-            final JsonElement value = resolveDependentVariable(element.getValue(), responseJsonModel);
+            final JsonElement value = resolveDependentVariable(element.getValue(), responseDocumentContext);
             valueObj.add(key, value);
         }
         return valueObj;
     }
 
-    private JsonArray processJsonArray(final JsonArray elementArray, final JsonModel responseJsonModel) {
+    private JsonArray processJsonArray(final JsonArray elementArray, final DocumentContext responseDocumentContext) {
 
         JsonArray valueArr = new JsonArray();
 
         for (JsonElement element : elementArray) {
             if (element.isJsonObject()) {
                 final JsonObject jsObject = element.getAsJsonObject();
-                valueArr.add(processJsonObject(jsObject, responseJsonModel));
+                valueArr.add(processJsonObject(jsObject, responseDocumentContext));
             }
         }
 
         return valueArr;
     }
 
-    private JsonElement resolveDependentVariable(final JsonElement element, final JsonModel responseJsonModel) {
+    private JsonElement resolveDependentVariable(final JsonElement element, final DocumentContext responseDocumentContext) {
         JsonElement value = element;
         String paramVal = element.getAsString();
         if (paramVal.contains("$.")) {
             // Get the value of the parameter from parent response
-            final String resParamValue = responseJsonModel.get(paramVal).toString();
+            final String resParamValue = responseDocumentContext.read(paramVal).toString();
             value = this.fromJsonHelper.parse(resParamValue);
         }
         return value;

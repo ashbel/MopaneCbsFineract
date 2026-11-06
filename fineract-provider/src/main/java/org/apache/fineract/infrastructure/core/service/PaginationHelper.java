@@ -32,7 +32,7 @@ public class PaginationHelper<E> {
 
         // determine how many rows are available
         @SuppressWarnings("deprecation")
-        final int totalFilteredRecords = jt.queryForInt(sqlCountRows);
+        final int totalFilteredRecords = jt.queryForObject(sqlCountRows, Integer.class);
 
         return new Page<>(items, totalFilteredRecords);
     }
@@ -42,7 +42,7 @@ public class PaginationHelper<E> {
 
         // determine how many rows are available
         @SuppressWarnings("deprecation")
-        final int totalFilteredRecords = jdbcTemplate.queryForInt(sqlCountRows);
+        final int totalFilteredRecords = jdbcTemplate.queryForObject(sqlCountRows, Integer.class);
 
         return new Page<>(items, totalFilteredRecords);
     }

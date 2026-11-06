@@ -102,7 +102,7 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
         closureCommand.validateForUpdate();
 
         // is the glClosure valid
-        final GLClosure glClosure = this.glClosureRepository.findOne(glClosureId);
+        final GLClosure glClosure = this.glClosureRepository.findById(glClosureId).orElse(null);
         if (glClosure == null) { throw new GLClosureNotFoundException(glClosureId); }
 
         final Map<String, Object> changesOnly = glClosure.update(command);
@@ -118,7 +118,7 @@ public class GLClosureWritePlatformServiceJpaRepositoryImpl implements GLClosure
     @Transactional
     @Override
     public CommandProcessingResult deleteGLClosure(final Long glClosureId) {
-        final GLClosure glClosure = this.glClosureRepository.findOne(glClosureId);
+        final GLClosure glClosure = this.glClosureRepository.findById(glClosureId).orElse(null);
 
         if (glClosure == null) { throw new GLClosureNotFoundException(glClosureId); }
 

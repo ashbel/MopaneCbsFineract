@@ -20,7 +20,7 @@ package org.apache.fineract.infrastructure.codes.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.Code;
@@ -135,7 +135,7 @@ public class CodeWritePlatformServiceJpaRepositoryImpl implements CodeWritePlatf
     }
 
     private Code retrieveCodeBy(final Long codeId) {
-        final Code code = this.codeRepository.findOne(codeId);
+        final Code code = this.codeRepository.findById(codeId).orElse(null);
         if (code == null) { throw new CodeNotFoundException(codeId.toString()); }
         return code;
     }

@@ -296,9 +296,10 @@ public class AccountNumberPreferencesTest {
         	
             if (groupsPrefixName.equals(this.officeName)) {
             	
-                final String groupOfficeName = Utils.performServerGet(requestSpec, responseSpec, GROUP_URL, "officeName");
+                final Integer groupOfficeId = (Integer) Utils.performServerGet(requestSpec, responseSpec, GROUP_URL, "officeId");
+                final String groupOfficeShortCode = new OfficeHelper(requestSpec, responseSpec).retrieveOfficeShortCode(groupOfficeId);
                 
-                this.validateAccountNumberLengthAndStartsWithPrefix(this.groupAccountNo, groupOfficeName);
+                this.validateAccountNumberLengthAndStartsWithPrefix(this.groupAccountNo, groupOfficeShortCode);
             }
         } else {
             validateAccountNumberLengthAndStartsWithPrefix(this.groupAccountNo, null);
@@ -321,8 +322,9 @@ public class AccountNumberPreferencesTest {
             final String CENTER_URL = "/fineract-provider/api/v1/centers/" + this.centerId + "?" + Utils.TENANT_IDENTIFIER;
         	
             if (centerPrefixName.equals(this.officeName)) {
-                final String centerOfficeName = Utils.performServerGet(requestSpec, responseSpec, CENTER_URL, "officeName");  
-                this.validateAccountNumberLengthAndStartsWithPrefix(center.getAccountNo(), centerOfficeName);
+                final Integer centerOfficeId = (Integer) Utils.performServerGet(requestSpec, responseSpec, CENTER_URL, "officeId");
+                final String centerOfficeShortCode = new OfficeHelper(requestSpec, responseSpec).retrieveOfficeShortCode(centerOfficeId);
+                this.validateAccountNumberLengthAndStartsWithPrefix(center.getAccountNo(), centerOfficeShortCode);
             }
         } else {	
             validateAccountNumberLengthAndStartsWithPrefix(center.getAccountNo(), null);
@@ -368,9 +370,14 @@ public class AccountNumberPreferencesTest {
             this.clientId = ClientHelper.createClient(this.requestSpec, this.responseSpec);
             Assert.assertNotNull(clientId);
             clientAccountNo = (String) ClientHelper.getClient(requestSpec, responseSpec, this.clientId.toString(), "accountNo");
-            String officeName = (String) ClientHelper.getClient(requestSpec, responseSpec, this.clientId.toString(), "officeName");
-            this.validateAccountNumberLengthAndStartsWithPrefix(clientAccountNo, officeName);
+            this.validateAccountNumberLengthAndStartsWithPrefix(clientAccountNo, retrieveClientOfficeShortCode());
         }
+    }
+
+    private String retrieveClientOfficeShortCode() {
+        final Integer officeId = (Integer) ClientHelper.getClient(this.requestSpec, this.responseSpec, this.clientId.toString(),
+                "officeId");
+        return new OfficeHelper(this.requestSpec, this.responseSpec).retrieveOfficeShortCode(officeId);
     }
 
     private void validateAccountNumberLengthAndStartsWithPrefix(final String accountNumber, String prefix) {
@@ -418,8 +425,7 @@ public class AccountNumberPreferencesTest {
             String loanPrefixName = (String) this.accountNumberPreferencesHelper.getAccountNumberPreference(
                     this.loanAccountNumberPreferenceId, "prefixType.value");
             if (loanPrefixName.equals(this.officeName)) {
-                String loanOfficeName = (String) ClientHelper.getClient(requestSpec, responseSpec, this.clientId.toString(), "officeName");
-                this.validateAccountNumberLengthAndStartsWithPrefix(loanAccountNo, loanOfficeName);
+                this.validateAccountNumberLengthAndStartsWithPrefix(loanAccountNo, retrieveClientOfficeShortCode());
             } else if (loanPrefixName.equals(this.loanShortName)) {
                 String loanShortName = (String) this.loanTransactionHelper.getLoanProductDetail(this.requestSpec, this.responseSpec,
                         this.loanProductId, "shortName");
@@ -471,9 +477,7 @@ public class AccountNumberPreferencesTest {
                     this.savingsAccountNumberPreferenceId, "prefixType.value");
 
             if (savingsPrefixName.equals(this.officeName)) {
-                String savingsOfficeName = (String) ClientHelper.getClient(requestSpec, responseSpec, this.clientId.toString(),
-                        "officeName");
-                this.validateAccountNumberLengthAndStartsWithPrefix(savingsAccountNo, savingsOfficeName);
+                this.validateAccountNumberLengthAndStartsWithPrefix(savingsAccountNo, retrieveClientOfficeShortCode());
             } else if (savingsPrefixName.equals(this.savingsShortName)) {
                 String loanShortName = (String) this.savingsAccountHelper.getSavingsAccountDetail(this.savingsId, "shortName");
                 this.validateAccountNumberLengthAndStartsWithPrefix(savingsAccountNo, loanShortName);

@@ -20,7 +20,7 @@ package org.apache.fineract.organisation.provisioning.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -95,7 +95,7 @@ public class ProvisioningCategoryWritePlatformServiceJpaRepositoryImpl implement
     public CommandProcessingResult updateProvisioningCategory(final Long categoryId, JsonCommand command) {
         try {
             this.fromApiJsonDeserializer.validateForUpdate(command.json());
-            final ProvisioningCategory provisioningCategoryForUpdate = this.provisioningCategoryRepository.findOne(categoryId);
+            final ProvisioningCategory provisioningCategoryForUpdate = this.provisioningCategoryRepository.findById(categoryId).orElse(null);
             if (provisioningCategoryForUpdate == null) { throw new ProvisioningCategoryNotFoundException(categoryId); }
             final Map<String, Object> changes = provisioningCategoryForUpdate.update(command);
             if (!changes.isEmpty()) {

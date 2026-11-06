@@ -360,7 +360,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         try {
             final Long loanRescheduleRequestId = jsonCommand.entityId();
 
-            final LoanRescheduleRequest loanRescheduleRequest = this.loanRescheduleRequestRepository.findOne(loanRescheduleRequestId);
+            final LoanRescheduleRequest loanRescheduleRequest = this.loanRescheduleRequestRepository.findById(loanRescheduleRequestId).orElse(null);
 
             if (loanRescheduleRequest == null) { throw new LoanRescheduleRequestNotFoundException(loanRescheduleRequestId); }
 
@@ -537,7 +537,7 @@ public class LoanRescheduleRequestWritePlatformServiceImpl implements LoanResche
         try {
             final Long loanRescheduleRequestId = jsonCommand.entityId();
 
-            final LoanRescheduleRequest loanRescheduleRequest = loanRescheduleRequestRepository.findOne(loanRescheduleRequestId);
+            final LoanRescheduleRequest loanRescheduleRequest = loanRescheduleRequestRepository.findById(loanRescheduleRequestId).orElse(null);
 
             if (loanRescheduleRequest == null) { throw new LoanRescheduleRequestNotFoundException(loanRescheduleRequestId); }
 

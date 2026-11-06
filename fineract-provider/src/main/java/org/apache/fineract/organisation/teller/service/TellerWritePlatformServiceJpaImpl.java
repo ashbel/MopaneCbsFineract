@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;
@@ -237,7 +237,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
 
             this.fromApiJsonDeserializer.validateForAllocateCashier(command.json());
 
-            final Staff staff = this.staffRepository.findOne(staffId);
+            final Staff staff = this.staffRepository.findById(staffId).orElse(null);
             if (staff == null) { throw new StaffNotFoundException(staffId); }
             final Boolean isFullDay = command.booleanObjectValueOfParameterNamed("isFullDay");
             if (!isFullDay) {
@@ -286,7 +286,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             this.fromApiJsonDeserializer.validateForAllocateCashier(command.json());
 
             final Long staffId = command.longValueOfParameterNamed("staffId");
-            final Staff staff = this.staffRepository.findOne(staffId);
+            final Staff staff = this.staffRepository.findById(staffId).orElse(null);
             if (staff == null) { throw new StaffNotFoundException(staffId); }
 
             final Cashier cashier = validateUserPriviledgeOnCashierAndRetrieve(currentUser, tellerId, cashierId);
@@ -321,7 +321,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
 
         validateUserPriviledgeOnTellerAndRetrieve(currentUser, tellerId);
 
-        final Cashier cashierToReturn = this.cashierRepository.findOne(cashierId);
+        final Cashier cashierToReturn = this.cashierRepository.findById(cashierId).orElse(null);
 
         return cashierToReturn;
     }
@@ -380,7 +380,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
         try {
             final AppUser currentUser = this.context.authenticatedUser();
 
-            final Cashier cashier = this.cashierRepository.findOne(cashierId);
+            final Cashier cashier = this.cashierRepository.findById(cashierId).orElse(null);
             if (cashier == null) { throw new CashierNotFoundException(cashierId); }
 
             this.fromApiJsonDeserializer.validateForCashTxnForCashier(command.json());

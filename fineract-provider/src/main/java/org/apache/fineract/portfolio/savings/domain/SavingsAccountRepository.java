@@ -34,13 +34,13 @@ public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, 
     @Query("select s_acc from SavingsAccount s_acc where s_acc.status = :status")
     List<SavingsAccount> findSavingAccountByStatus(@Param("status") Integer status);
 
-    @Query("select sa from SavingsAccount sa where sa.client.id = :clientId and sa.group.id = :groupId")
+    @Query("select sa from SavingsAccount sa where sa.client.id = :clientId and sa.savingsGroup.id = :groupId")
     List<SavingsAccount> findByClientIdAndGroupId(@Param("clientId") Long clientId, @Param("groupId") Long groupId);
 
     @Query("select case when (count (saving) > 0) then 'true' else 'false' end from SavingsAccount saving where saving.client.id = :clientId and saving.status in (100,200,300,303,304)")
     boolean doNonClosedSavingAccountsExistForClient(@Param("clientId") Long clientId);
 
-    @Query("select sa from SavingsAccount sa where sa.client.id is null and sa.group.id = :groupId")
+    @Query("select sa from SavingsAccount sa where sa.client.id is null and sa.savingsGroup.id = :groupId")
     List<SavingsAccount> findByGroupId(@Param("groupId") Long groupId);
 
     @Query("select sa from SavingsAccount sa where sa.id = :accountId and sa.depositType = :depositAccountTypeId")

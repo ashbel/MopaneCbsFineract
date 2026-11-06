@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Client Saving Transactions" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="savingsAccountId" class="java.lang.String" />
+    <parameter name="startDate" class="java.lang.String" />
+    <parameter name="endDate" class="java.lang.String" />
+    <field name="Transaction ID" class="java.lang.String" />
+    <field name="Transaction Date" class="java.lang.String" />
+    <field name="name_no" class="java.lang.String" />
+    <field name="client_name" class="java.lang.String" />
+    <field name="Transaction Type" class="java.lang.String" />
+    <field name="Debit" class="java.lang.String" />
+    <field name="Credit" class="java.lang.String" />
+    <field name="Balance" class="java.lang.String" />
+    <field name="Reversed" class="java.lang.String" />
+    <query language="SQL">select 
+st.id as 'Transaction ID',
+st.transaction_date as 'Transaction Date',
+concat(': ',o.name) 'Branch',
+concat(': ',msp.name,'  (#',msa.account_no,')')as name_no ,
+#concat(': ',IF(msa.client_id is NULL,(SELECT mg.display_name FROM m_group mg WHERE mg.id=msa.group_id),(SELECT mc.display_name FROM m_client mc WHERE mc.id=msa.client_id))) as client_name,
+concat(': ',if (msa.group_id is null,cl.display_name,gr.display_name)) client_name,
+re.enum_value as 'Transaction Type',
+ifnull(case st.transaction_type_enum
+                  when 2 then st.amount
+                  end ,0) as 'Debit',
+ifnull(case st.transaction_type_enum
+                  when 1 then st.amount
+                  when 3 then st.amount
+                  end,0) as 'Credit',
+ifnull(st.running_balance_derived,0) as 'Balance',
+       case st.is_reversed
+           when 0 then 'No'
+           else 'Yes'
+           end as 'Reversed',
+           concat(': ',msa.account_balance_derived) 'Balance Amount',
+           concat(': ',msa.nominal_annual_interest_rate) 'Interest Rate',
+           concat(': ',ifnull(sf.display_name,'N/A')) Staff,
+           c.name 'Currency'
+from m_savings_account_transaction st
+inner join m_savings_account msa on msa.id =st.savings_account_id
+inner join m_savings_product msp on msp.id=msa.product_id
+inner join r_enum_value re
+           on re.enum_id=st.transaction_type_enum and re.enum_name='savings_transaction_type_enum'
+left join m_group gr on gr.id=msa.group_id
+left join m_client cl on cl.id=msa.client_id
+inner join m_office o on o.id=cl.office_id or o.id = gr.office_id
+left join m_staff sf on sf.id=msa.field_officer_id
+inner join m_currency c on c.code = msa.currency_code
+where msa.account_no=$P{savingsAccountId}
+#where msa.account_no='000000005'
+and (st.transaction_date between $P{startDate} and $P{endDate})
+#and (st.transaction_date between '2015-01-01' and '2015-05-26')
+order by 2 desc,is_reversed</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Client Saving Transactions</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="82" height="20"><text>Transaction ID</text></element><element kind="staticText" x="106" y="0" width="82" height="20"><text>Transaction Date</text></element><element kind="staticText" x="192" y="0" width="82" height="20"><text>name_no</text></element><element kind="staticText" x="278" y="0" width="82" height="20"><text>client_name</text></element><element kind="staticText" x="364" y="0" width="82" height="20"><text>Transaction Type</text></element><element kind="staticText" x="450" y="0" width="82" height="20"><text>Debit</text></element><element kind="staticText" x="536" y="0" width="82" height="20"><text>Credit</text></element><element kind="staticText" x="622" y="0" width="82" height="20"><text>Balance</text></element><element kind="staticText" x="708" y="0" width="82" height="20"><text>Reversed</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="82" height="18"><expression>$F{Transaction ID}</expression></element><element kind="textField" blankWhenNull="true" x="106" y="0" width="82" height="18"><expression>$F{Transaction Date}</expression></element><element kind="textField" blankWhenNull="true" x="192" y="0" width="82" height="18"><expression>$F{name_no}</expression></element><element kind="textField" blankWhenNull="true" x="278" y="0" width="82" height="18"><expression>$F{client_name}</expression></element><element kind="textField" blankWhenNull="true" x="364" y="0" width="82" height="18"><expression>$F{Transaction Type}</expression></element><element kind="textField" blankWhenNull="true" x="450" y="0" width="82" height="18"><expression>$F{Debit}</expression></element><element kind="textField" blankWhenNull="true" x="536" y="0" width="82" height="18"><expression>$F{Credit}</expression></element><element kind="textField" blankWhenNull="true" x="622" y="0" width="82" height="18"><expression>$F{Balance}</expression></element><element kind="textField" blankWhenNull="true" x="708" y="0" width="82" height="18"><expression>$F{Reversed}</expression></element></band>
+    </detail>
+</jasperReport>

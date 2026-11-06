@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.floatingrates.domain;
 import java.math.BigDecimal;
 import java.util.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;

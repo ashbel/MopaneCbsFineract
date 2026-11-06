@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Client Loan Account Schedule" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="selectLoan" class="java.lang.String" />
+    <parameter name="startDate" class="java.lang.String" />
+    <parameter name="endDate" class="java.lang.String" />
+    <field name="'Date'" class="java.lang.String" />
+    <field name="Note" class="java.lang.String" />
+    <field name="Principle" class="java.lang.String" />
+    <field name="Interest" class="java.lang.String" />
+    <field name="Fees" class="java.lang.String" />
+    <field name="Penalty" class="java.lang.String" />
+    <field name="Total_Paid" class="java.lang.String" />
+    <field name="Outstanding_Amount" class="java.lang.String" />
+    <query language="SQL">SELECT 
+det.dates 'Date',
+ifnull(comments.Note,'-') Note,
+det.Principle,
+det.Interest,
+det.Fees,
+det.Penalty,
+det.Total_Paid,
+det.Outstanding_Amount
+FROM (
+SELECT mtx.id id,
+mtx.loan_id,
+mtx.transaction_date 'dates', 
+IFNULL(mtx.amount,0) Principle, 
+IFNULL(mtx.interest_portion_derived,0) Interest, 
+IFNULL(mtx.fee_charges_portion_derived,0) Fees, 
+IFNULL(mtx.penalty_charges_portion_derived,0) Penalty,
+0.000000 Total_Paid,
+(ml.principal_amount + ml.interest_charged_derived + ml.fee_charges_charged_derived + ml.penalty_charges_charged_derived) Outstanding_Amount
+FROM
+m_loan_transaction mtx
+INNER JOIN m_loan ml on ml.id=mtx.loan_id
+WHERE mtx.transaction_type_enum=1
+AND ml.id=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan}) 
+
+UNION
+
+SELECT mtx.id,
+mtx.loan_id,
+mtx.transaction_date 'dates', 
+IFNULL(mtx.principal_portion_derived,0) Principal, 
+IFNULL(mtx.interest_portion_derived,0) Interest, 
+IFNULL(mtx.fee_charges_portion_derived,0) Fees, 
+IFNULL(mtx.penalty_charges_portion_derived,0) Penalty,
+mtx.amount Total_Paid,
+Outs.outs Outstanding_Amount
+
+FROM
+m_loan_transaction mtx
+INNER JOIN m_loan ml on ml.id=mtx.loan_id
+INNER JOIN (select m.id outId,
+(ml.principal_amount + ml.interest_charged_derived + ml.fee_charges_charged_derived + ml.penalty_charges_charged_derived - ml.interest_waived_derived - ml.fee_charges_waived_derived - ml.penalty_charges_waived_derived)-(m.amount + ifnull((select sum(amount)
+from m_loan_transaction mt
+where mt.id &lt; m.id and mt.loan_id=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan}) and mt.transaction_type_enum =2 and is_reversed=0),0) ) outs
+from m_loan_transaction m
+inner join m_loan ml on ml.id=m.loan_id
+where m.transaction_type_enum =2
+and m.loan_id=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan})) Outs on Outs.outId=mtx.id
+
+WHERE mtx.transaction_type_enum=2
+and mtx.is_reversed=0
+and ml.id=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan})) det
+
+LEFT JOIN 
+ (SELECT a.id comment_id, IFNULL(a.tid,(
+SELECT MIN(mtx.id)
+FROM m_loan_transaction mtx
+WHERE mtx.loan_id=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan}))) trx_id,
+a.note note
+FROM (
+SELECT mn.id id,
+ mn.loan_transaction_id tid,
+		mn.loan_id lid,
+		mn.note Note
+FROM m_note mn
+WHERE mn.id IN (
+SELECT MAX(mn.id)
+FROM m_note mn
+WHERE mn.note_type_enum=200
+GROUP BY mn.loan_id) UNION
+SELECT mn2.id,
+ mn2.loan_transaction_id,
+ mn2.loan_id,
+ mn2.note
+FROM m_note mn2
+WHERE mn2.note_type_enum=300) a
+WHERE a.lid=(select ml.id from m_loan ml where ml.account_no=$P{selectLoan})
+ORDER BY a.lid,a.id) 
+comments ON comments.trx_id=det.id
+WHERE det.dates between $P{startDate} and $P{endDate}</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Client Loan Account Schedule</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="93" height="20"><text>'Date'</text></element><element kind="staticText" x="117" y="0" width="93" height="20"><text>Note</text></element><element kind="staticText" x="214" y="0" width="93" height="20"><text>Principle</text></element><element kind="staticText" x="311" y="0" width="93" height="20"><text>Interest</text></element><element kind="staticText" x="408" y="0" width="93" height="20"><text>Fees</text></element><element kind="staticText" x="505" y="0" width="93" height="20"><text>Penalty</text></element><element kind="staticText" x="602" y="0" width="93" height="20"><text>Total_Paid</text></element><element kind="staticText" x="699" y="0" width="93" height="20"><text>Outstanding_Amount</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="93" height="18"><expression>$F{'Date'}</expression></element><element kind="textField" blankWhenNull="true" x="117" y="0" width="93" height="18"><expression>$F{Note}</expression></element><element kind="textField" blankWhenNull="true" x="214" y="0" width="93" height="18"><expression>$F{Principle}</expression></element><element kind="textField" blankWhenNull="true" x="311" y="0" width="93" height="18"><expression>$F{Interest}</expression></element><element kind="textField" blankWhenNull="true" x="408" y="0" width="93" height="18"><expression>$F{Fees}</expression></element><element kind="textField" blankWhenNull="true" x="505" y="0" width="93" height="18"><expression>$F{Penalty}</expression></element><element kind="textField" blankWhenNull="true" x="602" y="0" width="93" height="18"><expression>$F{Total_Paid}</expression></element><element kind="textField" blankWhenNull="true" x="699" y="0" width="93" height="18"><expression>$F{Outstanding_Amount}</expression></element></band>
+    </detail>
+</jasperReport>

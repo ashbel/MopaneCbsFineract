@@ -24,7 +24,7 @@ import org.apache.fineract.organisation.office.domain.Office;
 import org.joda.time.LocalDate;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.util.Date;

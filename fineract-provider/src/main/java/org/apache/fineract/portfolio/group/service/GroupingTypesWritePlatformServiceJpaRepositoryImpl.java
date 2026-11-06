@@ -20,7 +20,7 @@ package org.apache.fineract.portfolio.group.service;
 
 import java.util.*;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -153,7 +153,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             final Office groupOffice = this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
 
             final LocalDate activationDate = command.localDateValueOfParameterNamed(GroupingTypesApiConstants.activationDateParamName);
-            final GroupLevel groupLevel = this.groupLevelRepository.findOne(groupingType.getId());
+            final GroupLevel groupLevel = this.groupLevelRepository.findById(groupingType.getId()).orElse(null);
 
             validateOfficeOpeningDateisAfterGroupOrCenterOpeningDate(groupOffice, groupLevel, activationDate);
 
@@ -397,7 +397,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 groupForUpdate.updateStaff(newStaff);
             }
 
-            final GroupLevel groupLevel = this.groupLevelRepository.findOne(groupForUpdate.getGroupLevel().getId());
+            final GroupLevel groupLevel = this.groupLevelRepository.findById(groupForUpdate.getGroupLevel().getId()).orElse(null);
 
             /*
              * Ignoring parentId param, if group for update is super parent.

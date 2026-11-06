@@ -35,7 +35,7 @@ import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.security.InvalidParameterException;
 import java.util.*;
 

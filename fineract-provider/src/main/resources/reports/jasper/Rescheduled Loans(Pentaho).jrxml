@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Rescheduled Loans(Pentaho)" pageWidth="1160" pageHeight="595" orientation="Landscape" columnWidth="1120" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="startDate" class="java.lang.String" />
+    <parameter name="endDate" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="loanProductId" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Client Account No." class="java.lang.String" />
+    <field name="Client Name" class="java.lang.String" />
+    <field name="Loan Account No." class="java.lang.String" />
+    <field name="Product Name" class="java.lang.String" />
+    <field name="Disbursed Date" class="java.lang.String" />
+    <field name="Written Off date" class="java.lang.String" />
+    <field name="Loan Amount" class="java.lang.String" />
+    <field name="Rescheduled Principal" class="java.lang.String" />
+    <field name="Rescheduled Interest" class="java.lang.String" />
+    <field name="Rescheduled Fees" class="java.lang.String" />
+    <field name="Rescheduled Penalties" class="java.lang.String" />
+    <field name="Reason For Rescheduling" class="java.lang.String" />
+    <field name="Loan Officer Name" class="java.lang.String" />
+    <query language="SQL">SELECT 
+concat(repeat("..",   
+   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.`name`) as "Office/Branch",ounder.name as Name,
+ifnull(cur.display_symbol, ml.currency_code) as Currency,
+c.account_no as "Client Account No.",
+c.display_name AS 'Client Name',
+ml.account_no AS 'Loan Account No.',
+ifnull(mpl.name,'-') AS 'Product Name',
+ml.disbursedon_date AS 'Disbursed Date',
+lt.transaction_date AS 'Written Off date',
+ml.principal_amount as "Loan Amount",
+ifnull(lt.principal_portion_derived, 0) AS 'Rescheduled Principal',
+ifnull(lt.interest_portion_derived, 0) AS 'Rescheduled Interest',
+ifnull(lt.fee_charges_portion_derived,0) AS 'Rescheduled Fees',
+ifnull(lt.penalty_charges_portion_derived,0) AS 'Rescheduled Penalties',
+n.note AS 'Reason For Rescheduling',
+IFNULL(ms.display_name,'-') AS 'Loan Officer Name'
+FROM m_office o
+JOIN m_office ounder ON ounder.hierarchy like concat(o.hierarchy, '%')
+AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+JOIN m_client c ON c.office_id = ounder.id
+JOIN m_loan ml ON ml.client_id = c.id
+JOIN m_product_loan mpl ON mpl.id=ml.product_id
+LEFT JOIN m_staff ms ON ms.id=ml.loan_officer_id
+JOIN m_loan_transaction lt ON lt.loan_id = ml.id
+LEFT JOIN m_note n ON n.loan_transaction_id = lt.id
+LEFT JOIN m_currency cur on cur.code = ml.currency_code
+WHERE /*lt.transaction_type_enum = 7 marked for rescheduling 
+AND */ lt.is_reversed=0
+AND ml.loan_status_id=602
+AND o.id=$P{Branch}
+AND (mpl.id=$P{loanProductId} OR $P{loanProductId}=-1)
+AND lt.transaction_date BETWEEN $P{startDate} AND $P{endDate}
+AND (ml.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+ORDER BY ounder.hierarchy, ifnull(cur.display_symbol, ml.currency_code), ml.account_no</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Rescheduled Loans(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>Office/Branch</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="160" y="0" width="66" height="20"><text>Currency</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>Client Account No.</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Client Name</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Loan Account No.</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Product Name</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Disbursed Date</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Written Off date</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Loan Amount</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Rescheduled Principal</text></element><element kind="staticText" x="790" y="0" width="66" height="20"><text>Rescheduled Interest</text></element><element kind="staticText" x="860" y="0" width="66" height="20"><text>Rescheduled Fees</text></element><element kind="staticText" x="930" y="0" width="66" height="20"><text>Rescheduled Penalties</text></element><element kind="staticText" x="1000" y="0" width="66" height="20"><text>Reason For Rescheduling</text></element><element kind="staticText" x="1070" y="0" width="66" height="20"><text>Loan Officer Name</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="160" y="0" width="66" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{Client Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Client Name}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Loan Account No.}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Product Name}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Disbursed Date}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Written Off date}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Loan Amount}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Rescheduled Principal}</expression></element><element kind="textField" blankWhenNull="true" x="790" y="0" width="66" height="18"><expression>$F{Rescheduled Interest}</expression></element><element kind="textField" blankWhenNull="true" x="860" y="0" width="66" height="18"><expression>$F{Rescheduled Fees}</expression></element><element kind="textField" blankWhenNull="true" x="930" y="0" width="66" height="18"><expression>$F{Rescheduled Penalties}</expression></element><element kind="textField" blankWhenNull="true" x="1000" y="0" width="66" height="18"><expression>$F{Reason For Rescheduling}</expression></element><element kind="textField" blankWhenNull="true" x="1070" y="0" width="66" height="18"><expression>$F{Loan Officer Name}</expression></element></band>
+    </detail>
+</jasperReport>

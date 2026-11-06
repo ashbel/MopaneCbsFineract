@@ -18,30 +18,32 @@
  */
 package org.apache.fineract.infrastructure.core.domain;
 
+import java.lang.reflect.Method;
+
 import org.apache.fineract.infrastructure.security.domain.PlatformUser;
+import org.apache.fineract.infrastructure.security.service.FineractSha256PasswordEncoder;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.security.authentication.dao.SaltSource;
-import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-@SuppressWarnings("deprecation")
 @Service(value = "applicationPasswordEncoder")
 @Scope("singleton")
 public class DefaultPlatformPasswordEncoder implements PlatformPasswordEncoder {
 
-    private final PasswordEncoder passwordEncoder;
-    private final SaltSource saltSource;
-
-    @Autowired
-    public DefaultPlatformPasswordEncoder(final PasswordEncoder passwordEncoder, final SaltSource saltSource) {
-        this.passwordEncoder = passwordEncoder;
-        this.saltSource = saltSource;
-    }
-
     @Override
     public String encode(final PlatformUser appUser) {
-        return this.passwordEncoder.encodePassword(appUser.getPassword(), this.saltSource.getSalt(appUser));
+        return FineractSha256PasswordEncoder.hash(appUser.getPassword(), idOf(appUser));
+    }
+
+    private static Long idOf(final PlatformUser appUser) {
+        try {
+            final Method getId = appUser.getClass().getMethod("getId");
+            final Object id = getId.invoke(appUser);
+            if (id == null) { return null; }
+            if (id instanceof Long) { return (Long) id; }
+            return Long.valueOf(id.toString());
+        } catch (final ReflectiveOperationException e) {
+            return null;
+        }
     }
 }

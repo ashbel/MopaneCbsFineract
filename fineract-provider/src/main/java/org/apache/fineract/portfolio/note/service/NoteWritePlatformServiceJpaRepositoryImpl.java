@@ -99,7 +99,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
 
         final Long resourceId = command.getGroupId();
 
-        final Group group = this.groupRepository.findOne(resourceId);
+        final Group group = this.groupRepository.findById(resourceId).orElse(null);
         if (group == null) { throw new GroupNotFoundException(resourceId); }
         final Note newNote = Note.groupNoteFromJson(group, command);
 
@@ -135,7 +135,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
 
         final Long resourceId = command.subentityId();
 
-        final LoanTransaction loanTransaction = this.loanTransactionRepository.findOne(resourceId);
+        final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(resourceId).orElse(null);
         if (loanTransaction == null) { throw new LoanTransactionNotFoundException(resourceId); }
 
         final Loan loan = loanTransaction.getLoan();
@@ -159,7 +159,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
     // final Long resourceId = command.getSupportedEntityId();
     //
     // final SavingAccount savingAccount =
-    // this.savingAccountRepository.findOne(resourceId);
+    // this.savingAccountRepository.findById(resourceId).orElse(null);
     // if (savingAccount == null) { throw new
     // SavingAccountNotFoundException(resourceId); }
     //
@@ -261,7 +261,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
 
         final NoteType type = NoteType.GROUP;
 
-        final Group group = this.groupRepository.findOne(resourceId);
+        final Group group = this.groupRepository.findById(resourceId).orElse(null);
         if (group == null) { throw new GroupNotFoundException(resourceId); }
         final Note noteForUpdate = this.noteRepository.findByGroupIdAndId(resourceId, noteId);
 
@@ -309,7 +309,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
 
         final NoteType type = NoteType.LOAN_TRANSACTION;
 
-        final LoanTransaction loanTransaction = this.loanTransactionRepository.findOne(resourceId);
+        final LoanTransaction loanTransaction = this.loanTransactionRepository.findById(resourceId).orElse(null);
         if (loanTransaction == null) { throw new LoanTransactionNotFoundException(resourceId); }
         final Loan loan = loanTransaction.getLoan();
 
@@ -337,7 +337,7 @@ public class NoteWritePlatformServiceJpaRepositoryImpl implements NoteWritePlatf
     // final NoteType type = NoteType.fromApiUrl(resourceUrl);
     //
     // final SavingAccount savingAccount =
-    // this.savingAccountRepository.findOne(resourceId);
+    // this.savingAccountRepository.findById(resourceId).orElse(null);
     // if (savingAccount == null) { throw new
     // SavingAccountNotFoundException(resourceId); }
     //

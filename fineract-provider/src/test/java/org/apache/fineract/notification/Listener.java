@@ -20,7 +20,7 @@ package org.apache.fineract.notification;
 
 import org.springframework.jms.listener.SessionAwareMessageListener;
 
-import javax.jms.*;
+import jakarta.jms.*;
 
 public class Listener implements SessionAwareMessageListener {
 

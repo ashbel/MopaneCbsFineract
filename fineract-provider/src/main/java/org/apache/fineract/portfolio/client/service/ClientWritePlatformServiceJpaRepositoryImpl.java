@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
@@ -242,7 +242,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 
             Group clientParentGroup = null;
             if (groupId != null) {
-                clientParentGroup = this.groupRepository.findOne(groupId);
+                clientParentGroup = this.groupRepository.findById(groupId).orElse(null);
                 if (clientParentGroup == null) { throw new GroupNotFoundException(groupId); }
             }
 
@@ -275,7 +275,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
            
             final Long savingsProductId = command.longValueOfParameterNamed(ClientApiConstants.savingsProductIdParamName);
             if (savingsProductId != null) {
-                SavingsProduct savingsProduct = this.savingsProductRepository.findOne(savingsProductId);
+                SavingsProduct savingsProduct = this.savingsProductRepository.findById(savingsProductId).orElse(null);
                 if (savingsProduct == null) { throw new SavingsProductNotFoundException(savingsProductId); }
             }
             
@@ -448,7 +448,7 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 SavingsProduct savingsProduct = null;
                 final Long savingsProductId = command.longValueOfParameterNamed(ClientApiConstants.savingsProductIdParamName);
                 if (savingsProductId != null) {
-                    savingsProduct = this.savingsProductRepository.findOne(savingsProductId);
+                    savingsProduct = this.savingsProductRepository.findById(savingsProductId).orElse(null);
                     if (savingsProduct == null) { throw new SavingsProductNotFoundException(savingsProductId); }
                 }
                 clientForUpdate.updateSavingsProduct(savingsProductId);

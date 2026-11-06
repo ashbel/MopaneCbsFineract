@@ -165,7 +165,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
 
             if (accountRuleId != null) {
 
-                final AccountingRule accountingRule = this.accountingRuleRepository.findOne(accountRuleId);
+                final AccountingRule accountingRule = this.accountingRuleRepository.findById(accountRuleId).orElse(null);
                 if (accountingRule == null) { throw new AccountingRuleNotFoundException(accountRuleId); }
 
                 if (accountingRule.getAccountToCredit() == null) {
@@ -604,7 +604,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
             final JournalEntryType type, final String referenceNumber) {
         final boolean manualEntry = true;
         for (final SingleDebitOrCreditEntryCommand singleDebitOrCreditEntryCommand : singleDebitOrCreditEntryCommands) {
-            final GLAccount glAccount = this.glAccountRepository.findOne(singleDebitOrCreditEntryCommand.getGlAccountId());
+            final GLAccount glAccount = this.glAccountRepository.findById(singleDebitOrCreditEntryCommand.getGlAccountId()).orElse(null);
             if (glAccount == null) { throw new GLAccountNotFoundException(singleDebitOrCreditEntryCommand.getGlAccountId()); }
 
             validateGLAccountForTransaction(glAccount);
@@ -703,7 +703,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
             final JournalEntryType type, final Long contraAccountId) {
 
         final boolean manualEntry = true;
-        final GLAccount contraAccount = this.glAccountRepository.findOne(contraAccountId);
+        final GLAccount contraAccount = this.glAccountRepository.findById(contraAccountId).orElse(null);
         if (contraAccount == null) { throw new GLAccountNotFoundException(contraAccountId); }
         if (!GLAccountType.fromInt(contraAccount.getType()).isEquityType()) { throw new GeneralPlatformDomainRuleException(
                 "error.msg.configuration.opening.balance.contra.account.value.is.invalid.account.type",
@@ -716,7 +716,7 @@ public class JournalEntryWritePlatformServiceJpaRepositoryImpl implements Journa
         this.organisationCurrencyRepository.findOneWithNotFoundDetection(currencyCode);
 
         for (final SingleDebitOrCreditEntryCommand singleDebitOrCreditEntryCommand : singleDebitOrCreditEntryCommands) {
-            final GLAccount glAccount = this.glAccountRepository.findOne(singleDebitOrCreditEntryCommand.getGlAccountId());
+            final GLAccount glAccount = this.glAccountRepository.findById(singleDebitOrCreditEntryCommand.getGlAccountId()).orElse(null);
             if (glAccount == null) { throw new GLAccountNotFoundException(singleDebitOrCreditEntryCommand.getGlAccountId()); }
 
             validateGLAccountForTransaction(glAccount);

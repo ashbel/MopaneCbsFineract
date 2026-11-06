@@ -41,7 +41,7 @@ public class FinancialActivityAccountRepositoryWrapper {
     }
 
     public FinancialActivityAccount findOneWithNotFoundDetection(final Long id) {
-        final FinancialActivityAccount financialActivityAccount = this.repository.findOne(id);
+        final FinancialActivityAccount financialActivityAccount = this.repository.findById(id).orElse(null);
         if (financialActivityAccount == null) { throw new FinancialActivityAccountNotFoundException(id); }
         return financialActivityAccount;
     }

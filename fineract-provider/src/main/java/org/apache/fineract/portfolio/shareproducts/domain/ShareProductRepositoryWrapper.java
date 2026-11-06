@@ -33,7 +33,7 @@ public class ShareProductRepositoryWrapper {
 	}
 	
 	public ShareProduct findOneWithNotFoundDetection(final Long productId) {
-		ShareProduct product = this.shareProductRepository.findOne(productId) ;
+		ShareProduct product = this.shareProductRepository.findById(productId).orElse(null) ;
 		if(product == null) {
 			throw new ProductNotFoundException(productId, "share") ;
 		}

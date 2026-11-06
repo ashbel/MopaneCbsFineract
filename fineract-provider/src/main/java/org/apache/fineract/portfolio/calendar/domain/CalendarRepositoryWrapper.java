@@ -45,7 +45,7 @@ public class CalendarRepositoryWrapper {
     }
 
     public Calendar findOneWithNotFoundDetection(final Long calendarId) {
-        final Calendar calendar = this.repository.findOne(calendarId);
+        final Calendar calendar = this.repository.findById(calendarId).orElse(null);
         if (calendar == null) { throw new CalendarNotFoundException(calendarId); }
         return calendar;
     }

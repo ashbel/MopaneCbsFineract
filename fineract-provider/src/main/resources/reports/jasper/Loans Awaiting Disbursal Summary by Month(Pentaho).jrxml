@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Loans Awaiting Disbursal Summary by Month(Pentaho)" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <parameter name="loanProductId" class="java.lang.String" />
+    <parameter name="fundId" class="java.lang.String" />
+    <parameter name="loanPurposeId" class="java.lang.String" />
+    <field name="Office/Branch" class="java.lang.String" />
+    <field name="Product" class="java.lang.String" />
+    <field name="Currency" class="java.lang.String" />
+    <field name="Year" class="java.lang.String" />
+    <field name="Month" class="java.lang.String" />
+    <field name="Principal" class="java.lang.String" />
+    <query language="SQL">SELECT 
+concat(repeat("..",   ((LENGTH(ounder.`hierarchy`) - LENGTH(REPLACE(ounder.`hierarchy`, '.', '')) - 1))), ounder.`name`) as "Office/Branch",ounder.name, ounder.id,
+pl.`name` as "Product", 
+ifnull(cur.display_symbol, l.currency_code) as Currency,  
+year(l.expected_disbursedon_date) as "Year", 
+monthname(l.expected_disbursedon_date) as "Month",
+sum(l.principal_amount) as Principal
+from m_office o 
+join m_office ounder on ounder.hierarchy like concat(o.hierarchy, '%')
+and ounder.hierarchy like concat($P{userhierarchy}, '%')
+join m_client c on c.office_id = ounder.id
+join m_loan l on l.client_id = c.id
+join m_product_loan pl on pl.id = l.product_id
+left join m_staff lo on lo.id = l.loan_officer_id
+left join m_currency cur on cur.code = l.currency_code
+left join m_fund f on f.id = l.fund_id
+left join m_code_value purp on purp.id = l.loanpurpose_cv_id
+where o.id = $P{Branch} 
+and (ifnull(l.loan_officer_id, -10) = -1 or "-1" = -1)
+and (l.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+and (l.product_id = $P{loanProductId} or "-1" = $P{loanProductId})
+and (ifnull(l.fund_id, -10) = $P{fundId} or -1 = $P{fundId})
+and (ifnull(l.loanpurpose_cv_id, -10) = $P{loanPurposeId} or "-1" = $P{loanPurposeId})
+and l.loan_status_id = 200
+group by ounder.hierarchy, pl.`name`, l.currency_code, year(l.expected_disbursedon_date), month(l.expected_disbursedon_date)
+order by ounder.hierarchy, pl.`name`, l.currency_code, year(l.expected_disbursedon_date), month(l.expected_disbursedon_date)</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Loans Awaiting Disbursal Summary by Month(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="126" height="20"><text>Office/Branch</text></element><element kind="staticText" x="150" y="0" width="126" height="20"><text>Product</text></element><element kind="staticText" x="280" y="0" width="126" height="20"><text>Currency</text></element><element kind="staticText" x="410" y="0" width="126" height="20"><text>Year</text></element><element kind="staticText" x="540" y="0" width="126" height="20"><text>Month</text></element><element kind="staticText" x="670" y="0" width="126" height="20"><text>Principal</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="126" height="18"><expression>$F{Office/Branch}</expression></element><element kind="textField" blankWhenNull="true" x="150" y="0" width="126" height="18"><expression>$F{Product}</expression></element><element kind="textField" blankWhenNull="true" x="280" y="0" width="126" height="18"><expression>$F{Currency}</expression></element><element kind="textField" blankWhenNull="true" x="410" y="0" width="126" height="18"><expression>$F{Year}</expression></element><element kind="textField" blankWhenNull="true" x="540" y="0" width="126" height="18"><expression>$F{Month}</expression></element><element kind="textField" blankWhenNull="true" x="670" y="0" width="126" height="18"><expression>$F{Principal}</expression></element></band>
+    </detail>
+</jasperReport>

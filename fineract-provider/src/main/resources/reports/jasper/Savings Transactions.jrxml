@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Savings Transactions" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="accountNo" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <field name="Transaction Date" class="java.lang.String" />
+    <field name="Details" class="java.lang.String" />
+    <field name="Deposit" class="java.lang.String" />
+    <field name="Withdrawal" class="java.lang.String" />
+    <field name="Balance" class="java.lang.String" />
+    <query language="SQL">select mc.display_name 'Client Name',
+msp.name 'Product Name',
+sa.account_no 'Account No',
+sat.transaction_date as 'Transaction Date',
+ev.enum_message_property as Details,
+if(ev.enum_type = 0,sat.amount,0) as Deposit,
+if(ev.enum_type = 1,sat.amount,0) as Withdrawal,
+sat.running_balance_derived as Balance  
+from m_savings_account sa 
+inner join m_savings_account_transaction sat on sat.savings_account_id = sa.id 
+inner join r_enum_value ev on ev.enum_name = 'savings_transaction_type_enum' and ev.enum_id = sat.transaction_type_enum 
+inner join m_savings_product msp on msp.id=sa.product_id
+inner join m_client mc on mc.id=sa.client_id
+where sa.account_no=$P{accountNo}
+and sat.is_reversed=0 
+and sat.transaction_date BETWEEN $P{fromDate} AND $P{toDate} 
+order by sat.transaction_date,sat.created_date,sat.id;</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Savings Transactions</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="152" height="20"><text>Transaction Date</text></element><element kind="staticText" x="176" y="0" width="152" height="20"><text>Details</text></element><element kind="staticText" x="332" y="0" width="152" height="20"><text>Deposit</text></element><element kind="staticText" x="488" y="0" width="152" height="20"><text>Withdrawal</text></element><element kind="staticText" x="644" y="0" width="152" height="20"><text>Balance</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="152" height="18"><expression>$F{Transaction Date}</expression></element><element kind="textField" blankWhenNull="true" x="176" y="0" width="152" height="18"><expression>$F{Details}</expression></element><element kind="textField" blankWhenNull="true" x="332" y="0" width="152" height="18"><expression>$F{Deposit}</expression></element><element kind="textField" blankWhenNull="true" x="488" y="0" width="152" height="18"><expression>$F{Withdrawal}</expression></element><element kind="textField" blankWhenNull="true" x="644" y="0" width="152" height="18"><expression>$F{Balance}</expression></element></band>
+    </detail>
+</jasperReport>

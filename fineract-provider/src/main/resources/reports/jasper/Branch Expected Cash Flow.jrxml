@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Branch Expected Cash Flow" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="fromDate" class="java.lang.String" />
+    <parameter name="toDate" class="java.lang.String" />
+    <parameter name="selectOffice" class="java.lang.String" />
+    <field name="prin" class="java.lang.String" />
+    <field name="intr" class="java.lang.String" />
+    <field name="fee" class="java.lang.String" />
+    <field name="pen" class="java.lang.String" />
+    <field name="dis" class="java.lang.String" />
+    <field name="curr" class="java.lang.String" />
+    <field name="loan_disb" class="java.lang.String" />
+    <query language="SQL">SELECT 
+office,
+action_date, 
+SUM(principal) AS prin, 
+SUM(interest) AS intr, 
+SUM(fees) AS fee, 
+SUM(penalty) AS pen, 
+SUM(loan_disb) AS dis,
+curr AS curr
+FROM
+(
+
+/*Repayments and Fees/penalties*/
+(SELECT mr.duedate action_date,
+ounder.name office, 
+SUM(IFNULL(mr.principal_amount,0)) principal, 
+SUM(IFNULL(mr.interest_amount,0))- SUM(IFNULL(mr.interest_waived_derived,0)) interest, 
+SUM(IFNULL(mr.fee_charges_amount,0))- SUM(IFNULL(mr.fee_charges_waived_derived,0)) fees, 
+SUM(IFNULL(mr.penalty_charges_amount,0))- SUM(IFNULL(mr.penalty_charges_waived_derived,0)) penalty,
+0.0 AS loan_disb,
+ml.currency_code curr
+FROM 
+m_office mo
+JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%')
+  AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+LEFT JOIN m_client mc ON mc.office_id=ounder.id
+JOIN m_loan ml ON ml.client_id=mc.id
+JOIN m_loan_repayment_schedule mr ON mr.loan_id=ml.id
+WHERE mo.id=$P{selectOffice}
+AND mr.duedate BETWEEN $P{fromDate} AND $P{toDate}
+AND mr.completed_derived=0
+AND ml.loan_status_id in (100, 200, 300)
+GROUP BY ounder.id,ml.currency_code,mr.duedate
+ORDER BY ounder.name,ml.currency_code,mr.duedate) 
+
+UNION ALL
+
+/*Disbursals And Fees at disbursals*/
+(SELECT ml.expected_disbursedon_date action_date,
+ounder.name office,
+0.0 principal,
+0.0 interest, 
+SUM(IFNULL(ml.total_charges_due_at_disbursement_derived,0)) fees,
+0.0 penalty, 
+SUM(ml.principal_amount) AS loan_disb,
+ml.currency_code curr
+FROM 
+m_office mo
+JOIN m_office ounder ON ounder.hierarchy LIKE CONCAT(mo.hierarchy, '%')
+  AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+LEFT JOIN m_client mc ON mc.office_id=ounder.id
+JOIN m_loan ml ON ml.client_id=mc.id
+WHERE mo.id=$P{selectOffice} 
+AND ml.expected_disbursedon_date BETWEEN $P{fromDate} AND $P{toDate} 
+AND ml.loan_status_id IN (100,200)
+GROUP BY ounder.id,ml.currency_code,ml.expected_disbursedon_date
+ORDER BY ounder.name,ml.expected_disbursedon_date,ml.expected_disbursedon_date)
+) results
+GROUP BY office,curr,action_date</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Branch Expected Cash Flow</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="107" height="20"><text>prin</text></element><element kind="staticText" x="131" y="0" width="107" height="20"><text>intr</text></element><element kind="staticText" x="242" y="0" width="107" height="20"><text>fee</text></element><element kind="staticText" x="353" y="0" width="107" height="20"><text>pen</text></element><element kind="staticText" x="464" y="0" width="107" height="20"><text>dis</text></element><element kind="staticText" x="575" y="0" width="107" height="20"><text>curr</text></element><element kind="staticText" x="686" y="0" width="107" height="20"><text>loan_disb</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="107" height="18"><expression>$F{prin}</expression></element><element kind="textField" blankWhenNull="true" x="131" y="0" width="107" height="18"><expression>$F{intr}</expression></element><element kind="textField" blankWhenNull="true" x="242" y="0" width="107" height="18"><expression>$F{fee}</expression></element><element kind="textField" blankWhenNull="true" x="353" y="0" width="107" height="18"><expression>$F{pen}</expression></element><element kind="textField" blankWhenNull="true" x="464" y="0" width="107" height="18"><expression>$F{dis}</expression></element><element kind="textField" blankWhenNull="true" x="575" y="0" width="107" height="18"><expression>$F{curr}</expression></element><element kind="textField" blankWhenNull="true" x="686" y="0" width="107" height="18"><expression>$F{loan_disb}</expression></element></band>
+    </detail>
+</jasperReport>

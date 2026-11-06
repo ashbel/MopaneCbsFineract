@@ -24,11 +24,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -39,6 +39,7 @@ import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.loanschedule.domain.AprCalculator;
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
@@ -125,6 +126,9 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     @Column(name = "days_in_year_enum", nullable = false)
     private Integer daysInYearType;
 
+    @Column(name = "weeks_in_year_enum", nullable = false)
+    private Integer weeksInYearType = WeeksInYearType.WEEKS_52.getValue();
+
     @Column(name = "interest_recalculation_enabled")
     private boolean isInterestRecalculationEnabled;
     
@@ -138,13 +142,14 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
             final Integer repaymentEvery, final PeriodFrequencyType repaymentPeriodFrequencyType, final Integer numberOfRepayments,
             final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods, final Integer graceOnInterestPayment, final Integer graceOnInterestCharged,
             final AmortizationMethod amortizationMethod, final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing,
-            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization) {
+            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization,
+            final Integer weeksInYearType) {
 
         return new LoanProductRelatedDetail(currency, principal, nominalInterestRatePerPeriod, interestRatePeriodFrequencyType,
                 nominalAnnualInterestRate, interestMethod, interestCalculationPeriodMethod, allowPartialPeriodInterestCalcualtion,
                 repaymentEvery, repaymentPeriodFrequencyType, numberOfRepayments, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment,
                 graceOnInterestCharged, amortizationMethod, inArrearsTolerance, graceOnArrearsAgeing, daysInMonthType, daysInYearType,
-                isInterestRecalculationEnabled, isEqualAmortization);
+                isInterestRecalculationEnabled, isEqualAmortization, weeksInYearType);
     }
 
     protected LoanProductRelatedDetail() {
@@ -158,7 +163,8 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
             final Integer repayEvery, final PeriodFrequencyType repaymentFrequencyType, final Integer defaultNumberOfRepayments,
             final Integer graceOnPrincipalPayment, final Integer recurringMoratoriumOnPrincipalPeriods, final Integer graceOnInterestPayment, final Integer graceOnInterestCharged,
             final AmortizationMethod amortizationMethod, final BigDecimal inArrearsTolerance, final Integer graceOnArrearsAgeing,
-            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization) {
+            final Integer daysInMonthType, final Integer daysInYearType, final boolean isInterestRecalculationEnabled, final boolean isEqualAmortization,
+            final Integer weeksInYearType) {
         this.currency = currency;
         this.principal = defaultPrincipal;
         this.nominalInterestRatePerPeriod = defaultNominalInterestRatePerPeriod;
@@ -183,6 +189,7 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
         this.graceOnArrearsAgeing = graceOnArrearsAgeing;
         this.daysInMonthType = daysInMonthType;
         this.daysInYearType = daysInYearType;
+        this.weeksInYearType = weeksInYearType == null ? WeeksInYearType.WEEKS_52.getValue() : weeksInYearType;
         this.isInterestRecalculationEnabled = isInterestRecalculationEnabled;
         this.isEqualAmortization = isEqualAmortization;
     }
@@ -494,6 +501,14 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
             this.daysInYearType = newValue;
         }
 
+        if (command.isChangeInIntegerParameterNamed(LoanProductConstants.weeksInYearTypeParameterName, this.weeksInYearType)) {
+            final Integer newValue = command.integerValueOfParameterNamed(LoanProductConstants.weeksInYearTypeParameterName);
+            actualChanges.put(LoanProductConstants.weeksInYearTypeParameterName, newValue);
+            actualChanges.put("locale", localeAsInput);
+            this.weeksInYearType = WeeksInYearType.fromInt(newValue).getValue();
+            updateInterestRateDerivedFields(aprCalculator);
+        }
+
         if (command.isChangeInBooleanParameterNamed(LoanProductConstants.isInterestRecalculationEnabledParameterName,
                 this.isInterestRecalculationEnabled)) {
             final boolean newValue = command
@@ -565,7 +580,8 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
     }
 
     private void updateInterestRateDerivedFields(final AprCalculator aprCalculator) {
-        this.annualNominalInterestRate = aprCalculator.calculateFrom(this.interestPeriodFrequencyType, this.nominalInterestRatePerPeriod);
+        this.annualNominalInterestRate = aprCalculator.calculateFrom(this.interestPeriodFrequencyType, this.nominalInterestRatePerPeriod,
+                fetchWeeksInYearType());
     }
 
     public boolean hasCurrencyCodeOf(final String currencyCode) {
@@ -587,6 +603,10 @@ public class LoanProductRelatedDetail implements LoanProductMinimumRepaymentSche
 
     public DaysInYearType fetchDaysInYearType() {
         return DaysInYearType.fromInt(this.daysInYearType);
+    }
+
+    public WeeksInYearType fetchWeeksInYearType() {
+        return WeeksInYearType.fromInt(this.weeksInYearType);
     }
 
     public boolean isInterestRecalculationEnabled() {

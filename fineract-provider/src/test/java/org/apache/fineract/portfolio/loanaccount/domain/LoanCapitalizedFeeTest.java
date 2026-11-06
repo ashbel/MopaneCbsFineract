@@ -32,6 +32,8 @@ import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.charge.domain.ChargeCalculationType;
 import org.apache.fineract.portfolio.charge.domain.ChargePaymentMode;
 import org.apache.fineract.portfolio.charge.domain.ChargeTimeType;
+import org.apache.fineract.portfolio.charge.service.ChargeEnumerations;
+import org.apache.fineract.portfolio.loanaccount.data.LoanChargeData;
 import org.joda.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,5 +96,15 @@ public class LoanCapitalizedFeeTest {
                 org.apache.fineract.infrastructure.core.service.DateUtils.getLocalDateTimeOfTenant(), null);
         assertTrue(tx.isCapitalisedFee());
         assertTrue(tx.getPrincipalPortion(usd).isEqualTo(hundred));
+    }
+
+    @Test
+    public void unpaidDisbursementCapitalisedChargeDataIsPrincipalCapitalizing() {
+        org.apache.fineract.infrastructure.core.data.EnumOptionData time = ChargeEnumerations
+                .chargeTimeType(ChargeTimeType.DISBURSEMENT_CAPITALISED);
+        LoanChargeData unpaid = new LoanChargeData(1L, new BigDecimal("12.00"), time, 7647L, false, false, false);
+        assertTrue(unpaid.isUnpaidPrincipalCapitalizingFee());
+        LoanChargeData paid = new LoanChargeData(1L, new BigDecimal("12.00"), time, 7647L, false, true, false);
+        assertFalse(paid.isUnpaidPrincipalCapitalizingFee());
     }
 }

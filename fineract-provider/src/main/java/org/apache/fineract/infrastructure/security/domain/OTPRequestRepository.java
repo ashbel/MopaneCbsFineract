@@ -34,14 +34,14 @@ public class OTPRequestRepository {
 
 
     public OTPRequest getOTPRequestForUser(AppUser user) {
-        Assert.notNull(user);
+        Assert.notNull(user, "user");
 
         return this.OTPrequests.get(user.getId());
     }
 
     public void addOTPRequest(AppUser user, OTPRequest request) {
-        Assert.notNull(user);
-        Assert.notNull(request);
+        Assert.notNull(user, "user");
+        Assert.notNull(request, "request");
         this.OTPrequests.put(user.getId(), request);
     }
 

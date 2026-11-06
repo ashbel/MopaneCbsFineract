@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
@@ -43,7 +43,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.apache.fineract.infrastructure.security.service.LegacyOAuthTokenService;
 import org.springframework.stereotype.Component;
 
 /*
@@ -55,13 +55,13 @@ import org.springframework.stereotype.Component;
 @Scope("singleton")
 public class UserDetailsApiResource {
 
-    private final ResourceServerTokenServices tokenServices;
+    private final LegacyOAuthTokenService tokenServices;
     private final ToApiJsonSerializer<AuthenticatedOauthUserData> apiJsonSerializerService;
     private final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext;
     private final TwoFactorUtils twoFactorUtils;
 
     @Autowired
-    public UserDetailsApiResource(@Qualifier("tokenServices") final ResourceServerTokenServices tokenServices,
+    public UserDetailsApiResource(@Qualifier("tokenServices") final LegacyOAuthTokenService tokenServices,
             final ToApiJsonSerializer<AuthenticatedOauthUserData> apiJsonSerializerService,
             final SpringSecurityPlatformSecurityContext springSecurityPlatformSecurityContext,
             final TwoFactorUtils twoFactorUtils) {

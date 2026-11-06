@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
@@ -175,7 +175,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private LoanTransactionProcessingStrategy findStrategyByIdIfProvided(final Long transactionProcessingStrategyId) {
         LoanTransactionProcessingStrategy strategy = null;
         if (transactionProcessingStrategyId != null) {
-            strategy = this.loanTransactionProcessingStrategyRepository.findOne(transactionProcessingStrategyId);
+            strategy = this.loanTransactionProcessingStrategyRepository.findById(transactionProcessingStrategyId).orElse(null);
             if (strategy == null) { throw new LoanTransactionProcessingStrategyNotFoundException(transactionProcessingStrategyId); }
         }
         return strategy;
@@ -184,7 +184,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
     private Fund findFundByIdIfProvided(final Long fundId) {
         Fund fund = null;
         if (fundId != null) {
-            fund = this.fundRepository.findOne(fundId);
+            fund = this.fundRepository.findById(fundId).orElse(null);
             if (fund == null) { throw new FundNotFoundException(fundId); }
         }
         return fund;
@@ -197,7 +197,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         try {
             this.context.authenticatedUser();
 
-            final LoanProduct product = this.loanProductRepository.findOne(loanProductId);
+            final LoanProduct product = this.loanProductRepository.findById(loanProductId).orElse(null);
             if (product == null) { throw new LoanProductNotFoundException(loanProductId); }
 
             this.fromApiJsonDeserializer.validateForUpdate(command.json(), product);

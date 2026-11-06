@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Staff Assignment History" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="centerId" class="java.lang.String" />
+    <field name="dadate" class="java.lang.String" />
+    <field name="last_modified_by" class="java.lang.String" />
+    <query language="SQL">select mgc.id center_id
+,mgc.display_name center_name
+,msah.staff_id staff_id
+,ms.display_name staff_name
+, msah.start_date from_date
+,msah.end_date
+,msah.created_date 
+,if(msah.end_date!=msah.created_date,msah.lastmodified_date,'') AS dadate
+,msah.createdby_id 
+,concat(u.firstname,' ',u.lastname) created_by
+,if(msah.end_date!=msah.created_date,concat(ul.firstname,' ',ul.lastname),'') AS last_modified_by
+
+
+
+from m_staff_assignment_history msah
+
+inner join m_group mgc on mgc.id=msah.centre_id and mgc.level_id=1
+inner join m_staff ms on ms.id=msah.staff_id
+inner join m_appuser u on u.id=msah.createdby_id
+inner join m_appuser ul on ul.id=msah.lastmodifiedby_id
+where mgc.id=$P{centerId}</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Staff Assignment History</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="156" height="20"><text>dadate</text></element><element kind="staticText" x="180" y="0" width="156" height="20"><text>last_modified_by</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="156" height="18"><expression>$F{dadate}</expression></element><element kind="textField" blankWhenNull="true" x="180" y="0" width="156" height="18"><expression>$F{last_modified_by}</expression></element></band>
+    </detail>
+</jasperReport>

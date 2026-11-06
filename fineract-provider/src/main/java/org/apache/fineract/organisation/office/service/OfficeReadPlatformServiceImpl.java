@@ -68,7 +68,7 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         public String officeSchema() {
             return " o.id as id, o.name as name, "
                     + nameDecoratedBaseOnHierarchy
-                    + " as nameDecorated, o.external_id as externalId, o.opening_date as openingDate, o.hierarchy as hierarchy, parent.id as parentId, parent.name as parentName "
+                    + " as nameDecorated, o.external_id as externalId, o.short_code as shortCode, o.opening_date as openingDate, o.hierarchy as hierarchy, parent.id as parentId, parent.name as parentName "
                     + "from m_office o LEFT JOIN m_office AS parent ON parent.id = o.parent_id ";
         }
 
@@ -79,12 +79,13 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
             final String name = rs.getString("name");
             final String nameDecorated = rs.getString("nameDecorated");
             final String externalId = rs.getString("externalId");
+            final String shortCode = rs.getString("shortCode");
             final LocalDate openingDate = JdbcSupport.getLocalDate(rs, "openingDate");
             final String hierarchy = rs.getString("hierarchy");
             final Long parentId = JdbcSupport.getLong(rs, "parentId");
             final String parentName = rs.getString("parentName");
 
-            return new OfficeData(id, name, nameDecorated, externalId, openingDate, hierarchy, parentId, parentName, null);
+            return new OfficeData(id, name, nameDecorated, externalId, shortCode, openingDate, hierarchy, parentId, parentName, null);
         }
     }
 

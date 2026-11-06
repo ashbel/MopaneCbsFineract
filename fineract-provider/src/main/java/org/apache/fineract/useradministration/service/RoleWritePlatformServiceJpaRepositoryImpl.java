@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -132,7 +132,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
 
             this.roleCommandFromApiJsonDeserializer.validateForUpdate(command.json());
 
-            final Role role = this.roleRepository.findOne(roleId);
+            final Role role = this.roleRepository.findById(roleId).orElse(null);
             if (role == null) { throw new RoleNotFoundException(roleId); }
 
             String previousRoleName = role.getName();
@@ -169,7 +169,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
     public CommandProcessingResult updateRolePermissions(final Long roleId, final JsonCommand command) {
         this.context.authenticatedUser();
 
-        final Role role = this.roleRepository.findOne(roleId);
+        final Role role = this.roleRepository.findById(roleId).orElse(null);
         if (role == null) { throw new RoleNotFoundException(roleId); }
 
         final Collection<Permission> allPermissions = this.permissionRepository.findAll();
@@ -222,7 +222,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             /**
              * Checking the role present in DB or not using role_id
              */
-            final Role role = this.roleRepository.findOne(roleId);
+            final Role role = this.roleRepository.findById(roleId).orElse(null);
             if (role == null) { throw new RoleNotFoundException(roleId); }
             
             /**
@@ -251,7 +251,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             /**
              * Checking the role present in DB or not using role_id
              */
-            final Role role = this.roleRepository.findOne(roleId);
+            final Role role = this.roleRepository.findById(roleId).orElse(null);
             if (role == null) { throw new RoleNotFoundException(roleId); }
             //if(role.isDisabled()){throw new RoleNotFoundException(roleId);}
             
@@ -284,7 +284,7 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
             /**
              * Checking the role present in DB or not using role_id
              */
-            final Role role = this.roleRepository.findOne(roleId);
+            final Role role = this.roleRepository.findById(roleId).orElse(null);
             if (role == null) { throw new RoleNotFoundException(roleId); }
             //if(!role.isEnabled()){throw new RoleNotFoundException(roleId);}
             

@@ -126,7 +126,7 @@ public class SavingsAccountChargeAssembler {
                     } else {
                         final Long savingsAccountChargeId = id;
                         final SavingsAccountCharge savingsAccountCharge = this.savingsAccountChargeRepository
-                                .findOne(savingsAccountChargeId);
+                                .findById(savingsAccountChargeId).orElse(null);
                         if (savingsAccountCharge == null) { throw new SavingsAccountChargeNotFoundException(savingsAccountChargeId); }
 
                         savingsAccountCharge.update(amount, dueDate, feeOnMonthDay, feeInterval);

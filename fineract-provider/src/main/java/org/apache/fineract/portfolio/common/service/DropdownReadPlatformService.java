@@ -31,4 +31,6 @@ public interface DropdownReadPlatformService {
     List<EnumOptionData> retrieveDaysInMonthTypeOptions();
 
     List<EnumOptionData> retrieveDaysInYearTypeOptions();
+
+    List<EnumOptionData> retrieveWeeksInYearTypeOptions();
 }

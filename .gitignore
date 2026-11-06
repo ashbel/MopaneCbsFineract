@@ -1,12 +1,17 @@
 *.class
 *.jar
+# The Gradle wrapper jar is part of the build; README now says to run ./gradlew
+# directly, so a clone has to carry it.
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 .gradle
 build
 .DS_Store
 deploy/docker/.env
+deploy/docker/observability/.env
 deploy/docker/tomcat/fineract-provider.war
+deploy/docker/.mifosx/
 # Built community-app assets — deploy from mopane-cbs-ui (see deploy/docker/README.md)
 deploy/docker/ui/dist/**
 !deploy/docker/ui/dist/.gitkeep

@@ -20,7 +20,7 @@ package org.apache.fineract.spm.domain;
 
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "m_survey_responses")

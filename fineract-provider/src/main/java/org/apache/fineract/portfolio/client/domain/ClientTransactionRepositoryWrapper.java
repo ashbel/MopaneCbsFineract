@@ -37,7 +37,7 @@ public class ClientTransactionRepositoryWrapper {
     }
 
     public ClientTransaction findOneWithNotFoundDetection(final Long clientId, final Long transactionId) {
-        final ClientTransaction clientTransaction = this.repository.findOne(transactionId);
+        final ClientTransaction clientTransaction = this.repository.findById(transactionId).orElse(null);
         if (clientTransaction == null
                 || !clientTransaction.getClientId().equals(clientId)) { throw new ClientTransactionNotFoundException(clientId, transactionId); }
         // enrich Client charge with details of Organizational currency

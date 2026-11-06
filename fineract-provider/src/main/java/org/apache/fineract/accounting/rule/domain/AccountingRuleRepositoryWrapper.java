@@ -38,7 +38,7 @@ public class AccountingRuleRepositoryWrapper {
     }
 
     public AccountingRule findOneWithNotFoundDetection(final Long id) {
-        final AccountingRule accountingRule = this.repository.findOne(id);
+        final AccountingRule accountingRule = this.repository.findById(id).orElse(null);
         if (accountingRule == null) { throw new AccountingRuleNotFoundException(id); }
         return accountingRule;
     }

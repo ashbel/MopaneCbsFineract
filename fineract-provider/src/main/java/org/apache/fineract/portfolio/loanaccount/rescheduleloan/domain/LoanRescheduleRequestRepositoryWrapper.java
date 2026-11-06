@@ -39,7 +39,7 @@ public class LoanRescheduleRequestRepositoryWrapper {
 
     @Transactional(readOnly = true)
     public LoanRescheduleRequest findOneWithNotFoundDetection(final Long id, boolean loadLazyCollections) {
-        final LoanRescheduleRequest loanRescheduleRequest = this.loanRescheduleRequestRepository.findOne(id);
+        final LoanRescheduleRequest loanRescheduleRequest = this.loanRescheduleRequestRepository.findById(id).orElse(null);
         if (loanRescheduleRequest == null) { throw new LoanRescheduleRequestNotFoundException(id); }
         if (loadLazyCollections) {
             loanRescheduleRequest.getLoan().initializeLazyCollections();

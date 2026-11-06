@@ -8,40 +8,18 @@ The next evolution of Apache Fineract focuses on being faster, lighter and cheap
 
 Requirements
 ============
-* Java >= 1.8 (Oracle JVMS have been tested)
-* gradle-wrapper.jar version 2.10
-* MySQL 5.5
-
-Instructions to download gradle wrapper
-============
-By running following command, it will download the gradle wrapper from Fineract git repository and puts under fineract-provider/gradle/wrapper
-
-wget --no-check-certificate -P fineract-provider/gradle/wrapper https://github.com/apache/incubator-fineract/raw/develop/fineract-provider/gradle/wrapper/gradle-wrapper.jar
-(or)
-curl --insecure -L https://github.com/apache/incubator-fineract/raw/develop/fineract-provider/gradle/wrapper/gradle-wrapper.jar > fineract-provider/gradle/wrapper/gradle-wrapper.jar
-
-Instructions to run Apache RAT (Release Audit Tool)
-============
-1. Extract the archive file to your local directory.
-2. Download gradle-wrapper.jar version 2.10 and place it in the fineract-provider/gradle/wrapper folder. See 'Instructions to download gradle wrapper' above.
-3. Run `./gradlew rat`. Report will be generated under build/reports/rat/rat-report.txt
-
-Pentaho reporting dependencies (required before first build)
-============
-Public Maven mirrors for Pentaho 3.9.x no longer work. **Run once** from the repo root:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File fineract-provider/scripts/bootstrap-pentaho-m2.ps1
-```
-
-This downloads from SourceForge (~70 MB + ~178 MB for Report Designer CE on first run) into `fineract-provider/pentaho-m2-local/`. Set `MOPANE_PRD_ZIP` if you already have `prd-ce-3.9.1-GA.zip`. See `fineract-provider/pentaho-m2-local/README.md`.
+* Java 21 (Temurin 21 is the toolchain this build uses)
+* Gradle wrapper 8.10.2
+* MySQL 8
 
 Instructions to build war file
 ============
-1. Extract the archive file to your local directory.
-2. Download gradle-wrapper.jar version 2.10 and place it in the fineract-provider/gradle/wrapper folder. See 'Instructions to download gradle wrapper' above.
-3. Run the **Pentaho reporting dependencies** step above if you have not already.
-4. Run `./gradlew clean war` or `./gradlew build` to build deployable war file which will be created at build/libs directory.
+1. Install JDK 21 and set `JAVA_HOME` to it.
+2. Run `./gradlew clean bootWar` from the repository root. The war is written under `build/libs`.
+
+Reports
+============
+Designer reports are JasperReports 7 templates on the classpath at `fineract-provider/src/main/resources/reports/jasper`. `GET /runreports/{reportName}` still accepts `output-type` of PDF, XLS, XLSX, CSV, or HTML. Rows with `report_type` Pentaho are rendered by the same Jasper service so existing screens keep exporting. Table and Chart reports stay SQL. SSB workbooks and the RBZ Form MFI-1 filler stay on Apache POI.
 
 
 Instructions to execute Integration tests

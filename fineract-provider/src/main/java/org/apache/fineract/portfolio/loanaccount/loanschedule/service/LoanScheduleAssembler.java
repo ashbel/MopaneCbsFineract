@@ -67,6 +67,7 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.portfolio.common.domain.DayOfWeekType;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.apache.fineract.portfolio.common.domain.NthDayType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateDTO;
@@ -176,7 +177,7 @@ public class LoanScheduleAssembler {
     public LoanApplicationTerms assembleLoanTerms(final JsonElement element) {
         final Long loanProductId = this.fromApiJsonHelper.extractLongNamed("productId", element);
 
-        final LoanProduct loanProduct = this.loanProductRepository.findOne(loanProductId);
+        final LoanProduct loanProduct = this.loanProductRepository.findById(loanProductId).orElse(null);
         if (loanProduct == null) { throw new LoanProductNotFoundException(loanProductId); }
 
         return assembleLoanApplicationTermsFrom(element, loanProduct);
@@ -227,7 +228,8 @@ public class LoanScheduleAssembler {
 
         BigDecimal annualNominalInterestRate = BigDecimal.ZERO;
         if (interestRatePerPeriod != null) {
-            annualNominalInterestRate = this.aprCalculator.calculateFrom(interestRatePeriodFrequencyType, interestRatePerPeriod);
+            annualNominalInterestRate = this.aprCalculator.calculateFrom(interestRatePeriodFrequencyType, interestRatePerPeriod,
+                    loanProduct.fetchWeeksInYearType());
         }
             
         // disbursement details
@@ -263,7 +265,7 @@ public class LoanScheduleAssembler {
          * meeting freq multiples
          */
         if ((loanType.isJLGAccount() || loanType.isGroupAccount()) && calendarId != null) {
-            calendar = this.calendarRepository.findOne(calendarId);
+            calendar = this.calendarRepository.findById(calendarId).orElse(null);
             if (calendar == null) { throw new CalendarNotFoundException(calendarId); }
             final PeriodFrequencyType meetingPeriodFrequency = CalendarUtils.getMeetingPeriodFrequencyType(calendar.getRecurrence());
             validateRepaymentFrequencyIsSameAsMeetingFrequency(meetingPeriodFrequency.getValue(), repaymentFrequencyType,
@@ -347,6 +349,7 @@ public class LoanScheduleAssembler {
         final DaysInMonthType daysInMonthType = loanProduct.fetchDaysInMonthType();
 
         final DaysInYearType daysInYearType = loanProduct.fetchDaysInYearType();
+        final WeeksInYearType weeksInYearType = loanProduct.fetchWeeksInYearType();
 
         final boolean isInterestRecalculationEnabled = loanProduct.isInterestRecalculationEnabled();
         RecalculationFrequencyType recalculationFrequencyType = null;
@@ -455,7 +458,7 @@ public class LoanScheduleAssembler {
                 allowPartialPeriodInterestCalcualtion, principalMoney, expectedDisbursementDate, repaymentsStartingFromDate,
                 calculatedRepaymentsStartingFromDate, graceOnPrincipalPayment, recurringMoratoriumOnPrincipalPeriods, graceOnInterestPayment, graceOnInterestCharged,
                 interestChargedFromDate, inArrearsToleranceMoney, loanProduct.isMultiDisburseLoan(), emiAmount, disbursementDatas,
-                maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, isInterestRecalculationEnabled,
+                maxOutstandingBalance, graceOnArrearsAgeing, daysInMonthType, daysInYearType, weeksInYearType, isInterestRecalculationEnabled,
                 recalculationFrequencyType, restCalendarInstance, compoundingMethod, compoundingCalendarInstance, compoundingFrequencyType,
                 principalThresholdForLastInstalment, installmentAmountInMultiplesOf, loanProduct.preCloseInterestCalculationStrategy(),
                 calendar, BigDecimal.ZERO, loanTermVariations, isInterestChargedFromDateSameAsDisbursalDateEnabled,numberOfDays, isSkipMeetingOnFirstDay, detailDTO,

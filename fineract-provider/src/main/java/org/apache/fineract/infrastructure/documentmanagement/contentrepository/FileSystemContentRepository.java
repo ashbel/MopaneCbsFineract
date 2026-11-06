@@ -35,7 +35,7 @@ import org.apache.fineract.infrastructure.documentmanagement.exception.ContentMa
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lowagie.text.pdf.codec.Base64;
+import java.util.Base64;
 
 public class FileSystemContentRepository implements ContentRepository {
 
@@ -80,7 +80,7 @@ public class FileSystemContentRepository implements ContentRepository {
         final String fileLocation = uploadImageLocation + File.separator + imageName + base64EncodedImage.getFileExtension();
         try {
             final OutputStream out = new FileOutputStream(new File(fileLocation));
-            final byte[] imgBytes = Base64.decode(base64EncodedImage.getBase64EncodedString());
+            final byte[] imgBytes = Base64.getDecoder().decode(base64EncodedImage.getBase64EncodedString());
             out.write(imgBytes);
             out.flush();
             out.close();

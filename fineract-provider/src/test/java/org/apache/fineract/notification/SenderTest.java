@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.notification;
 
-import com.mockrunner.mock.jms.MockQueue;
 import org.apache.fineract.notification.data.NotificationData;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,9 +27,10 @@ import org.springframework.jms.core.MessageCreator;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
 
 @ContextConfiguration(locations = {
         "classpath:META-INF/testNotificationContext.xml",
@@ -42,7 +42,7 @@ public class SenderTest {
     private JmsTemplate jmsTemplate;
 
     @Autowired
-    private MockQueue mockQueue;
+    private Queue mockQueue;
 
     @Test
     public void notificationCreation() {

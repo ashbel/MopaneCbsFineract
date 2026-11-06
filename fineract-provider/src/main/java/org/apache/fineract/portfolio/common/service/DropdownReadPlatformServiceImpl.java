@@ -22,6 +22,7 @@ import static org.apache.fineract.portfolio.common.service.CommonEnumerations.co
 import static org.apache.fineract.portfolio.common.service.CommonEnumerations.daysInMonthType;
 import static org.apache.fineract.portfolio.common.service.CommonEnumerations.daysInYearType;
 import static org.apache.fineract.portfolio.common.service.CommonEnumerations.termFrequencyType;
+import static org.apache.fineract.portfolio.common.service.CommonEnumerations.weeksInYearType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.apache.fineract.portfolio.common.domain.ConditionType;
 import org.apache.fineract.portfolio.common.domain.DaysInMonthType;
 import org.apache.fineract.portfolio.common.domain.DaysInYearType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
+import org.apache.fineract.portfolio.common.domain.WeeksInYearType;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -66,6 +68,11 @@ public class DropdownReadPlatformServiceImpl implements DropdownReadPlatformServ
         final List<EnumOptionData> daysInYearTypeOptions = Arrays.asList(daysInYearType(DaysInYearType.ACTUAL),
                 daysInYearType(DaysInYearType.DAYS_360), daysInYearType(DaysInYearType.DAYS_364), daysInYearType(DaysInYearType.DAYS_365));
         return daysInYearTypeOptions;
+    }
+
+    @Override
+    public List<EnumOptionData> retrieveWeeksInYearTypeOptions() {
+        return Arrays.asList(weeksInYearType(WeeksInYearType.WEEKS_52), weeksInYearType(WeeksInYearType.WEEKS_48));
     }
 
 }

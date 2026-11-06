@@ -20,7 +20,7 @@ package org.apache.fineract.portfolio.client.service;
 
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
@@ -125,7 +125,7 @@ public class ClientIdentifierWritePlatformServiceJpaRepositoryImpl implements Cl
             CodeValue documentType = null;
 
             final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
-            final ClientIdentifier clientIdentifierForUpdate = this.clientIdentifierRepository.findOne(identifierId);
+            final ClientIdentifier clientIdentifierForUpdate = this.clientIdentifierRepository.findById(identifierId).orElse(null);
             if (clientIdentifierForUpdate == null) { throw new ClientIdentifierNotFoundException(identifierId); }
 
             final Map<String, Object> changes = clientIdentifierForUpdate.update(command);
@@ -177,7 +177,7 @@ public class ClientIdentifierWritePlatformServiceJpaRepositoryImpl implements Cl
 
         final Client client = this.clientRepository.findOneWithNotFoundDetection(clientId);
 
-        final ClientIdentifier clientIdentifier = this.clientIdentifierRepository.findOne(identifierId);
+        final ClientIdentifier clientIdentifier = this.clientIdentifierRepository.findById(identifierId).orElse(null);
         if (clientIdentifier == null) { throw new ClientIdentifierNotFoundException(identifierId); }
         this.clientIdentifierRepository.delete(clientIdentifier);
 

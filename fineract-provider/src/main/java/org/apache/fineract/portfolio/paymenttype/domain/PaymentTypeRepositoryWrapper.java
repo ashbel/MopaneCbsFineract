@@ -33,7 +33,7 @@ public class PaymentTypeRepositoryWrapper {
     }
 
     public PaymentType findOneWithNotFoundDetection(final Long id) {
-        final PaymentType paymentType = this.repository.findOne(id);
+        final PaymentType paymentType = this.repository.findById(id).orElse(null);
         if (paymentType == null) { throw new PaymentTypeNotFoundException(id); }
         return paymentType;
     }

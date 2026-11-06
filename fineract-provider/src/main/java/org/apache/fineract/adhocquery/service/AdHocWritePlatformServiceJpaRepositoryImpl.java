@@ -105,7 +105,7 @@ public class AdHocWritePlatformServiceJpaRepositoryImpl implements AdHocWritePla
 
             this.adHocCommandFromApiJsonDeserializer.validateForUpdate(command.json());
 
-            final AdHoc adHoc = this.adHocRepository.findOne(adHocId);
+            final AdHoc adHoc = this.adHocRepository.findById(adHocId).orElse(null);
             if (adHoc == null) { throw new AdHocNotFoundException(adHocId); }
 
             final Map<String, Object> changes = adHoc.update(command);
@@ -136,7 +136,7 @@ public class AdHocWritePlatformServiceJpaRepositoryImpl implements AdHocWritePla
             /**
              * Checking the adhocQuery present in DB or not using adHocId
              */
-            final AdHoc adHoc = this.adHocRepository.findOne(adHocId);
+            final AdHoc adHoc = this.adHocRepository.findById(adHocId).orElse(null);
             if (adHoc == null) { throw new AdHocNotFoundException(adHocId); }
             
             this.adHocRepository.delete(adHoc);
@@ -157,7 +157,7 @@ public class AdHocWritePlatformServiceJpaRepositoryImpl implements AdHocWritePla
             /**
              * Checking the adhocquery present in DB or not using adHocId
              */
-            final AdHoc adHoc = this.adHocRepository.findOne(adHocId);
+            final AdHoc adHoc = this.adHocRepository.findById(adHocId).orElse(null);
             if (adHoc == null) { throw new AdHocNotFoundException(adHocId); }
             adHoc.disableActive();
             this.adHocRepository.save(adHoc);
@@ -179,7 +179,7 @@ public class AdHocWritePlatformServiceJpaRepositoryImpl implements AdHocWritePla
             /**
              * Checking the adHoc present in DB or not using id
              */
-            final AdHoc adHoc = this.adHocRepository.findOne(adHocId);
+            final AdHoc adHoc = this.adHocRepository.findById(adHocId).orElse(null);
             if (adHoc == null) { throw new AdHocNotFoundException(adHocId); }
             adHoc.enableActive();
             this.adHocRepository.save(adHoc);

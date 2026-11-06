@@ -32,17 +32,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.fineract.mix.data.MixTaxonomyData;
-import org.apache.fineract.mix.data.NamespaceData;
 import org.apache.fineract.mix.service.NamespaceReadPlatformServiceImpl;
 import org.apache.fineract.mix.service.XBRLBuilder;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -53,15 +50,6 @@ public class XBRLBuilderTest {
     private NamespaceReadPlatformServiceImpl readNamespaceService;
     @InjectMocks
     private final XBRLBuilder xbrlBuilder = new XBRLBuilder();
-
-    @Before
-    public void setUp() throws Exception {
-
-        this.readNamespaceService = Mockito.mock(NamespaceReadPlatformServiceImpl.class);
-        when(this.readNamespaceService.retrieveNamespaceByPrefix(Matchers.anyString())).thenReturn(
-                new NamespaceData(1l, "mockedprefix", "mockedurl"));
-
-    }
 
     @SuppressWarnings("null")
     @Test

@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="Aging Summary (Arrears in Weeks)(Pentaho)" pageWidth="880" pageHeight="595" orientation="Landscape" columnWidth="840" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <parameter name="userhierarchy" class="java.lang.String" />
+    <parameter name="userid" class="java.lang.String" />
+    <parameter name="Branch" class="java.lang.String" />
+    <parameter name="CurrencyId" class="java.lang.String" />
+    <field name="currency" class="java.lang.String" />
+    <field name="Name" class="java.lang.String" />
+    <field name="No Of Loans" class="java.lang.String" />
+    <field name="Original Principal" class="java.lang.String" />
+    <field name="Original Interest" class="java.lang.String" />
+    <field name="Principal Paid" class="java.lang.String" />
+    <field name="Interest Paid" class="java.lang.String" />
+    <field name="Principal Overdue" class="java.lang.String" />
+    <field name="Interest Overdue" class="java.lang.String" />
+    <field name="Weeks In Arrears (Up To)" class="java.lang.String" />
+    <query language="SQL">SELECT 
+  IFNULL(periods.currencyName, periods.currency) as currency, ars.Name as Name,
+  periods.period_no 'Weeks In Arrears (Up To)', 
+  IFNULL(ars.loanId, 0) 'No Of Loans', 
+  IFNULL(ars.principal,0.0) 'Original Principal', 
+  IFNULL(ars.interest,0.0) 'Original Interest', 
+  IFNULL(ars.prinPaid,0.0) 'Principal Paid', 
+  IFNULL(ars.intPaid,0.0) 'Interest Paid', 
+  IFNULL(ars.prinOverdue,0.0) 'Principal Overdue', 
+  IFNULL(ars.intOverdue,0.0)'Interest Overdue'
+FROM 
+	/* full table of aging periods/currencies used combo to ensure each line represented */
+  (SELECT curs.code as currency, curs.name as currencyName, pers.* from
+	(SELECT 'On Schedule' period_no,1 pid UNION
+		SELECT '1',2 UNION
+		SELECT '2',3 UNION
+		SELECT '3',4 UNION
+		SELECT '4',5 UNION
+		SELECT '5',6 UNION
+		SELECT '6',7 UNION
+		SELECT '7',8 UNION
+		SELECT '8',9 UNION
+		SELECT '9',10 UNION
+		SELECT '10',11 UNION
+		SELECT '11',12 UNION
+		SELECT '12',13 UNION
+		SELECT '12+',14) pers,
+	(SELECT distinctrow moc.code, moc.name
+  	FROM m_office mo2
+   	INNER JOIN m_office ounder2 ON ounder2.hierarchy 
+				LIKE CONCAT(mo2.hierarchy, '%')
+AND ounder2.hierarchy like CONCAT($P{userhierarchy}, '%')
+   	INNER JOIN m_client mc2 ON mc2.office_id=ounder2.id
+   	INNER JOIN m_loan ml2 ON ml2.client_id = mc2.id
+	INNER JOIN m_organisation_currency moc ON moc.code = ml2.currency_code
+	WHERE ml2.loan_status_id=300 /* active */
+	AND mo2.id=$P{Branch}
+AND (ml2.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})) curs) periods
+
+
+LEFT JOIN /* table of aging periods per currency with gaps if no applicable loans */
+(SELECT 
+  	z.currency, z.arrPeriod, z.Name as "Name",
+	COUNT(z.loanId) as loanId, SUM(z.principal) as principal, SUM(z.interest) as interest, 
+	SUM(z.prinPaid) as prinPaid, SUM(z.intPaid) as intPaid, 
+	SUM(z.prinOverdue) as prinOverdue, SUM(z.intOverdue) as intOverdue
+FROM
+	/*derived table just used to get arrPeriod value (was much slower to
+	duplicate calc of minOverdueDate in inner query)
+might not be now with derived fields but didn’t check */
+	(SELECT x.loanId, x.currency, x.principal, x.interest, x.prinPaid, x.intPaid, x.prinOverdue, x.intOverdue,x.Name as "Name",
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;1, 'On Schedule', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;8, '1', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;15, '2', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;22, '3', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;29, '4', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;36, '5', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;43, '6', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;50, '7', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;57, '8', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;64, '9', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;71, '10', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;78, '11', 
+		IF(DATEDIFF(CURDATE(), minOverdueDate)&lt;85, '12',
+				 '12+'))))))))))))) AS arrPeriod
+
+	FROM /* get the individual loan details */
+		(SELECT ml.id AS loanId, ml.currency_code as currency,ounder.name as "Name",
+   			ml.principal_disbursed_derived as principal, 
+			   ml.interest_charged_derived as interest, 
+   			ml.principal_repaid_derived as prinPaid, 
+			   ml.interest_repaid_derived intPaid,
+
+			   laa.principal_overdue_derived as prinOverdue,
+			   laa.interest_overdue_derived as intOverdue,
+
+			   IFNULL(laa.overdue_since_date_derived, curdate()) as minOverdueDate
+			  
+  		FROM m_office mo
+   		INNER JOIN m_office ounder ON ounder.hierarchy 
+				LIKE CONCAT(mo.hierarchy, '%')
+AND ounder.hierarchy like CONCAT($P{userhierarchy}, '%')
+   		INNER JOIN m_client mc ON mc.office_id=ounder.id
+   		INNER JOIN m_loan ml ON ml.client_id = mc.id
+		   LEFT JOIN m_loan_arrears_aging laa on laa.loan_id = ml.id
+		WHERE ml.loan_status_id=300 /* active */
+     		AND mo.id=$P{Branch}
+     AND (ml.currency_code = $P{CurrencyId} or "-1" = $P{CurrencyId})
+  		GROUP BY ml.id) x
+	) z 
+GROUP BY z.currency, z.arrPeriod ) ars ON ars.arrPeriod=periods.period_no and ars.currency = periods.currency
+ORDER BY periods.currency, periods.pid</query>
+    <title height="30">
+        <element kind="staticText" x="0" y="0" width="700" height="24" fontSize="14" bold="true"><text>Aging Summary (Arrears in Weeks)(Pentaho)</text></element></title>
+    <columnHeader height="22">
+        <element kind="staticText" x="20" y="0" width="66" height="20"><text>currency</text></element><element kind="staticText" x="90" y="0" width="66" height="20"><text>Name</text></element><element kind="staticText" x="230" y="0" width="66" height="20"><text>No Of Loans</text></element><element kind="staticText" x="300" y="0" width="66" height="20"><text>Original Principal</text></element><element kind="staticText" x="370" y="0" width="66" height="20"><text>Original Interest</text></element><element kind="staticText" x="440" y="0" width="66" height="20"><text>Principal Paid</text></element><element kind="staticText" x="510" y="0" width="66" height="20"><text>Interest Paid</text></element><element kind="staticText" x="580" y="0" width="66" height="20"><text>Principal Overdue</text></element><element kind="staticText" x="650" y="0" width="66" height="20"><text>Interest Overdue</text></element><element kind="staticText" x="720" y="0" width="66" height="20"><text>Weeks In Arrears (Up To)</text></element></columnHeader>
+    <detail>
+        <band height="18">
+            <element kind="textField" blankWhenNull="true" x="20" y="0" width="66" height="18"><expression>$F{currency}</expression></element><element kind="textField" blankWhenNull="true" x="90" y="0" width="66" height="18"><expression>$F{Name}</expression></element><element kind="textField" blankWhenNull="true" x="230" y="0" width="66" height="18"><expression>$F{No Of Loans}</expression></element><element kind="textField" blankWhenNull="true" x="300" y="0" width="66" height="18"><expression>$F{Original Principal}</expression></element><element kind="textField" blankWhenNull="true" x="370" y="0" width="66" height="18"><expression>$F{Original Interest}</expression></element><element kind="textField" blankWhenNull="true" x="440" y="0" width="66" height="18"><expression>$F{Principal Paid}</expression></element><element kind="textField" blankWhenNull="true" x="510" y="0" width="66" height="18"><expression>$F{Interest Paid}</expression></element><element kind="textField" blankWhenNull="true" x="580" y="0" width="66" height="18"><expression>$F{Principal Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="650" y="0" width="66" height="18"><expression>$F{Interest Overdue}</expression></element><element kind="textField" blankWhenNull="true" x="720" y="0" width="66" height="18"><expression>$F{Weeks In Arrears (Up To)}</expression></element></band>
+    </detail>
+</jasperReport>

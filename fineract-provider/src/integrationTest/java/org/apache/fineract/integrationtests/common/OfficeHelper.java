@@ -32,8 +32,8 @@ import com.jayway.restassured.specification.ResponseSpecification;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 public class OfficeHelper {
 
@@ -54,6 +54,11 @@ public class OfficeHelper {
 		final String json = new Gson().toJson(get);
 		return new Gson().fromJson(json, new TypeToken<OfficeDomain>() {
 		}.getType());
+	}
+
+	public String retrieveOfficeShortCode(int id) {
+		return (String) Utils.performServerGet(requestSpec, responseSpec,
+				OFFICE_URL + "/" + id + "?" + Utils.TENANT_IDENTIFIER, "shortCode");
 	}
 
 	public Integer createOffice(final String openingDate) {
@@ -81,6 +86,7 @@ public class OfficeHelper {
 		final HashMap<String, String> map = new HashMap<>();
 		map.put("parentId", "1");
 		map.put("name", Utils.randomNameGenerator("Office_", 4));
+		map.put("shortCode", Utils.randomStringGenerator("", 3));
 		map.put("dateFormat", "dd MMMM yyyy");
 		map.put("locale", "en");
 		map.put("openingDate", openingDate);

@@ -171,7 +171,7 @@ public class LoanAssembler {
         final Boolean createStandingInstructionAtDisbursement = this.fromApiJsonHelper.extractBooleanNamed(
                 "createStandingInstructionAtDisbursement", element);
 
-        final LoanProduct loanProduct = this.loanProductRepository.findOne(productId);
+        final LoanProduct loanProduct = this.loanProductRepository.findById(productId).orElse(null);
         if (loanProduct == null) { throw new LoanProductNotFoundException(productId); }
 
         final Fund fund = findFundByIdIfProvided(fundId);
@@ -240,7 +240,7 @@ public class LoanAssembler {
         }
 
         if (groupId != null) {
-            group = this.groupRepository.findOne(groupId);
+            group = this.groupRepository.findById(groupId).orElse(null);
             if (group == null) { throw new GroupNotFoundException(groupId); }
             if (group.isNotActive()) { throw new GroupNotActiveException(groupId); }
         }
@@ -314,7 +314,7 @@ public class LoanAssembler {
     public Fund findFundByIdIfProvided(final Long fundId) {
         Fund fund = null;
         if (fundId != null) {
-            fund = this.fundRepository.findOne(fundId);
+            fund = this.fundRepository.findById(fundId).orElse(null);
             if (fund == null) { throw new FundNotFoundException(fundId); }
         }
         return fund;
@@ -323,7 +323,7 @@ public class LoanAssembler {
     public Staff findLoanOfficerByIdIfProvided(final Long loanOfficerId) {
         Staff staff = null;
         if (loanOfficerId != null) {
-            staff = this.staffRepository.findOne(loanOfficerId);
+            staff = this.staffRepository.findById(loanOfficerId).orElse(null);
             if (staff == null) {
                 throw new StaffNotFoundException(loanOfficerId);
             } else if (staff.isNotLoanOfficer()) { throw new StaffRoleException(loanOfficerId, StaffRoleException.STAFF_ROLE.LOAN_OFFICER); }
@@ -334,7 +334,7 @@ public class LoanAssembler {
     public LoanTransactionProcessingStrategy findStrategyByIdIfProvided(final Long transactionProcessingStrategyId) {
         LoanTransactionProcessingStrategy strategy = null;
         if (transactionProcessingStrategyId != null) {
-            strategy = this.loanTransactionProcessingStrategyRepository.findOne(transactionProcessingStrategyId);
+            strategy = this.loanTransactionProcessingStrategyRepository.findById(transactionProcessingStrategyId).orElse(null);
             if (strategy == null) { throw new LoanTransactionProcessingStrategyNotFoundException(transactionProcessingStrategyId); }
         }
         return strategy;

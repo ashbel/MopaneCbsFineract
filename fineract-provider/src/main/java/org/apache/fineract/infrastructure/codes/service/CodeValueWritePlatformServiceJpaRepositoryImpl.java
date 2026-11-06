@@ -73,7 +73,7 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
             this.fromApiJsonDeserializer.validateForCreate(command.json());
 
             final Long codeId = command.entityId();
-            final Code code = this.codeRepository.findOne(codeId);
+            final Code code = this.codeRepository.findById(codeId).orElse(null);
             if (code == null) {
                 throw new CodeNotFoundException(codeId);
             }
@@ -149,7 +149,7 @@ public class CodeValueWritePlatformServiceJpaRepositoryImpl implements CodeValue
         try {
             this.context.authenticatedUser();
 
-            final Code code = this.codeRepository.findOne(codeId);
+            final Code code = this.codeRepository.findById(codeId).orElse(null);
             if (code == null) { throw new CodeNotFoundException(codeId); }
 
             final CodeValue codeValueToDelete = this.codeValueRepositoryWrapper.findOneWithNotFoundDetection(codeValueId);

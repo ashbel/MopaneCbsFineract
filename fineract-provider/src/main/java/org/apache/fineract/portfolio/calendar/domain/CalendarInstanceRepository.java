@@ -50,7 +50,7 @@ public interface CalendarInstanceRepository extends JpaRepository<CalendarInstan
     Collection<CalendarInstance> findByCalendarIdAndEntityTypeId(Long calendarId, Integer entityTypeId);
 
     /** Should use in clause, can I do it without creating a new class? **/
-    @Query("select ci from CalendarInstance ci where ci.entityId in (select loan.id from Loan loan where loan.client.id = :clientId and loan.group.id = :groupId and (loan.loanStatus = 100 or loan.loanStatus = 200 or loan.loanStatus = 300)) and ci.entityTypeId = 3")
+    @Query("select ci from CalendarInstance ci where ci.entityId in (select loan.id from Loan loan where loan.client.id = :clientId and loan.loanGroup.id = :groupId and (loan.loanStatus = 100 or loan.loanStatus = 200 or loan.loanStatus = 300)) and ci.entityTypeId = 3")
     List<CalendarInstance> findCalendarInstancesForActiveLoansByGroupIdAndClientId(@Param("groupId") Long groupId,
             @Param("clientId") Long clientId);
     
@@ -58,7 +58,7 @@ public interface CalendarInstanceRepository extends JpaRepository<CalendarInstan
      *  EntityType = 3 is for loan
      */
     
-    @Query("SELECT COUNT(ci.id) FROM CalendarInstance ci, Loan ln WHERE ln.id = ci.entityId AND ci.entityTypeId = 3 AND ci.calendar.id = :calendarId AND ln.loanStatus IN :loanStatuses ") 
+    @Query("SELECT COUNT(ci.id) FROM CalendarInstance ci, Loan l WHERE l.id = ci.entityId AND ci.entityTypeId = 3 AND ci.calendar.id = :calendarId AND l.loanStatus IN :loanStatuses ") 
     Integer countOfLoansSyncedWithCalendar(@Param("calendarId") Long calendarId, @Param("loanStatuses") Collection<Integer> loanStatuses );
 
 }

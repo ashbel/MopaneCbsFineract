@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.template.domain;
 
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import com.google.gson.annotations.SerializedName;
 

@@ -44,7 +44,7 @@ public class HolidayRepositoryWrapper {
     }
 
     public Holiday findOneWithNotFoundDetection(final Long id) {
-        final Holiday holiday = this.repository.findOne(id);
+        final Holiday holiday = this.repository.findById(id).orElse(null);
         if (holiday == null) { throw new HolidayNotFoundException(id); }
         return holiday;
     }
@@ -54,7 +54,7 @@ public class HolidayRepositoryWrapper {
     }
 
     public void save(final Iterable<Holiday> holidays) {
-        this.repository.save(holidays);
+        this.repository.saveAll(holidays);
     }
 
     public void saveAndFlush(final Holiday holiday) {

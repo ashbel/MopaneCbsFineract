@@ -19,7 +19,7 @@
 package org.apache.fineract.infrastructure.bulkimport.service;
 
 import com.google.common.io.Files;
-import com.sun.jersey.core.header.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.apache.fineract.infrastructure.bulkimport.data.BulkImportEvent;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.data.ImportData;
@@ -42,7 +42,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.tika.Tika;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +51,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.*;
 import java.net.URLConnection;
 import java.sql.ResultSet;
@@ -89,7 +88,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
             if (entity !=null && inputStream!=null &&fileDetail!=null&&locale!=null&&dateFormat!=null) {
 
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                IOUtils.copy(inputStream, baos);
+                inputStream.transferTo(baos);
                 final byte[] bytes = baos.toByteArray();
                 InputStream clonedInputStream = new ByteArrayInputStream(bytes);
                 InputStream clonedInputStreamWorkbook =new ByteArrayInputStream(bytes);
@@ -193,7 +192,7 @@ public class BulkImportWorkbookServiceImpl implements BulkImportWorkbookService 
                 DocumentWritePlatformServiceJpaRepositoryImpl.DOCUMENT_MANAGEMENT_ENTITY.IMPORT.name(),
                 this.securityContext.authenticatedUser().getId(), null, clonedInputStreamWorkbook,
                 URLConnection.guessContentTypeFromName(fileName), fileName, null, fileName);
-        final Document document = this.documentRepository.findOne(documentId);
+        final Document document = this.documentRepository.findById(documentId).orElse(null);
 
         final ImportDocument importDocument = ImportDocument.instance(document,
                 DateUtils.getLocalDateTimeOfTenant(), entityType.getValue(),
